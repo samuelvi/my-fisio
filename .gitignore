@@ -1,1 +1,71 @@
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+.phpunit.result.cache
+###< phpunit/phpunit ###
+
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
+
+###> symfony/webpack-encore-bundle ###
+/node_modules/
+/public/build/
+npm-debug.log
+yarn-error.log
+###< symfony/webpack-encore-bundle ###
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> PHPStan ###
+/phpstan.neon.dist
+/.phpstan.cache
+###< PHPStan ###
+
+###> Rector ###
+/.rector.cache
+###< Rector ###
+
+# IDE
+/.idea/
+/.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Private files
 private/*
+!private/.gitkeep
+
+# Docker
+/docker/dev/.env
+
+# Coverage reports
+/var/coverage/
+
+# Composer
+composer.phar
+/composer.lock
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
