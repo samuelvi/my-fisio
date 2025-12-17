@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: physiotherapy_postgres
+    environment:
+      POSTGRES_DB: physiotherapy_db
+      POSTGRES_USER: physiotherapy_user
+      POSTGRES_PASSWORD: physiotherapy_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - physiotherapy_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U physiotherapy_user -d physiotherapy_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for sessions
+  redis:
+    image: redis:7-alpine
+    container_name: physiotherapy_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - physiotherapy_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PHP-FPM 8.4
+  php:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: physiotherapy_php
+    working_dir: /var/www/html
+    volumes:
+      - ../../:/var/www/html
+      - ./php/php.ini:/usr/local/etc/php/conf.d/custom.ini
+    networks:
+      - physiotherapy_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://physiotherapy_user:physiotherapy_pass@postgres:5432/physiotherapy_db?serverVersion=16&charset=utf8
+      - REDIS_URL=redis://redis:6379
+      - APP_ENV=dev
+      - APP_DEBUG=1
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: physiotherapy_nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ../../:/var/www/html
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - physiotherapy_network
+    depends_on:
+      - php
+
+  # MailPit for email testing
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: physiotherapy_mailpit
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - physiotherapy_network
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+networks:
+  physiotherapy_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
