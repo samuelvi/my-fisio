@@ -1,0 +1,59 @@
+doctrine:
+    dbal:
+        url: '%env(resolve:DATABASE_URL)%'
+        driver: 'pdo_pgsql'
+        server_version: '16'
+        charset: utf8
+
+        # Logging (disable in production)
+        logging: '%kernel.debug%'
+        profiling: '%kernel.debug%'
+
+    orm:
+        auto_generate_proxy_classes: true
+        enable_lazy_ghost_objects: true
+        report_fields_where_declared: true
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        auto_mapping: true
+
+        mappings:
+            App:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Domain/Model'
+                prefix: 'App\Domain\Model'
+                alias: App
+
+        # DQL functions can be added here if needed
+        dql:
+            string_functions: {}
+            numeric_functions: {}
+            datetime_functions: {}
+
+when@test:
+    doctrine:
+        dbal:
+            # Use in-memory SQLite for faster tests
+            url: 'sqlite:///:memory:'
+            driver: 'pdo_sqlite'
+
+when@prod:
+    doctrine:
+        orm:
+            auto_generate_proxy_classes: false
+            proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

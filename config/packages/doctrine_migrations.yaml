@@ -1,0 +1,33 @@
+doctrine_migrations:
+    migrations_paths:
+        'App\Infrastructure\Persistence\Doctrine\Migrations': '%kernel.project_dir%/src/Infrastructure/Persistence/Doctrine/Migrations'
+
+    # Storage configuration
+    storage:
+        table_storage:
+            table_name: 'doctrine_migration_versions'
+            version_column_name: 'version'
+            version_column_length: 191
+            executed_at_column_name: 'executed_at'
+            execution_time_column_name: 'execution_time'
+
+    # Organize migrations by year and month (optional)
+    organize_migrations: false
+
+    # Check if database platform matches your schema
+    check_database_platform: true
+
+    # Connection to use for migrations (null = default)
+    connection: null
+
+    # Entity manager to use for migrations (null = default)
+    em: null
+
+    # All or nothing approach (transactional migrations)
+    all_or_nothing: true
+
+    # Custom migration template (optional)
+    # custom_template: null
+
+    # Enable or disable migrations
+    enable_profiler: '%kernel.debug%'
