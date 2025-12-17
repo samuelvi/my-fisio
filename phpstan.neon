@@ -1,0 +1,34 @@
+includes:
+    - vendor/phpstan/phpstan-doctrine/extension.neon
+    - vendor/phpstan/phpstan-symfony/extension.neon
+
+parameters:
+    level: 8
+    paths:
+        - src
+        - tests
+
+    excludePaths:
+        - src/Infrastructure/Persistence/Doctrine/Migrations
+        - tests/bootstrap.php
+
+    # Symfony-specific settings
+    symfony:
+        container_xml_path: var/cache/dev/App_KernelDevDebugContainer.xml
+        console_application_loader: tests/console-application.php
+
+    # Doctrine-specific settings
+    doctrine:
+        repositoryClass: Doctrine\ORM\EntityRepository
+        objectManagerLoader: tests/object-manager.php
+
+    # Additional checks
+    checkMissingIterableValueType: true
+    checkGenericClassInNonGenericObjectType: true
+    checkMissingCallableSignature: true
+
+    # Report unknown types
+    reportUnmatchedIgnoredErrors: true
+
+    # Bleeding edge features
+    # treatPhpDocTypesAsCertain: false
