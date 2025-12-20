@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: physiotherapy_db
       POSTGRES_USER: physiotherapy_user
       POSTGRES_PASSWORD: physiotherapy_pass
+      PGDATA: /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
     volumes:
