@@ -4,7 +4,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: physiotherapy_postgres
+    container_name: dev_physiotherapy_postgres
     environment:
       POSTGRES_DB: physiotherapy_db
       POSTGRES_USER: physiotherapy_user
@@ -12,7 +12,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/data:/var/lib/postgresql/data
     networks:
       - physiotherapy_network
     healthcheck:
@@ -24,11 +24,11 @@ services:
   # Redis for sessions
   redis:
     image: redis:7-alpine
-    container_name: physiotherapy_redis
+    container_name: dev_physiotherapy_redis
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      - ./redis/data:/data
     networks:
       - physiotherapy_network
     healthcheck:
@@ -42,7 +42,7 @@ services:
     build:
       context: ./php
       dockerfile: Dockerfile
-    container_name: physiotherapy_php
+    container_name: dev_physiotherapy_php
     working_dir: /var/www/html
     volumes:
       - ../../:/var/www/html
@@ -63,7 +63,7 @@ services:
   # Nginx Web Server
   nginx:
     image: nginx:alpine
-    container_name: physiotherapy_nginx
+    container_name: dev_physiotherapy_nginx
     ports:
       - "80:80"
     volumes:
@@ -78,7 +78,7 @@ services:
   # MailPit for email testing
   mailpit:
     image: axllent/mailpit:latest
-    container_name: physiotherapy_mailpit
+    container_name: dev_physiotherapy_mailpit
     ports:
       - "1025:1025"  # SMTP
       - "8025:8025"  # Web UI
@@ -91,7 +91,3 @@ services:
 networks:
   physiotherapy_network:
     driver: bridge
-
-volumes:
-  postgres_data:
-  redis_data:

@@ -185,7 +185,7 @@ The coverage report will be generated in `var/coverage/index.html`.
 src/
 ├── Application/        # Use cases, DTOs, Application services
 ├── Domain/            # Entities, Value Objects, Events, Repositories
-│   ├── Model/         # Aggregates and Entities
+│   ├── Entity/        # Domain Entities
 │   ├── Event/         # Domain Events
 │   └── Repository/    # Repository interfaces
 ├── Infrastructure/    # Concrete implementations, persistence
@@ -213,8 +213,12 @@ For more details about the architecture, see [docs/AGENTS.md](docs/AGENTS.md).
 - Foreign keys: `{singular_table}_id` (e.g., `patient_id`)
 
 ### Code
-- **Backend PHP**: PascalCase for classes, camelCase for methods
-- **Frontend React**: PascalCase for components, camelCase for functions
+- **Backend PHP**: PascalCase for classes, camelCase for methods.
+- **Doctrine Entities**: 
+    - NO fluid interfaces (setters should not return `$this`).
+    - NO traditional setters and getters. Use **PHP 8.4 Property Hooks** to manage property access and logic.
+- **Imports**: Always import classes/interfaces (`use App\Class;`) instead of using fully qualified names (`\App\Class`) inside the code.
+- **Frontend React**: PascalCase for components, camelCase for functions.
 - **Events**: `{Entity}{Action}Event` (e.g., `PatientRegisteredEvent`)
 - **Commands**: `{Action}{Entity}Command` (e.g., `RegisterPatientCommand`)
 

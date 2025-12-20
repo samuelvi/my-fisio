@@ -1,4 +1,4 @@
-.PHONY: help build up down restart logs ps shell-php shell-db shell-redis composer composer-install composer-update composer-require composer-require-dev composer-remove composer-validate composer-dump-autoload symfony cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-api install-cache install-redis-bundle install-event-store install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-coverage install init-symfony wait-for-services db-setup success-message quick-start clean clean-cache mailpit urls
+.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis composer composer-install composer-update composer-require composer-require-dev composer-remove composer-validate composer-dump-autoload symfony cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-api install-cache install-redis-bundle install-event-store install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache mailpit urls
 
 # Default target
 .DEFAULT_GOAL := help
@@ -7,9 +7,9 @@
 DOCKER_COMPOSE = docker-compose -f docker/dev/docker-compose.yaml
 
 # Colors for terminal output
-GREEN  := \033[0;32m
-YELLOW := \033[0;33m
-NC     := \033[0m # No Color
+GREEN  := [0;32m
+YELLOW := [0;33m
+NC     := [0m # No Color
 
 ##@ General
 
@@ -18,47 +18,47 @@ help: ## Display this help message
 	@echo ""
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(GREEN)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-##@ Docker Management
+##@ Docker Management (Dev)
 
-build: ## Build all Docker containers
+dev-build: ## Build all Docker containers
 	@echo "$(GREEN)Building Docker containers...$(NC)"
 	$(DOCKER_COMPOSE) build
 
-up: ## Start all containers in background
+dev-up: ## Start all containers in background
 	@echo "$(GREEN)Starting containers...$(NC)"
 	$(DOCKER_COMPOSE) up -d
 
-down: ## Stop and remove all containers
+dev-down: ## Stop and remove all containers
 	@echo "$(YELLOW)Stopping containers...$(NC)"
 	$(DOCKER_COMPOSE) down
 
-restart: down up ## Restart all containers
+dev-restart: dev-down dev-up ## Restart all containers
 
-stop: ## Stop all containers without removing
+dev-stop: ## Stop all containers without removing
 	@echo "$(YELLOW)Stopping containers...$(NC)"
 	$(DOCKER_COMPOSE) stop
 
-logs: ## Show logs from all containers (use: make logs service=php)
+dev-logs: ## Show logs from all containers (use: make dev-logs service=php)
 	@if [ -z "$(service)" ]; then \
 		$(DOCKER_COMPOSE) logs -f; \
 	else \
 		$(DOCKER_COMPOSE) logs -f $(service); \
 	fi
 
-ps: ## Show running containers
+dev-ps: ## Show running containers
 	$(DOCKER_COMPOSE) ps
 
-##@ Container Access
+##@ Container Access (Dev)
 
-shell-php: ## Access PHP container shell
+dev-shell-php: ## Access PHP container shell
 	@echo "$(GREEN)Accessing PHP container...$(NC)"
 	$(DOCKER_COMPOSE) exec php sh
 
-shell-db: ## Access PostgreSQL database shell
+dev-shell-db: ## Access PostgreSQL database shell
 	@echo "$(GREEN)Accessing PostgreSQL...$(NC)"
 	$(DOCKER_COMPOSE) exec postgres psql -U physiotherapy_user -d physiotherapy_db
 
-shell-redis: ## Access Redis CLI
+dev-shell-redis: ## Access Redis CLI
 	@echo "$(GREEN)Accessing Redis CLI...$(NC)"
 	$(DOCKER_COMPOSE) exec redis redis-cli
 
@@ -66,7 +66,7 @@ shell-redis: ## Access Redis CLI
 
 composer: ## Run composer command (use: make composer cmd="install")
 	@if [ -z "$(cmd)" ]; then \
-		echo "$(YELLOW)Usage: make composer cmd=\"your-command\"$(NC)"; \
+		echo "$(YELLOW)Usage: make composer cmd=\"your-command\"$(NC)\"
 	else \
 		$(DOCKER_COMPOSE) exec php composer $(cmd); \
 	fi
@@ -81,21 +81,21 @@ composer-update: ## Update composer dependencies
 
 composer-require: ## Install a package (use: make composer-require pkg="vendor/package")
 	@if [ -z "$(pkg)" ]; then \
-		echo "$(YELLOW)Usage: make composer-require pkg=\"vendor/package\"$(NC)"; \
+		echo "$(YELLOW)Usage: make composer-require pkg=\"vendor/package\"$(NC)\"
 	else \
 		$(DOCKER_COMPOSE) exec php composer require $(pkg); \
 	fi
 
 composer-require-dev: ## Install a dev package (use: make composer-require-dev pkg="vendor/package")
 	@if [ -z "$(pkg)" ]; then \
-		echo "$(YELLOW)Usage: make composer-require-dev pkg=\"vendor/package\"$(NC)"; \
+		echo "$(YELLOW)Usage: make composer-require-dev pkg=\"vendor/package\"$(NC)\"
 	else \
 		$(DOCKER_COMPOSE) exec php composer require --dev $(pkg); \
 	fi
 
 composer-remove: ## Remove a package (use: make composer-remove pkg="vendor/package")
 	@if [ -z "$(pkg)" ]; then \
-		echo "$(YELLOW)Usage: make composer-remove pkg=\"vendor/package\"$(NC)"; \
+		echo "$(YELLOW)Usage: make composer-remove pkg=\"vendor/package\"$(NC)\"
 	else \
 		$(DOCKER_COMPOSE) exec php composer remove $(pkg); \
 	fi
@@ -110,7 +110,7 @@ composer-dump-autoload: ## Regenerate autoload files
 
 symfony: ## Run Symfony console command (use: make symfony cmd="cache:clear")
 	@if [ -z "$(cmd)" ]; then \
-		echo "$(YELLOW)Usage: make symfony cmd=\"your-command\"$(NC)"; \
+		echo "$(YELLOW)Usage: make symfony cmd=\"your-command\"$(NC)\"
 	else \
 		$(DOCKER_COMPOSE) exec php php bin/console $(cmd); \
 	fi
@@ -235,7 +235,7 @@ test-coverage: ## Run tests with coverage
 
 ##@ Project Setup
 
-install: build up wait-for-services init-symfony install-all-packages db-setup success-message ## Full project installation
+dev-install: dev-build dev-up wait-for-services init-symfony install-all-packages db-setup success-message ## Full project installation (Dev)
 
 init-symfony: ## Initialize Symfony application
 	@echo "$(GREEN)Initializing Symfony application...$(NC)"
@@ -262,6 +262,7 @@ wait-for-services: ## Wait for services to be ready
 	done
 	@echo "$(GREEN)Redis is ready!$(NC)"
 
+
 db-setup: db-create db-migrate ## Setup database (create + migrate)
 
 success-message: ## Display success message
@@ -283,11 +284,11 @@ success-message: ## Display success message
 	@echo "  4. Run 'make help' to see all available commands"
 	@echo ""
 
-quick-start: build up wait-for-services composer-install db-setup success-message ## Quick start (assumes Symfony is already initialized)
+dev-quick-start: dev-build dev-up wait-for-services composer-install db-setup success-message ## Quick start (assumes Symfony is already initialized)
 
 ##@ Cleanup
 
-clean: down ## Stop containers and remove volumes
+dev-clean: dev-down ## Stop containers and remove volumes
 	@echo "$(YELLOW)Removing volumes...$(NC)"
 	$(DOCKER_COMPOSE) down -v
 

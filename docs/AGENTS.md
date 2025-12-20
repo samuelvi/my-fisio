@@ -13,7 +13,7 @@ Responsive web application to manage a physiotherapy clinic with modern decouple
 - **State**: Context API / Redux (to be defined)
 - **HTTP Client**: Axios
 - **UI**: Modular and reusable components
-
+w
 ### Backend
 - **Framework**: Symfony 7.4
 - **PHP**: 8.4 (PHP-FPM)
@@ -36,7 +36,7 @@ Responsive web application to manage a physiotherapy clinic with modern decouple
 src/
 ├── Application/        # Use cases, DTOs, Application services
 ├── Domain/            # Entities, Value Objects, Events, Repositories (interfaces)
-│   ├── Model/         # Aggregates and Entities
+│   ├── Entity/        # Domain Entities
 │   ├── Event/         # Domain Events
 │   └── Repository/    # Repository interfaces
 ├── Infrastructure/    # Concrete implementations, persistence, Event Store
@@ -79,6 +79,10 @@ src/
 
 ### Code
 - **Backend PHP**: PascalCase for classes, camelCase for methods
+- **Doctrine Entities**: 
+    - NO fluid interfaces.
+    - NO traditional setters and getters. Use **PHP 8.4 Property Hooks**.
+- **Imports**: Always import classes/interfaces (`use`) instead of using fully qualified names inside the code.
 - **Frontend React**: PascalCase for components, camelCase for functions
 - **Events**: `{Entity}{Action}Event` (e.g., `PatientRegisteredEvent`)
 - **Commands**: `{Action}{Entity}Command` (e.g., `RegisterPatientCommand`)
@@ -115,13 +119,36 @@ docker/dev/
 ```
 
 **Main commands (via Makefile):**
-- `make install`: Complete project installation
-- `make up`: Start containers
-- `make down`: Stop containers
-- `make shell-php`: Access PHP container
-- `make symfony cmd="..."`: Run Symfony commands
-- `make composer cmd="..."`: Run Composer commands
-- `make db-reset`: Reset complete database
+
+**Setup & Lifecycle (Dev)**
+- `make dev-install`: Complete project setup (Build, Up, Init, DB).
+- `make dev-quick-start`: Fast start if already initialized.
+- `make dev-up` / `make dev-down`: Start/Stop services.
+- `make dev-restart`: Restart all services.
+- `make dev-logs`: Tail logs (optional: `service=php`).
+- `make dev-clean`: Destroy containers and volumes.
+
+**Development**
+- `make dev-shell-php`: Access PHP container shell.
+- `make dev-shell-db`: Access PostgreSQL shell.
+- `make dev-shell-redis`: Access Redis CLI.
+- `make composer cmd="..."`: Run Composer (e.g., `cmd="require symfony/mailer"`).
+- `make symfony cmd="..."`: Run Symfony Console (e.g., `cmd="make:controller"`).
+- `make cache-clear`: Clear application cache.
+
+**Database**
+- `make db-migrate`: Apply migrations.
+- `make db-migration-create`: Generate new migration.
+- `make db-fixtures`: Load test data.
+- `make db-reset`: Full reset (Drop -> Create -> Migrate -> Fixtures).
+- `make db-validate`: Validate Doctrine schema.
+
+**Quality & Testing**
+- `make test`: Run PHPUnit tests.
+- `make test-coverage`: Run tests with HTML coverage report.
+- `make phpstan`: Run static analysis (Level 8).
+- `make cs-check` / `make cs-fix`: Check/Fix coding style (PHP-CS-Fixer).
+- `make rector`: Run automated refactoring (dry-run).
 
 See `make help` for complete command list.
 
