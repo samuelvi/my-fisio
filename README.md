@@ -39,7 +39,7 @@ git clone <repository-url>
 cd New3
 
 # Automatic installation (build, start and configure)
-make install
+make dev-install
 ```
 
 This command will:
@@ -52,19 +52,19 @@ This command will:
 
 ```bash
 # Start all services
-make up
+make dev-up
 
 # Stop all services
-make down
+make dev-down
 
 # Restart all services
-make restart
+make dev-restart
 
 # View logs from all services
-make logs
+make dev-logs
 
 # View logs from a specific service
-make logs service=php
+make dev-logs service=php
 ```
 
 ## Available Services
@@ -79,6 +79,15 @@ Once the containers are started, you will have access to:
 | PostgreSQL | localhost:5432 | Main database |
 | Redis | localhost:6379 | Cache and session storage |
 
+### Adminer Login Credentials
+
+To manage the database through Adminer, use:
+- **System**: `PostgreSQL`
+- **Server**: `postgres`
+- **Username**: `physiotherapy_user`
+- **Password**: `physiotherapy_pass`
+- **Database**: `physiotherapy_db`
+
 View all available URLs:
 ```bash
 make urls
@@ -90,23 +99,23 @@ make urls
 
 ```bash
 # Access PHP container
-make shell-php
+make dev-shell-php
 
 # Access PostgreSQL
-make shell-db
+make dev-shell-db
 
 # Access Redis CLI
-make shell-redis
+make dev-shell-redis
 ```
 
 ### View Container Status
 
 ```bash
 # View running containers
-make ps
+make dev-ps
 
 # View logs in real-time
-make logs
+make dev-logs
 ```
 
 ## Symfony Development
@@ -115,13 +124,13 @@ make logs
 
 ```bash
 # Install dependencies
-make composer cmd="install"
+make composer-install
 
 # Add a package
-make composer cmd="require symfony/mailer"
+make composer-require pkg="symfony/mailer"
 
 # Update dependencies
-make composer cmd="update"
+make composer-update
 ```
 
 ### Symfony Console
@@ -248,7 +257,7 @@ Custom PHP configuration is located in `docker/dev/php/php.ini`:
 
 ```bash
 # Stop and remove volumes
-make clean
+make dev-clean
 
 # Clean Symfony cache and logs
 make clean-cache
@@ -267,19 +276,19 @@ make help
 
 ```bash
 # Check logs
-make logs
+make dev-logs
 
 # Rebuild containers
-make clean
-make build
-make up
+make dev-clean
+make dev-build
+make dev-up
 ```
 
 ### File permission errors
 
 ```bash
 # Access PHP container and adjust permissions
-make shell-php
+make dev-shell-php
 chown -R www-data:www-data var/
 ```
 
@@ -287,7 +296,7 @@ chown -R www-data:www-data var/
 
 ```bash
 # Check container status
-make ps
+make dev-ps
 
 # Restart PostgreSQL
 docker-compose -f docker/dev/docker-compose.yaml restart postgres

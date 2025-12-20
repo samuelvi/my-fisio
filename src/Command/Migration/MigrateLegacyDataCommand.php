@@ -123,7 +123,7 @@ final class MigrateLegacyDataCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dumpFile = $this->projectDir . '/private/dump.sql';
+        $dumpFile = $this->projectDir . '/private/dump2.sql';
 
         if (!file_exists($dumpFile)) {
             $io->error(sprintf('Dump file not found at "%s"', $dumpFile));
@@ -131,7 +131,7 @@ final class MigrateLegacyDataCommand extends Command
         }
 
         $io->title('Migrating Legacy Data');
-        
+
         $connection = $this->entityManager->getConnection();
         $connection->beginTransaction();
 
@@ -142,7 +142,7 @@ final class MigrateLegacyDataCommand extends Command
             $connection->executeStatement('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
 
             $io->text('Reading dump file...');
-            
+
             $stats = ['users' => 0, 'paciente' => 0, 'historial' => 0, 'event' => 0];
 
             foreach ($this->parser->parse($dumpFile) as $entry) {
@@ -166,7 +166,7 @@ final class MigrateLegacyDataCommand extends Command
             $this->resetSequence($connection, 'customers');
 
             $connection->commit();
-            
+
             $io->success('Migration completed successfully.');
             $io->table(
                 ['Legacy Table', 'Imported Rows'],
@@ -177,7 +177,7 @@ final class MigrateLegacyDataCommand extends Command
                     ['event', $stats['event']],
                 ]
             );
-            
+
             return Command::SUCCESS;
         } catch (Exception $e) {
             $connection->rollBack();
@@ -207,11 +207,11 @@ final class MigrateLegacyDataCommand extends Command
         foreach ($columns as $index => $colConfig) {
             // Handle cases where row might have fewer columns than expected (though unlikely in dump)
             $rawValue = $row[$index] ?? null;
-            
+
             $targetColumns[] = $colConfig['target'];
             $paramName = $colConfig['target'];
             $queryValues[] = ':' . $paramName;
-            
+
             $parameters[$paramName] = $this->transformValue($rawValue, $colConfig['type']);
         }
 
@@ -221,7 +221,7 @@ final class MigrateLegacyDataCommand extends Command
                  $parameters['user_id'] = 1; // Default admin
              }
         }
-        
+
         // Special handling for patients: created_at fallback
         if ($targetTable === 'patients' && empty($parameters['created_at'])) {
             $parameters['created_at'] = (new DateTime())->format('Y-m-d');
@@ -250,7 +250,7 @@ final class MigrateLegacyDataCommand extends Command
 
         return match ($type) {
             self::TYPE_INT => (int) $value,
-            self::TYPE_BOOL => (bool) $value, // '1' -> true, '0' -> false
+            self::TYPE_BOOL => ($value === '' || $value === '0' || $value === 0 || $value === false) ? 0 : 1, // Return int for safe string binding (0/1)
             self::TYPE_DATE => $this->formatDate($value),
             self::TYPE_DATETIME => $this->formatDate($value),
             self::TYPE_JSON => $this->isValidJson($value) ? $value : json_encode([]), // Ensure valid JSON
@@ -272,14 +272,14 @@ final class MigrateLegacyDataCommand extends Command
         if (!$value) {
             return null;
         }
-        
+
         // Try to unserialize PHP serialized string with restricted classes
         $data = @unserialize($value, ['allowed_classes' => false]);
-        
+
         if ($data === false && $value !== 'b:0;') {
             return json_encode([]); // Failed to unserialize
         }
-        
+
         return json_encode($data);
     }
 

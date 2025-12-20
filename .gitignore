@@ -69,3 +69,6 @@ composer.phar
 # Temporary files
 *.tmp
 *.bak
+
+# IDE files
+.idea
