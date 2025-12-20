@@ -15,7 +15,7 @@ This guide provides step-by-step instructions for setting up the Physiotherapy C
 This will build containers, initialize Symfony, install all packages, and set up the database.
 
 ```bash
-make install
+make dev-install
 ```
 
 This command executes the following steps:
@@ -33,7 +33,7 @@ This command executes the following steps:
 If you already have Symfony initialized and just need to start the project:
 
 ```bash
-make quick-start
+make dev-quick-start
 ```
 
 ## Step-by-Step Installation
@@ -43,13 +43,13 @@ If you prefer to install components individually:
 ### 1. Build Docker Containers
 
 ```bash
-make build
+make dev-build
 ```
 
 ### 2. Start All Services
 
 ```bash
-make up
+make dev-up
 ```
 
 ### 3. Wait for Services
@@ -200,19 +200,19 @@ make urls
 ### Access PHP Container
 
 ```bash
-make shell-php
+make dev-shell-php
 ```
 
 ### Access PostgreSQL Database
 
 ```bash
-make shell-db
+make dev-shell-db
 ```
 
 ### Access Redis CLI
 
 ```bash
-make shell-redis
+make dev-shell-redis
 ```
 
 ## Symfony Commands
@@ -300,18 +300,18 @@ make quality-check
 
 ```bash
 # Check logs
-make logs
+make dev-logs
 
 # Or check specific service
-make logs service=php
-make logs service=postgres
+make dev-logs service=php
+make dev-logs service=postgres
 ```
 
 ### Permission Issues
 
 ```bash
 # Access PHP container and fix permissions
-make shell-php
+make dev-shell-php
 chown -R www-data:www-data var/
 ```
 
@@ -319,7 +319,7 @@ chown -R www-data:www-data var/
 
 ```bash
 # Check PostgreSQL status
-make ps
+make dev-ps
 
 # Restart PostgreSQL
 docker-compose -f docker/dev/docker-compose.yaml restart postgres
@@ -331,10 +331,10 @@ If you need to start fresh:
 
 ```bash
 # Stop and remove all containers and volumes
-make clean
+make dev-clean
 
 # Rebuild and reinstall
-make install
+make dev-install
 ```
 
 ## Environment Configuration

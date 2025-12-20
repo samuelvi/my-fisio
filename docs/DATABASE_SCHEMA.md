@@ -95,26 +95,6 @@ This entity follows DDD principles and uses PHP 8.4 attributes for Doctrine ORM 
 - **Type Safety**: Strong typing for all properties
 - **Value Objects**: Ready for refactoring to use value objects (e.g., `AppointmentId`, `TimeRange`)
 
-## Migration File
-
-The migration file is located at:
-```
-src/Infrastructure/Persistence/Doctrine/Migrations/Version20251217000001.php
-```
-
-### Running the Migration
-
-```bash
-# Create the database (if not exists)
-make db-create
-
-# Run the migration
-make db-migrate
-
-# Validate the schema
-make db-validate
-```
-
 ## Future Enhancements
 
 1. **Foreign Key Constraints**: Add foreign key constraint to `users` table once migrated
