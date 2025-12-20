@@ -105,6 +105,7 @@ The project uses Docker Compose for the development environment:
 - **Redis 7**: Cache and session management
 - **Nginx**: Web server configured for Symfony
 - **MailPit**: Email capture for testing (UI at http://localhost:8025)
+- **Adminer**: Visual database management (UI at http://localhost:8080)
 
 **File location:**
 ```

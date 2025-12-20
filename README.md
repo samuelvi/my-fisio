@@ -75,6 +75,7 @@ Once the containers are started, you will have access to:
 |---------|----------|-------------|
 | Application | http://localhost | Main web application |
 | MailPit UI | http://localhost:8025 | Web interface for development emails |
+| Adminer | http://localhost:8080 | Visual database management |
 | PostgreSQL | localhost:5432 | Main database |
 | Redis | localhost:6379 | Cache and session storage |
 

@@ -88,6 +88,15 @@ services:
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
 
+  # Adminer for database management
+  adminer:
+    image: adminer:latest
+    container_name: dev_physiotherapy_adminer
+    ports:
+      - "8080:8080"
+    networks:
+      - physiotherapy_network
+
 networks:
   physiotherapy_network:
     driver: bridge
