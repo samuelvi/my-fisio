@@ -39,8 +39,8 @@ yarn-error.log
 ###< Rector ###
 
 # IDE
-/.idea/
-/.vscode/
+.idea/
+.vscode/
 *.swp
 *.swo
 *~
@@ -69,6 +69,3 @@ composer.phar
 # Temporary files
 *.tmp
 *.bak
-
-# IDE files
-.idea
