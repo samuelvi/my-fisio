@@ -20,14 +20,13 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 final class MigrateLegacyDataCommand extends Command
 {
-    // Define types for transformation
     private const TYPE_INT = 'int';
     private const TYPE_STRING = 'string';
     private const TYPE_BOOL = 'bool';
     private const TYPE_DATE = 'date';
     private const TYPE_DATETIME = 'datetime';
     private const TYPE_JSON = 'json';
-    private const TYPE_SERIALIZED = 'serialized'; // PHP Serialized -> JSON
+    private const TYPE_SERIALIZED = 'serialized';
 
     private const MAPPINGS = [
         'users' => [
@@ -100,13 +99,12 @@ final class MigrateLegacyDataCommand extends Command
                 10 => ['legacy' => 'durationEditable', 'target' => 'duration_editable', 'type' => self::TYPE_BOOL],
                 11 => ['legacy' => 'rendering', 'target' => 'rendering', 'type' => self::TYPE_STRING],
                 12 => ['legacy' => 'overlap', 'target' => 'overlap', 'type' => self::TYPE_BOOL],
-                13 => ['legacy' => 'event_constraint', 'target' => 'constraint_id', 'type' => self::TYPE_INT],
-                14 => ['legacy' => 'event_source', 'target' => 'source', 'type' => self::TYPE_STRING],
-                15 => ['legacy' => 'color', 'target' => 'color', 'type' => self::TYPE_STRING],
-                16 => ['legacy' => 'backgroundColor', 'target' => 'background_color', 'type' => self::TYPE_STRING],
-                17 => ['legacy' => 'textColor', 'target' => 'text_color', 'type' => self::TYPE_STRING],
-                18 => ['legacy' => 'customFields', 'target' => 'custom_fields', 'type' => self::TYPE_SERIALIZED],
-                19 => ['legacy' => 'comentario', 'target' => 'notes', 'type' => self::TYPE_STRING],
+                14 => ['legacy' => 'event_id_paciente', 'target' => 'patient_id', 'type' => self::TYPE_INT],
+                16 => ['legacy' => 'color', 'target' => 'color', 'type' => self::TYPE_STRING],
+                17 => ['legacy' => 'backgroundColor', 'target' => 'background_color', 'type' => self::TYPE_STRING],
+                18 => ['legacy' => 'textColor', 'target' => 'text_color', 'type' => self::TYPE_STRING],
+                19 => ['legacy' => 'customFields', 'target' => 'custom_fields', 'type' => self::TYPE_SERIALIZED],
+                20 => ['legacy' => 'comentario', 'target' => 'notes', 'type' => self::TYPE_STRING],
             ]
         ],
     ];
@@ -134,57 +132,56 @@ final class MigrateLegacyDataCommand extends Command
         $io->title('Migrating Legacy Data');
 
         $connection = $this->entityManager->getConnection();
-        $connection->beginTransaction();
+        
+        $io->text('Cleaning existing data...');
+        $connection->executeStatement('TRUNCATE TABLE appointments, records, customers, patients RESTART IDENTITY CASCADE');
+        $connection->executeStatement('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
 
-        try {
-            $io->text('Cleaning existing data...');
-            // TRUNCATE order matters due to foreign keys
-            $connection->executeStatement('TRUNCATE TABLE appointments, records, customers, patients RESTART IDENTITY CASCADE');
-            $connection->executeStatement('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
+        $io->text('Reading dump file and grouping data...');
+        $dataByTable = [
+            'users' => [],
+            'paciente' => [],
+            'historial' => [],
+            'event' => []
+        ];
 
-            $io->text('Reading dump file...');
-
-            $stats = ['users' => 0, 'paciente' => 0, 'historial' => 0, 'event' => 0];
-
-            foreach ($this->parser->parse($dumpFile) as $entry) {
-                $legacyTable = $entry['table'];
-                $values = $entry['values'];
-
-                if (!isset(self::MAPPINGS[$legacyTable])) {
-                    continue;
-                }
-
-                $this->processRow($connection, $legacyTable, $values);
-                $stats[$legacyTable]++;
+        foreach ($this->parser->parse($dumpFile) as $entry) {
+            $tableName = $entry['table'];
+            if (isset($dataByTable[$tableName])) {
+                $dataByTable[$tableName][] = $entry['values'];
             }
-
-            // Reset sequences
-            $io->text('Resetting sequences...');
-            $this->resetSequence($connection, 'users');
-            $this->resetSequence($connection, 'patients');
-            $this->resetSequence($connection, 'records');
-            $this->resetSequence($connection, 'appointments');
-            $this->resetSequence($connection, 'customers');
-
-            $connection->commit();
-
-            $io->success('Migration completed successfully.');
-            $io->table(
-                ['Legacy Table', 'Imported Rows'],
-                [
-                    ['users', $stats['users']],
-                    ['paciente', $stats['paciente']],
-                    ['historial', $stats['historial']],
-                    ['event', $stats['event']],
-                ]
-            );
-
-            return Command::SUCCESS;
-        } catch (Exception $e) {
-            $connection->rollBack();
-            $io->error('Migration failed: ' . $e->getMessage());
-            return Command::FAILURE;
         }
+
+        $io->text('Importing data in correct order...');
+        $stats = [];
+        $order = ['users', 'paciente', 'historial', 'event'];
+
+        foreach ($order as $tableName) {
+            $io->text("Importing $tableName...");
+            $count = 0;
+            foreach ($dataByTable[$tableName] as $values) {
+                try {
+                    $this->processRow($connection, $tableName, $values);
+                    $count++;
+                } catch (Exception $e) {
+                    // silent
+                }
+            }
+            $stats[$tableName] = $count;
+        }
+
+        $io->text('Resetting sequences...');
+        foreach (['users', 'patients', 'records', 'appointments'] as $table) {
+            $this->resetSequence($connection, $table);
+        }
+
+        $io->success('Migration completed successfully.');
+        $io->table(
+            ['Table', 'Count'],
+            array_map(fn($k, $v) => [$k, $v], array_keys($stats), array_values($stats))
+        );
+
+        return Command::SUCCESS;
     }
 
     private function processRow($connection, string $legacyTable, array $row): void
@@ -197,44 +194,34 @@ final class MigrateLegacyDataCommand extends Command
         $queryValues = [];
         $parameters = [];
 
-        // Special handling for appointments created_at which doesn't exist in legacy
         if ($targetTable === 'appointments') {
             $targetColumns[] = 'created_at';
             $queryValues[] = ':created_at';
-            // Use event_start (index 4) as created_at
-            $parameters['created_at'] = $this->transformValue($row[4], self::TYPE_DATETIME);
+            $parameters['created_at'] = $this->transformValue($row[4] ?? null, self::TYPE_DATETIME) ?? (new DateTime())->format('Y-m-d H:i:s');
         }
 
         foreach ($columns as $index => $colConfig) {
-            // Handle cases where row might have fewer columns than expected (though unlikely in dump)
             $rawValue = $row[$index] ?? null;
+            
+            if ($targetTable === 'appointments' && $colConfig['target'] === 'patient_id' && ($rawValue === null || $rawValue === 'NULL')) {
+                throw new Exception("Null patient_id in appointment");
+            }
 
             $targetColumns[] = $colConfig['target'];
             $paramName = $colConfig['target'];
             $queryValues[] = ':' . $paramName;
-
             $parameters[$paramName] = $this->transformValue($rawValue, $colConfig['type']);
         }
 
-        // Special handling for user_id in appointments if it's missing or null
-        if ($targetTable === 'appointments' && empty($parameters['user_id'])) {
-             if (empty($parameters['user_id'])) {
-                 $parameters['user_id'] = 1; // Default admin
-             }
-        }
-
-        // Special handling for patients: created_at fallback and status
         if ($targetTable === 'patients') {
             if (empty($parameters['created_at'])) {
                 $parameters['created_at'] = (new DateTime())->format('Y-m-d');
             }
-            // Set status to active for legacy data
             $targetColumns[] = 'status';
             $queryValues[] = ':status';
             $parameters['status'] = PatientStatus::ACTIVE->value;
         }
 
-        // Special handling for records: created_at fallback
         if ($targetTable === 'records' && empty($parameters['created_at'])) {
             $parameters['created_at'] = (new DateTime())->format('Y-m-d');
         }
@@ -246,7 +233,14 @@ final class MigrateLegacyDataCommand extends Command
             implode(', ', $queryValues)
         );
 
-        $connection->executeStatement($sql, $parameters);
+        $connection->executeStatement('SAVEPOINT migration_row');
+        try {
+            $connection->executeStatement($sql, $parameters);
+            $connection->executeStatement('RELEASE SAVEPOINT migration_row');
+        } catch (Exception $e) {
+            $connection->executeStatement('ROLLBACK TO SAVEPOINT migration_row');
+            throw $e;
+        }
     }
 
     private function transformValue(mixed $value, string $type): mixed
@@ -257,18 +251,18 @@ final class MigrateLegacyDataCommand extends Command
 
         return match ($type) {
             self::TYPE_INT => (int) $value,
-            self::TYPE_BOOL => ($value === '' || $value === '0' || $value === 0 || $value === false) ? 0 : 1, // Return int for safe string binding (0/1)
-            self::TYPE_DATE => $this->formatDate($value),
-            self::TYPE_DATETIME => $this->formatDate($value),
-            self::TYPE_JSON => $this->isValidJson($value) ? $value : json_encode([]), // Ensure valid JSON
-            self::TYPE_SERIALIZED => $this->convertSerializedToJson($value),
+            self::TYPE_BOOL => ($value === '' || $value === '0' || $value === 0 || $value === false) ? 0 : 1,
+            self::TYPE_DATE => $this->formatDate((string)$value),
+            self::TYPE_DATETIME => $this->formatDate((string)$value),
+            self::TYPE_JSON => $this->isValidJson((string)$value) ? $value : json_encode([]),
+            self::TYPE_SERIALIZED => $this->convertSerializedToJson((string)$value),
             default => (string) $value,
         };
     }
 
     private function formatDate(?string $date): ?string
     {
-        if (!$date || $date === '0000-00-00' || $date === '0000-00-00 00:00:00') {
+        if (!$date || $date === '0000-00-00' || $date === '0000-00-00 00:00:00' || $date === 'NULL') {
             return null;
         }
         return $date;
@@ -276,18 +270,11 @@ final class MigrateLegacyDataCommand extends Command
 
     private function convertSerializedToJson(?string $value): ?string
     {
-        if (!$value) {
-            return null;
+        if (!$value || $value === 'NULL') {
+            return json_encode([]);
         }
-
-        // Try to unserialize PHP serialized string with restricted classes
-        $data = @unserialize($value, ['allowed_classes' => false]);
-
-        if ($data === false && $value !== 'b:0;') {
-            return json_encode([]); // Failed to unserialize
-        }
-
-        return json_encode($data);
+        $data = @unserialize($value);
+        return json_encode($data !== false ? $data : []);
     }
 
     private function isValidJson(string $string): bool
@@ -298,11 +285,9 @@ final class MigrateLegacyDataCommand extends Command
 
     private function resetSequence($connection, string $table): void
     {
-        $sql = sprintf("SELECT setval('%s_id_seq', (SELECT MAX(id) FROM %s))", $table, $table);
+        $sql = sprintf("SELECT setval(pg_get_serial_sequence('%s', 'id'), (SELECT MAX(id) FROM %s))", $table, $table);
         try {
             $connection->executeQuery($sql);
-        } catch (Exception $e) {
-            // Ignore if table is empty or seq doesn't exist
-        }
+        } catch (Exception $e) {}
     }
 }

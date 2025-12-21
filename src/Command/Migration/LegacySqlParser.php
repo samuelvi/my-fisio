@@ -16,8 +16,7 @@ final class LegacySqlParser
             throw new \RuntimeException(sprintf('Could not open file "%s"', $filePath));
         }
 
-        $currentTable = null;
-
+        $buffer = '';
         try {
             while (($line = fgets($handle)) !== false) {
                 $line = trim($line);
@@ -26,39 +25,23 @@ final class LegacySqlParser
                     continue;
                 }
 
-                if (str_starts_with($line, 'INSERT INTO')) {
-                    if (preg_match('/INSERT INTO `([^`]+)`/', $line, $matches)) {
-                        $currentTable = $matches[1];
-                    }
-                }
+                $buffer .= $line;
 
-                if ($currentTable && str_contains($line, 'VALUES')) {
-                    // Determine if this is a single line insert or multi-line
-                    // For simplicity, we assume standard mysqldump format where VALUES are followed by (...)
-                    // We will extract the content between parentheses
-                    
-                    // This is a naive parser but sufficient for standard dumps
-                    // It splits by "),(" which is the standard separator in extended inserts
-                    
-                    $valuesPart = substr($line, strpos($line, 'VALUES') + 6);
-                    $valuesPart = rtrim($valuesPart, ';');
-                    
-                    // Remove the first '(' and last ')'
-                    // Note: This naive splitting breaks if string content contains "),("
-                    // A robust parser would need a state machine, but we try this first for speed
-                    
-                    // Better approach: regex to capture balanced parentheses is hard in pure regex.
-                    // We will rely on the fact that strings are escaped in SQL dumps.
-                    
-                    // Let's iterate through the string to respect quotes
-                    $rows = $this->parseValues($valuesPart);
-                    
-                    foreach ($rows as $row) {
-                        yield [
-                            'table' => $currentTable,
-                            'values' => $row
-                        ];
+                if (str_ends_with($line, ';')) {
+                    if (preg_match('/INSERT INTO `([^`]+)` VALUES\s*(.*);$/i', $buffer, $matches)) {
+                        $tableName = $matches[1];
+                        $valuesPart = $matches[2];
+                        
+                        $rows = $this->parseValues($valuesPart);
+                        
+                        foreach ($rows as $row) {
+                            yield [
+                                'table' => $tableName,
+                                'values' => $row
+                            ];
+                        }
                     }
+                    $buffer = '';
                 }
             }
         } finally {
@@ -77,7 +60,6 @@ final class LegacySqlParser
         $escaped = false;
         $parenthesisDepth = 0;
 
-        // Input looks like: (1, 'text', NULL), (2, 'text2', ...
         $len = strlen($input);
         
         for ($i = 0; $i < $len; $i++) {
@@ -106,7 +88,6 @@ final class LegacySqlParser
                 continue;
             }
 
-            // Not in string
             if ($char === '(') {
                 if ($parenthesisDepth > 0) {
                     $currentValue .= $char;
@@ -115,12 +96,10 @@ final class LegacySqlParser
             } elseif ($char === ')') {
                 $parenthesisDepth--;
                 if ($parenthesisDepth === 0) {
-                    // End of row
                     $currentRow[] = $this->cleanValue($currentValue);
                     $rows[] = $currentRow;
                     $currentRow = [];
                     $currentValue = '';
-                    // Skip the comma after the closing parenthesis if it exists
                     if (isset($input[$i + 1]) && $input[$i + 1] === ',') {
                         $i++;
                     }
@@ -128,12 +107,9 @@ final class LegacySqlParser
                     $currentValue .= $char;
                 }
             } elseif ($char === ',' && $parenthesisDepth === 1) {
-                // Separator between values
                 $currentRow[] = $this->cleanValue($currentValue);
                 $currentValue = '';
             } else {
-                // Regular character (whitespace or part of unquoted value like numbers/NULL)
-                // Skip leading whitespace for values
                 if ($currentValue === '' && ctype_space($char)) {
                     continue;
                 }
@@ -151,9 +127,7 @@ final class LegacySqlParser
             return null;
         }
         if (str_starts_with($value, "'") && str_ends_with($value, "'")) {
-            // Unquote and unescape
             $val = substr($value, 1, -1);
-            // Simple unescape for common SQL escapes
             return str_replace(["\'", "\\\\", "\r", "\n"], ["'", "\\", "\r", "\n"], $val);
         }
         return $value;

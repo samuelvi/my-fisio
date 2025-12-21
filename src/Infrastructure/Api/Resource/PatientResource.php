@@ -46,10 +46,58 @@ class PatientResource
     public string $lastName;
 
     #[Groups(['patient:read', 'patient:write'])]
+    public ?\DateTimeInterface $dateOfBirth = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $identityDocument = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
     public ?string $phone = null;
 
     #[Groups(['patient:read', 'patient:write'])]
     public ?string $email = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $address = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $profession = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $sportsActivity = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $notes = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $rate = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $allergies = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $medication = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $systemicDiseases = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $surgeries = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $accidents = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $injuries = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $bruxism = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $insoles = null;
+
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $others = null;
 
     #[Groups(['patient:read'])]
     public ?\DateTimeImmutable $createdAt = null;

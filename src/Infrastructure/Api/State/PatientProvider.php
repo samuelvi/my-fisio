@@ -67,8 +67,24 @@ class PatientProvider implements ProviderInterface
         $resource->status = $patient->status;
         $resource->firstName = $patient->firstName;
         $resource->lastName = $patient->lastName;
+        $resource->dateOfBirth = $patient->dateOfBirth;
+        $resource->identityDocument = $patient->identityDocument;
         $resource->phone = $patient->phone;
         $resource->email = $patient->email;
+        $resource->address = $patient->address;
+        $resource->profession = $patient->profession;
+        $resource->sportsActivity = $patient->sportsActivity;
+        $resource->notes = $patient->notes;
+        $resource->rate = $patient->rate;
+        $resource->allergies = $patient->allergies;
+        $resource->medication = $patient->medication;
+        $resource->systemicDiseases = $patient->systemicDiseases;
+        $resource->surgeries = $patient->surgeries;
+        $resource->accidents = $patient->accidents;
+        $resource->injuries = $patient->injuries;
+        $resource->bruxism = $patient->bruxism;
+        $resource->insoles = $patient->insoles;
+        $resource->others = $patient->others;
         $resource->createdAt = $patient->createdAt;
         
         $resource->records = $patient->records->map(fn($record) => [

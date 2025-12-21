@@ -72,39 +72,51 @@ export default function PatientDetail() {
                         </div>
                         
                         {/* Details Grid */}
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
                             <div>
-                                <dt className="text-sm font-medium text-gray-500">Full Name</dt>
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Full Name</dt>
                                 <dd className="mt-1 text-lg font-semibold text-gray-900">{patient.firstName} {patient.lastName}</dd>
                             </div>
                             <div>
-                                <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                                <dd className="mt-1 text-sm text-gray-900">{patient.phone || 'N/A'}</dd>
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Phone</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">{patient.phone || 'N/A'}</dd>
                             </div>
                             <div>
-                                <dt className="text-sm font-medium text-gray-500">Email</dt>
-                                <dd className="mt-1 text-sm text-gray-900">{patient.email || 'N/A'}</dd>
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Email</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">{patient.email || 'N/A'}</dd>
                             </div>
                             <div>
-                                <dt className="text-sm font-medium text-gray-500">Date of Birth</dt>
-                                <dd className="mt-1 text-sm text-gray-900">
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Date of Birth</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">
                                     {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}
                                 </dd>
                             </div>
                              <div>
-                                <dt className="text-sm font-medium text-gray-500">Profession</dt>
-                                <dd className="mt-1 text-sm text-gray-900">{patient.profession || 'N/A'}</dd>
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Profession</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">{patient.profession || 'N/A'}</dd>
                             </div>
                              <div>
-                                <dt className="text-sm font-medium text-gray-500">Sports Activity</dt>
-                                <dd className="mt-1 text-sm text-gray-900">{patient.sportsActivity || 'N/A'}</dd>
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Sports Activity</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">{patient.sportsActivity || 'N/A'}</dd>
+                            </div>
+                            <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Address</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">{patient.address || 'N/A'}</dd>
+                            </div>
+                            <div>
+                                <dt className="font-medium text-gray-500 uppercase text-xs">Rate</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">{patient.rate || 'N/A'}</dd>
+                            </div>
+                            <div>
+                                <dt className="font-medium text-gray-500 uppercase text-xs">DNI</dt>
+                                <dd className="mt-1 text-gray-900 font-medium">{patient.identityDocument || 'N/A'}</dd>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Bottom Section: Records Timeline */}
+            {/* Medical Info Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Main Content (Records) - Takes up 2/3 space on large screens */}
                 <div className="lg:col-span-2">
@@ -156,7 +168,7 @@ export default function PatientDetail() {
                     </div>
 
                     <div className="bg-white shadow rounded-lg p-6 border-l-4 border-yellow-500">
-                        <h4 className="text-md font-bold text-gray-900 mb-3">History Highlights</h4>
+                        <h4 className="text-md font-bold text-gray-900 mb-3">History Details</h4>
                          <div className="space-y-2 text-sm">
                             <div>
                                 <span className="font-semibold text-gray-500">Surgeries:</span>
@@ -165,6 +177,22 @@ export default function PatientDetail() {
                             <div>
                                 <span className="font-semibold text-gray-500">Accidents:</span>
                                 <p className="text-gray-900">{patient.accidents || '-'}</p>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500">Injuries:</span>
+                                <p className="text-gray-900">{patient.injuries || '-'}</p>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500">Bruxism:</span>
+                                <p className="text-gray-900">{patient.bruxism || '-'}</p>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500">Insoles:</span>
+                                <p className="text-gray-900">{patient.insoles || '-'}</p>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500">Others:</span>
+                                <p className="text-gray-900">{patient.others || '-'}</p>
                             </div>
                         </div>
                     </div>

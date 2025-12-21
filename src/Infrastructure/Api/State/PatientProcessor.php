@@ -34,9 +34,24 @@ class PatientProcessor implements ProcessorInterface
         $patient->firstName = $data->firstName;
         $patient->lastName = $data->lastName;
         $patient->status = $data->status;
+        $patient->dateOfBirth = $data->dateOfBirth;
+        $patient->identityDocument = $data->identityDocument;
         $patient->phone = $data->phone;
         $patient->email = $data->email;
-        // Map other fields...
+        $patient->address = $data->address;
+        $patient->profession = $data->profession;
+        $patient->sportsActivity = $data->sportsActivity;
+        $patient->notes = $data->notes;
+        $patient->rate = $data->rate;
+        $patient->allergies = $data->allergies;
+        $patient->medication = $data->medication;
+        $patient->systemicDiseases = $data->systemicDiseases;
+        $patient->surgeries = $data->surgeries;
+        $patient->accidents = $data->accidents;
+        $patient->injuries = $data->injuries;
+        $patient->bruxism = $data->bruxism;
+        $patient->insoles = $data->insoles;
+        $patient->others = $data->others;
 
         $this->entityManager->persist($patient);
         $this->entityManager->flush();

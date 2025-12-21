@@ -37,24 +37,20 @@ class TestController extends AbstractController
         $schemaTool = new SchemaTool($this->entityManager);
         $schemaTool->createSchema($metadatas);
 
-        // Load Base Fixtures (Admin User)
+        // Load Base Fixtures (using the same logic as AppFixtures)
         UserFactory::createOne([
-            'email' => 'admin@example.com',
+            'email' => 'tina@tinafisio.com',
             'password' => 'password',
             'roles' => ['ROLE_ADMIN']
         ]);
 
-        // Create 15 patients in total
-        // 1. Create the one that will appear LAST (ID 1)
-        $firstCreated = PatientFactory::createOne(['firstName' => 'Patient', 'lastName' => 'First Created']);
-        RecordFactory::createMany(2, ['patient' => $firstCreated]);
+        $firstPatient = PatientFactory::createOne(['firstName' => 'AFirst', 'lastName' => 'Patient']);
+        RecordFactory::createMany(2, ['patient' => $firstPatient]);
 
-        // 2. Create middle patients (IDs 2-14)
         PatientFactory::createMany(13);
 
-        // 3. Create the one that will appear FIRST (ID 15)
-        $lastCreated = PatientFactory::createOne(['firstName' => 'Patient', 'lastName' => 'Last Created']);
-        RecordFactory::createMany(2, ['patient' => $lastCreated]);
+        $lastPatient = PatientFactory::createOne(['firstName' => 'ZLast', 'lastName' => 'Patient']);
+        RecordFactory::createMany(2, ['patient' => $lastPatient]);
 
         return new JsonResponse(['status' => 'Database reset and base fixtures loaded']);
     }
