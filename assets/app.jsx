@@ -12,6 +12,7 @@ import PatientDetail from './components/PatientDetail';
 import PatientForm from './components/PatientForm';
 import RecordForm from './components/RecordForm';
 import FullHistory from './components/FullHistory';
+import Calendar from './components/Calendar';
 
 // Configure Axios
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
@@ -100,7 +101,7 @@ function App() {
                 <Route path="/appointments" element={
                     <ProtectedRoute>
                         <Layout>
-                             <div className="p-4">Appointments Component (Coming Soon)</div>
+                             <Calendar />
                         </Layout>
                     </ProtectedRoute>
                 } />

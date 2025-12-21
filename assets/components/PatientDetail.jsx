@@ -7,23 +7,27 @@ export default function PatientDetail() {
     const { id } = useParams();
     const navigate = useNavigate();
     const [patient, setPatient] = useState(null);
+    const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchPatient = async () => {
+        const fetchData = async () => {
             try {
-                // Fetch patient AND their records (if using normalizationContext with groups, records might be included)
-                // Assuming standard API Platform GET /patients/{id}
-                const response = await axios.get(`/api/patients/${id}`);
-                setPatient(response.data);
+                const [patientRes, appointmentsRes] = await Promise.all([
+                    axios.get(`/api/patients/${id}`),
+                    axios.get(`/api/appointments?patientId=${id}`)
+                ]);
+                
+                setPatient(patientRes.data);
+                setAppointments(appointmentsRes.data['member'] || appointmentsRes.data['hydra:member'] || []);
                 setLoading(false);
             } catch (error) {
-                console.error("Error fetching patient details:", error);
+                console.error("Error fetching patient data:", error);
                 setLoading(false);
             }
         };
 
-        fetchPatient();
+        fetchData();
     }, [id]);
 
     const handleAddRecord = () => {
@@ -112,8 +116,27 @@ export default function PatientDetail() {
                     />
                 </div>
 
-                {/* Side Panel (Medical Alerts) - Takes up 1/3 space */}
+                {/* Side Panel (Medical Alerts & Appointments) - Takes up 1/3 space */}
                 <div className="space-y-6">
+                    <div className="bg-white shadow rounded-lg p-6 border-l-4 border-indigo-500">
+                        <h4 className="text-md font-bold text-gray-900 mb-3 flex justify-between items-center">
+                            Next Appointments
+                            <button className="text-xs text-indigo-600 hover:underline">Schedule</button>
+                        </h4>
+                        <div className="space-y-3">
+                            {appointments.length > 0 ? (
+                                appointments.slice(0, 3).map(app => (
+                                    <div key={app.id} className="text-sm border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                                        <p className="font-semibold text-gray-800">{new Date(app.startsAt).toLocaleDateString()} - {new Date(app.startsAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                        <p className="text-gray-500 truncate">{app.title}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-gray-500 italic">No upcoming appointments</p>
+                            )}
+                        </div>
+                    </div>
+
                     <div className="bg-white shadow rounded-lg p-6 border-l-4 border-red-500">
                         <h4 className="text-md font-bold text-gray-900 mb-3">Medical Alerts</h4>
                         <div className="space-y-2 text-sm">
