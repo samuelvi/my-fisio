@@ -3,6 +3,8 @@
 namespace App\Tests\DataFixtures;
 
 use App\Domain\Entity\User;
+use App\Tests\Factory\PatientFactory;
+use App\Tests\Factory\RecordFactory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -19,20 +21,23 @@ class AppFixtures extends Fixture
         $user = User::create('admin@example.com');
         $hashedPassword = $this->passwordHasher->hashPassword($user, 'password');
         
-        // Reflection to set private property 'password' since we don't have setters (DDD style)
-        // Or if we modify User entity to allow setting password during creation.
-        // Let's assume for now we can modify the User entity creation logic or use reflection.
-        // Actually, User entity has public $password field but it's not set in constructor.
-        // Let's check User.php again.
-        
-        // Wait, User.php has public properties?
-        // public string $password;
-        // Yes. So I can just set it.
-        
         $user->password = $hashedPassword;
         $user->roles = ['ROLE_ADMIN'];
 
         $manager->persist($user);
+        
+        // Create 15 patients for testing pagination (4 per page)
+        // 1. Create the one that will appear LAST (ID 1)
+        $first = PatientFactory::createOne(['firstName' => 'Patient', 'lastName' => 'First Created']);
+        RecordFactory::createMany(2, ['patient' => $first]);
+
+        // 2. Create middle patients (IDs 2-14)
+        PatientFactory::createMany(13);
+
+        // 3. Create the one that will appear FIRST (ID 15)
+        $last = PatientFactory::createOne(['firstName' => 'Patient', 'lastName' => 'Last Created']);
+        RecordFactory::createMany(2, ['patient' => $last]);
+
         $manager->flush();
     }
 }

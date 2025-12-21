@@ -9,6 +9,14 @@ export default function Login() {
     const navigate = useNavigate();
 
     useEffect(() => {
+        // Auto-fill credentials in test environment
+        if (import.meta.env.VITE_APP_ENV === 'test') {
+            setEmail('admin@example.com');
+            setPassword('password');
+        }
+    }, []);
+
+    useEffect(() => {
         if (localStorage.getItem('token')) {
             navigate('/');
         }

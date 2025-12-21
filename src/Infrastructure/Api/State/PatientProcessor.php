@@ -33,6 +33,7 @@ class PatientProcessor implements ProcessorInterface
 
         $patient->firstName = $data->firstName;
         $patient->lastName = $data->lastName;
+        $patient->status = $data->status;
         $patient->phone = $data->phone;
         $patient->email = $data->email;
         // Map other fields...

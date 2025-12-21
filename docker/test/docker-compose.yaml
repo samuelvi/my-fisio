@@ -57,6 +57,7 @@ services:
       - APP_ENV=test
       - APP_DEBUG=1
       - APP_SECRET=test_secret_12345
+      - ITEMS_PER_PAGE=4
 
   # Nginx (Test)
   nginx_test:
@@ -80,6 +81,9 @@ services:
     image: node:20-alpine
     container_name: test_physiotherapy_node
     working_dir: /var/www/html
+    environment:
+      - VITE_ITEMS_PER_PAGE=4
+      - VITE_APP_ENV=test
     volumes:
       - ../../:/var/www/html
     networks:

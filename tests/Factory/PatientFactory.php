@@ -3,6 +3,7 @@
 namespace App\Tests\Factory;
 
 use App\Domain\Entity\Patient;
+use App\Domain\Enum\PatientStatus;
 use Zenstruck\Foundry\Persistence\PersistentObjectFactory;
 
 /**
@@ -28,6 +29,7 @@ final class PatientFactory extends PersistentObjectFactory
             'lastName' => self::faker()->lastName(),
             'email' => self::faker()->unique()->safeEmail(),
             'phone' => self::faker()->phoneNumber(),
+            'status' => PatientStatus::ACTIVE,
         ];
     }
 
@@ -43,6 +45,7 @@ final class PatientFactory extends PersistentObjectFactory
             ->afterInstantiate(function(Patient $patient, array $attributes): void {
                 if (isset($attributes['email'])) $patient->email = $attributes['email'];
                 if (isset($attributes['phone'])) $patient->phone = $attributes['phone'];
+                if (isset($attributes['status'])) $patient->status = $attributes['status'];
             })
         ;
     }

@@ -1,19 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import Fuse from 'fuse.js';
 
 export default function PatientList() {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchInput, setSearchInput] = useState(sessionStorage.getItem('patientList_searchInput') || '');
+    const [searchTerm, setSearchTerm] = useState(sessionStorage.getItem('patientList_searchTerm') || '');
+    const [statusFilter, setStatusFilter] = useState(sessionStorage.getItem('patientList_statusFilter') || 'active');
+    const [sortOrder, setSortOrder] = useState(sessionStorage.getItem('patientList_sortOrder') || 'latest');
+    const [page, setPage] = useState(parseInt(sessionStorage.getItem('patientList_page') || '1', 10));
+    const [hasNextPage, setHasNextPage] = useState(false);
+    const ITEMS_PER_PAGE = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10', 10);
 
     useEffect(() => {
+        sessionStorage.setItem('patientList_searchInput', searchInput);
+        sessionStorage.setItem('patientList_searchTerm', searchTerm);
+        sessionStorage.setItem('patientList_statusFilter', statusFilter);
+        sessionStorage.setItem('patientList_sortOrder', sortOrder);
+        sessionStorage.setItem('patientList_page', page.toString());
         fetchPatients();
-    }, []);
+    }, [statusFilter, page, searchTerm, sortOrder]);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        setPage(1); // Reset to page 1 on new search
+        setSearchTerm(searchInput);
+    };
+
+    const handleClear = () => {
+        setSearchInput('');
+        setSearchTerm('');
+        setPage(1);
+    };
 
     const fetchPatients = async () => {
+        setLoading(true);
         try {
-            const response = await axios.get('/api/patients');
+            const response = await axios.get('/api/patients', {
+                params: { 
+                    status: statusFilter,
+                    order: sortOrder,
+                    page: page,
+                    itemsPerPage: ITEMS_PER_PAGE
+                }
+            });
             console.log('API Response:', response.data);
             
             let data = [];
@@ -25,7 +57,15 @@ export default function PatientList() {
                 data = response.data['member'];
             }
             
-            setPatients(data);
+            // N+1 Logic: If we got more than ITEMS_PER_PAGE, there is a next page
+            if (data.length > ITEMS_PER_PAGE) {
+                setHasNextPage(true);
+                setPatients(data.slice(0, ITEMS_PER_PAGE)); // Only show N
+            } else {
+                setHasNextPage(false);
+                setPatients(data);
+            }
+            
             setLoading(false);
         } catch (error) {
             console.error('Error fetching patients:', error);
@@ -34,13 +74,63 @@ export default function PatientList() {
         }
     };
 
-    const filteredPatients = patients.filter(patient =>
-        patient.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        patient.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (patient.phone && patient.phone.includes(searchTerm))
-    );
+    // Fuse.js configuration for fuzzy search
+    // Lower score is better (0 is exact match). Fuse sorts by score automatically.
+    const fuseOptions = {
+        keys: [
+            { name: 'firstName', weight: 0.3 },
+            { name: 'lastName', weight: 0.3 },
+            { name: 'phone', weight: 0.2 },
+            { name: 'email', weight: 0.2 }
+        ],
+        threshold: 0.4, // Sensitivity: 0.0 (exact) to 1.0 (match anything)
+        includeScore: true
+    };
+
+    let filteredPatients = patients;
+    if (searchTerm) {
+        const fuse = new Fuse(patients, fuseOptions);
+        filteredPatients = fuse.search(searchTerm).map(result => result.item);
+    }
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading patients...</div>;
+
+    const Pagination = () => (
+        <div className="flex items-center justify-between py-3 border-t border-b border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
+            <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest mr-2">Page</span>
+                    <div className="h-10 w-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md">
+                        {page}
+                    </div>
+                </div>
+                {page > 1 && (
+                    <button
+                        onClick={() => setPage(1)}
+                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-tighter bg-white border border-indigo-200 px-3 py-2 rounded-md shadow-sm transition"
+                    >
+                        « Back to Start
+                    </button>
+                )}
+            </div>
+            <div className="flex space-x-2">
+                <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1 || loading}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-tighter"
+                >
+                    Previous
+                </button>
+                <button
+                    onClick={() => setPage(p => p + 1)}
+                    disabled={!hasNextPage || loading}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-tighter"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
 
     return (
         <div>
@@ -54,16 +144,69 @@ export default function PatientList() {
                 </Link>
             </div>
 
-            {/* Search Bar */}
-            <div className="mb-6">
-                <input
-                    type="text"
-                    placeholder="Search by name or phone..."
-                    className="w-full md:w-1/3 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                />
-            </div>
+            {/* Search Bar & Status Filter */}
+            <form onSubmit={handleSearch} className="mb-8 space-y-4">
+                <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
+                    <div className="flex-1">
+                        <input
+                            type="text"
+                            placeholder="Search by name or phone..."
+                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                            value={searchInput}
+                            onChange={(e) => setSearchInput(e.target.value)}
+                        />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <label htmlFor="statusFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                            Status:
+                        </label>
+                        <select
+                            id="statusFilter"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+                        >
+                            <option value="active">Active</option>
+                            <option value="disabled">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
+                    <div className="flex items-center space-x-2">
+                        <label htmlFor="sortOrder" className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                            Sort by:
+                        </label>
+                        <select
+                            id="sortOrder"
+                            value={sortOrder}
+                            onChange={(e) => { setSortOrder(e.target.value); setPage(1); }}
+                            className="block w-full md:w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
+                        >
+                            <option value="latest">Latest added</option>
+                            <option value="alpha">Alphabetical (Name)</option>
+                        </select>
+                    </div>
+                    
+                    <div className="flex items-center justify-end space-x-3 pt-2 md:pt-0">
+                        <button 
+                            type="button"
+                            onClick={handleClear}
+                            className="text-gray-500 hover:text-gray-700 text-sm font-medium px-4 py-2"
+                        >
+                            Clear Results
+                        </button>
+                        <button 
+                            type="submit"
+                            className="bg-gray-800 hover:bg-gray-900 text-white px-8 py-2 rounded-md font-medium transition shadow-sm"
+                        >
+                            Search Patients
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <Pagination />
 
             {/* Patients Table */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -73,6 +216,7 @@ export default function PatientList() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                             <th className="relative px-6 py-3">
                                 <span className="sr-only">Actions</span>
@@ -83,24 +227,29 @@ export default function PatientList() {
                         {filteredPatients.map((patient) => (
                             <tr key={patient.id} className="hover:bg-gray-50 transition">
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
+                                    <Link to={`/patients/${patient.id}`} className="flex items-center group">
                                         <div className="h-10 w-10 flex-shrink-0">
-                                            <span className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                            <span className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold group-hover:bg-indigo-200 transition">
                                                 {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
                                             </span>
                                         </div>
                                         <div className="ml-4">
-                                            <div className="text-sm font-medium text-gray-900">
+                                            <div className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition">
                                                 {patient.firstName} {patient.lastName}
                                             </div>
                                         </div>
-                                    </div>
+                                    </Link>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {patient.phone || '-'}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {patient.email || '-'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${patient.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                        {patient.status}
+                                    </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {new Date(patient.createdAt).toLocaleDateString()}
@@ -114,7 +263,7 @@ export default function PatientList() {
                         ))}
                         {filteredPatients.length === 0 && (
                             <tr>
-                                <td colSpan="5" className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                                     No patients found matching your search.
                                 </td>
                             </tr>
@@ -122,6 +271,8 @@ export default function PatientList() {
                     </tbody>
                 </table>
             </div>
+
+            <Pagination />
         </div>
     );
 }

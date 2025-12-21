@@ -30,6 +30,10 @@ export default function PatientDetail() {
         navigate(`/patients/${id}/records/new`);
     };
 
+    const handleEdit = () => {
+        navigate(`/patients/${id}/edit`);
+    };
+
     if (loading) return <div className="p-8">Loading details...</div>;
     if (!patient) return <div className="p-8">Patient not found</div>;
 
@@ -45,9 +49,14 @@ export default function PatientDetail() {
                     <h3 className="text-lg leading-6 font-medium text-gray-900">
                         Patient Information
                     </h3>
-                    <button className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
-                        Edit Details
-                    </button>
+                    <div className="flex items-center space-x-4">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${patient.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {patient.status.toUpperCase()}
+                        </span>
+                        <button onClick={handleEdit} className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
+                            Edit Details
+                        </button>
+                    </div>
                 </div>
                 <div className="px-6 py-5">
                     <div className="flex items-start space-x-6">
@@ -97,6 +106,8 @@ export default function PatientDetail() {
                 <div className="lg:col-span-2">
                     <RecordTimeline 
                         records={patient.records} 
+                        patient={patient}
+                        patientId={patient.id}
                         onAddRecord={handleAddRecord} 
                     />
                 </div>

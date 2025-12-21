@@ -1,11 +1,11 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ request }) => {
-  // Reset Database before each test
-  const response = await request.post('/api/test/reset-db');
-  expect(response.ok()).toBeTruthy();
-});
+// test.beforeEach(async ({ request }) => {
+//   // Reset Database before each test
+//   const response = await request.post('/api/test/reset-db');
+//   expect(response.ok()).toBeTruthy();
+// });
 
 test('has title and login works', async ({ page }) => {
   await page.goto('/login');

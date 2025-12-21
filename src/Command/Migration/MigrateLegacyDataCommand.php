@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command\Migration;
 
+use App\Domain\Enum\PatientStatus;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
@@ -222,9 +223,15 @@ final class MigrateLegacyDataCommand extends Command
              }
         }
 
-        // Special handling for patients: created_at fallback
-        if ($targetTable === 'patients' && empty($parameters['created_at'])) {
-            $parameters['created_at'] = (new DateTime())->format('Y-m-d');
+        // Special handling for patients: created_at fallback and status
+        if ($targetTable === 'patients') {
+            if (empty($parameters['created_at'])) {
+                $parameters['created_at'] = (new DateTime())->format('Y-m-d');
+            }
+            // Set status to active for legacy data
+            $targetColumns[] = 'status';
+            $queryValues[] = ':status';
+            $parameters['status'] = PatientStatus::ACTIVE->value;
         }
 
         // Special handling for records: created_at fallback

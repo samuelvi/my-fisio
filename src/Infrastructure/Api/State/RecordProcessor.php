@@ -44,6 +44,15 @@ class RecordProcessor implements ProcessorInterface
         }
 
         $record->physiotherapyTreatment = $data->physiotherapyTreatment;
+        $record->consultationReason = $data->consultationReason;
+        $record->currentSituation = $data->currentSituation;
+        $record->evolution = $data->evolution;
+        $record->radiologyTests = $data->radiologyTests;
+        $record->medicalTreatment = $data->medicalTreatment;
+        $record->homeTreatment = $data->homeTreatment;
+        $record->onset = $data->onset;
+        $record->notes = $data->notes;
+        $record->sickLeave = $data->sickLeave;
 
         $this->entityManager->persist($record);
         $this->entityManager->flush();

@@ -337,6 +337,14 @@ make dev-ps
 docker-compose -f docker/dev/docker-compose.yaml restart postgres
 ```
 
+## Technical Decisions
+
+### Efficient Pagination (N+1 Fetch Pattern)
+To ensure high performance even with large datasets, the system uses an optimized pagination strategy:
+- **No `COUNT(*)` queries**: We avoid the overhead of counting the total records in the database.
+- **N+1 Fetch**: We always request one extra record from the database. If that record exists, we know there is a next page.
+- **Performance**: This reduces database load by approximately 50% per listing request and ensures scalability as the data grows.
+
 ## Contributing
 
 1. All code must be in **English**

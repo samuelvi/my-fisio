@@ -11,6 +11,7 @@ import PatientList from './components/PatientList';
 import PatientDetail from './components/PatientDetail';
 import PatientForm from './components/PatientForm';
 import RecordForm from './components/RecordForm';
+import FullHistory from './components/FullHistory';
 
 // Configure Axios
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
@@ -64,7 +65,31 @@ function App() {
                     </ProtectedRoute>
                 } />
 
+                <Route path="/patients/:id/history" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <FullHistory />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/patients/:id/edit" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <PatientForm />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
                  <Route path="/patients/:patientId/records/new" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <RecordForm />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/patients/:patientId/records/:recordId/edit" element={
                     <ProtectedRoute>
                         <Layout>
                             <RecordForm />

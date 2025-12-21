@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Entity;
 
+use App\Domain\Enum\PatientStatus;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -105,6 +106,10 @@ class Patient
     #[ORM\Column(type: Types::STRING, length: 250, nullable: true)]
     #[Groups(['patient:read', 'patient:write'])]
     public ?string $others = null;
+
+    #[ORM\Column(type: Types::STRING, length: 20, options: ['default' => 'active'], enumType: PatientStatus::class)]
+    #[Groups(['patient:read', 'patient:write'])]
+    public PatientStatus $status = PatientStatus::ACTIVE;
 
     /**
      * @var Collection<int, Record>

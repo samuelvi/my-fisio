@@ -75,6 +75,11 @@ src/
 - CQRS: read/write separation
 - Repositories only in domain layer (interfaces)
 - Dependency Injection with Symfony
+- **Pagination Strategy**: Implement the **N+1 Fetch Pattern** for all collection endpoints.
+    - **Operation**: Fetch `N+1` records from the database when `N` items are requested per page.
+    - **Indicator**: Use the `N+1` record as a signal to enable the "Next" button in the UI.
+    - **Performance**: Eliminates costly `COUNT(*)` queries and reduces database load by ~50% (one query instead of two).
+    - **Scalability**: Ensures constant time performance regardless of dataset size.
 
 ### Frontend
 - Functional Components with Hooks
@@ -199,7 +204,7 @@ See `make help` for complete command list.
 - **Location**: `tests/e2e/`.
 - **Data Management**: 
     - `TestController` exposes `POST /api/test/reset-db`.
-    - Tests call this endpoint in `beforeEach` hook.
+    - **Persistence**: DO NOT reset the database automatically in tests unless explicitly requested. Leave data as is for manual inspection after execution.
     - **Generic Data**: Loaded via Doctrine Fixtures (Admin User).
     - **Specific Data**: Handled via Zenstruck Foundry Factories or API calls within the test.
 

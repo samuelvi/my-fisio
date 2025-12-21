@@ -1,11 +1,11 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-test.beforeEach(async ({ request }) => {
-  // Reset Database before each test
-  const response = await request.post('/api/test/reset-db');
-  expect(response.ok()).toBeTruthy();
-});
+// test.beforeEach(async ({ request }) => {
+//   // Reset Database before each test
+//   const response = await request.post('/api/test/reset-db');
+//   expect(response.ok()).toBeTruthy();
+// });
 
 test('can create a patient and see it in the list', async ({ page }) => {
   page.on('console', msg => console.log('BROWSER LOG:', msg.text()));

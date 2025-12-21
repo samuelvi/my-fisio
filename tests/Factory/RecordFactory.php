@@ -30,13 +30,21 @@ final class RecordFactory extends PersistentObjectFactory
      *
      * @todo add your default values here
      */
-    #[Override]
     protected function defaults(): array|callable
     {
         return [
-            'createdAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
             'patient' => PatientFactory::new(),
-            'physiotherapyTreatment' => self::faker()->text(),
+            'physiotherapyTreatment' => self::faker()->paragraphs(3, true),
+            'consultationReason' => self::faker()->sentence(),
+            'onset' => self::faker()->sentence(),
+            'radiologyTests' => self::faker()->sentence(),
+            'evolution' => self::faker()->paragraphs(2, true),
+            'currentSituation' => self::faker()->sentence(),
+            'sickLeave' => self::faker()->boolean(),
+            'medicalTreatment' => self::faker()->sentence(),
+            'homeTreatment' => self::faker()->sentence(),
+            'notes' => self::faker()->paragraph(),
+            'createdAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('-1 year', 'now')),
         ];
     }
 

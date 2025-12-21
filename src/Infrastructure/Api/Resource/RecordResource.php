@@ -36,6 +36,33 @@ class RecordResource
     #[Groups(['record:read', 'record:write'])]
     public string $physiotherapyTreatment;
 
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $consultationReason = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $currentSituation = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $evolution = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $radiologyTests = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $medicalTreatment = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $homeTreatment = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $onset = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?string $notes = null;
+
+    #[Groups(['record:read', 'record:write'])]
+    public ?bool $sickLeave = false;
+
     #[Groups(['record:read'])]
     public ?\DateTimeImmutable $createdAt = null;
 }

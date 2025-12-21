@@ -22,7 +22,19 @@ class RecordProvider implements ProviderInterface
             return $record ? $this->mapToResource($record) : null;
         }
 
-        $records = $this->entityManager->getRepository(Record::class)->findAll();
+        $filters = $context['filters'] ?? [];
+        $page = (int) ($filters['page'] ?? 1);
+        $limit = (int) ($filters['itemsPerPage'] ?? 10);
+        $offset = ($page - 1) * $limit;
+
+        // Fetch N+1 records
+        $records = $this->entityManager->getRepository(Record::class)->findBy(
+            [], 
+            ['id' => 'DESC'],
+            $limit + 1,
+            $offset
+        );
+
         return array_map([$this, 'mapToResource'], $records);
     }
 
@@ -32,6 +44,15 @@ class RecordProvider implements ProviderInterface
         $resource->id = $record->id;
         $resource->patient = '/api/patients/' . $record->patient->id;
         $resource->physiotherapyTreatment = $record->physiotherapyTreatment;
+        $resource->consultationReason = $record->consultationReason;
+        $resource->onset = $record->onset;
+        $resource->currentSituation = $record->currentSituation;
+        $resource->evolution = $record->evolution;
+        $resource->radiologyTests = $record->radiologyTests;
+        $resource->medicalTreatment = $record->medicalTreatment;
+        $resource->homeTreatment = $record->homeTreatment;
+        $resource->notes = $record->notes;
+        $resource->sickLeave = $record->sickLeave ?? false;
         $resource->createdAt = $record->createdAt;
         
         return $resource;

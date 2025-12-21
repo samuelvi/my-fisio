@@ -10,6 +10,7 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'appointments')]
+#[ORM\HasLifecycleCallbacks]
 class Appointment
 {
     #[ORM\Id]
@@ -17,8 +18,12 @@ class Appointment
     #[ORM\Column(type: 'integer')]
     public ?int $id = null;
 
+    #[ORM\ManyToOne(targetEntity: Patient::class)]
+    #[ORM\JoinColumn(nullable: false)]
+    public Patient $patient;
+
     #[ORM\Column(type: 'integer', nullable: false)]
-    public int $userId;
+    public int $userId; // The therapist/physio
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     public ?string $title = null;
@@ -26,11 +31,11 @@ class Appointment
     #[ORM\Column(type: 'boolean', nullable: true)]
     public ?bool $allDay = null;
 
-    #[ORM\Column(type: 'datetime', nullable: false)]
-    public DateTimeInterface $startsAt;
+    #[ORM\Column(type: 'datetimetz_immutable', nullable: false)]
+    public \DateTimeImmutable $startsAt;
 
-    #[ORM\Column(type: 'datetime', nullable: false)]
-    public DateTimeInterface $endsAt;
+    #[ORM\Column(type: 'datetimetz_immutable', nullable: false)]
+    public \DateTimeImmutable $endsAt;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     public ?string $url = null;
@@ -74,29 +79,32 @@ class Appointment
     #[ORM\Column(type: 'text', nullable: true)]
     public ?string $notes = null;
 
-    #[ORM\Column(type: 'datetime', nullable: false)]
-    public DateTimeInterface $createdAt;
+    #[ORM\Column(type: 'datetimetz_immutable', nullable: false)]
+    public \DateTimeImmutable $createdAt;
 
-    #[ORM\Column(type: 'datetime', nullable: true)]
-    public ?DateTimeInterface $updatedAt = null;
+    #[ORM\Column(type: 'datetimetz_immutable', nullable: true)]
+    public ?\DateTimeImmutable $updatedAt = null;
 
     private function __construct(
+        Patient $patient,
         int $userId,
-        DateTimeInterface $startsAt,
-        DateTimeInterface $endsAt
+        \DateTimeImmutable $startsAt,
+        \DateTimeImmutable $endsAt
     ) {
+        $this->patient = $patient;
         $this->userId = $userId;
         $this->startsAt = $startsAt;
         $this->endsAt = $endsAt;
-        $this->createdAt = new DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public static function create(
+        Patient $patient,
         int $userId,
-        DateTimeInterface $startsAt,
-        DateTimeInterface $endsAt
+        \DateTimeImmutable $startsAt,
+        \DateTimeImmutable $endsAt
     ): self {
-        return new self($userId, $startsAt, $endsAt);
+        return new self($patient, $userId, $startsAt, $endsAt);
     }
 
     #[ORM\PreUpdate]
