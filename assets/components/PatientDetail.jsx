@@ -1,0 +1,141 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import RecordTimeline from './RecordTimeline';
+
+export default function PatientDetail() {
+    const { id } = useParams();
+    const navigate = useNavigate();
+    const [patient, setPatient] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPatient = async () => {
+            try {
+                // Fetch patient AND their records (if using normalizationContext with groups, records might be included)
+                // Assuming standard API Platform GET /patients/{id}
+                const response = await axios.get(`/api/patients/${id}`);
+                setPatient(response.data);
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching patient details:", error);
+                setLoading(false);
+            }
+        };
+
+        fetchPatient();
+    }, [id]);
+
+    const handleAddRecord = () => {
+        navigate(`/patients/${id}/records/new`);
+    };
+
+    if (loading) return <div className="p-8">Loading details...</div>;
+    if (!patient) return <div className="p-8">Patient not found</div>;
+
+    return (
+        <div className="space-y-6">
+            <button onClick={() => navigate('/patients')} className="text-indigo-600 hover:text-indigo-800 mb-4 inline-flex items-center">
+                ← Back to List
+            </button>
+
+            {/* Top Section: Patient 360 Card */}
+            <div className="bg-white shadow rounded-lg overflow-hidden">
+                <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h3 className="text-lg leading-6 font-medium text-gray-900">
+                        Patient Information
+                    </h3>
+                    <button className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
+                        Edit Details
+                    </button>
+                </div>
+                <div className="px-6 py-5">
+                    <div className="flex items-start space-x-6">
+                        {/* Avatar */}
+                        <div className="flex-shrink-0">
+                            <span className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl font-bold border-4 border-white shadow-sm">
+                                {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
+                            </span>
+                        </div>
+                        
+                        {/* Details Grid */}
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div>
+                                <dt className="text-sm font-medium text-gray-500">Full Name</dt>
+                                <dd className="mt-1 text-lg font-semibold text-gray-900">{patient.firstName} {patient.lastName}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-sm font-medium text-gray-500">Phone</dt>
+                                <dd className="mt-1 text-sm text-gray-900">{patient.phone || 'N/A'}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-sm font-medium text-gray-500">Email</dt>
+                                <dd className="mt-1 text-sm text-gray-900">{patient.email || 'N/A'}</dd>
+                            </div>
+                            <div>
+                                <dt className="text-sm font-medium text-gray-500">Date of Birth</dt>
+                                <dd className="mt-1 text-sm text-gray-900">
+                                    {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}
+                                </dd>
+                            </div>
+                             <div>
+                                <dt className="text-sm font-medium text-gray-500">Profession</dt>
+                                <dd className="mt-1 text-sm text-gray-900">{patient.profession || 'N/A'}</dd>
+                            </div>
+                             <div>
+                                <dt className="text-sm font-medium text-gray-500">Sports Activity</dt>
+                                <dd className="mt-1 text-sm text-gray-900">{patient.sportsActivity || 'N/A'}</dd>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Bottom Section: Records Timeline */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Main Content (Records) - Takes up 2/3 space on large screens */}
+                <div className="lg:col-span-2">
+                    <RecordTimeline 
+                        records={patient.records} 
+                        onAddRecord={handleAddRecord} 
+                    />
+                </div>
+
+                {/* Side Panel (Medical Alerts) - Takes up 1/3 space */}
+                <div className="space-y-6">
+                    <div className="bg-white shadow rounded-lg p-6 border-l-4 border-red-500">
+                        <h4 className="text-md font-bold text-gray-900 mb-3">Medical Alerts</h4>
+                        <div className="space-y-2 text-sm">
+                            <div>
+                                <span className="font-semibold text-gray-500">Allergies:</span>
+                                <p className="text-gray-900">{patient.allergies || 'None recorded'}</p>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500">Systemic Diseases:</span>
+                                <p className="text-gray-900">{patient.systemicDiseases || 'None recorded'}</p>
+                            </div>
+                             <div>
+                                <span className="font-semibold text-gray-500">Medication:</span>
+                                <p className="text-gray-900">{patient.medication || 'None recorded'}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white shadow rounded-lg p-6 border-l-4 border-yellow-500">
+                        <h4 className="text-md font-bold text-gray-900 mb-3">History Highlights</h4>
+                         <div className="space-y-2 text-sm">
+                            <div>
+                                <span className="font-semibold text-gray-500">Surgeries:</span>
+                                <p className="text-gray-900">{patient.surgeries || '-'}</p>
+                            </div>
+                            <div>
+                                <span className="font-semibold text-gray-500">Accidents:</span>
+                                <p className="text-gray-900">{patient.accidents || '-'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

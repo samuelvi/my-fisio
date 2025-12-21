@@ -1,0 +1,12 @@
+controllers:
+    resource:
+        path: ../../src/Controller/
+        namespace: App\Controller
+    type: attribute
+
+when@test:
+    test_controllers:
+        resource:
+            path: ../../tests/Controller/
+            namespace: App\Tests\Controller
+        type: attribute

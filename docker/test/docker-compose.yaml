@@ -1,0 +1,91 @@
+services:
+  # PostgreSQL Database (Test)
+  postgres_test:
+    image: postgres:16-alpine
+    container_name: test_physiotherapy_postgres
+    environment:
+      POSTGRES_DB: physiotherapy_test_db
+      POSTGRES_USER: physiotherapy_user
+      POSTGRES_PASSWORD: physiotherapy_pass
+    ports:
+      - "5433:5432" # Different port than dev
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+    networks:
+      - physiotherapy_test_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U physiotherapy_user -d physiotherapy_test_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Redis (Test)
+  redis_test:
+    image: redis:7-alpine
+    container_name: test_physiotherapy_redis
+    ports:
+      - "6380:6379" # Different port than dev
+    volumes:
+      - ./redis/data:/data
+    networks:
+      - physiotherapy_test_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # PHP-FPM (Test)
+  php_test:
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+    container_name: test_physiotherapy_php
+    working_dir: /var/www/html
+    volumes:
+      - ../../:/var/www/html
+    networks:
+      - physiotherapy_test_network
+    depends_on:
+      postgres_test:
+        condition: service_healthy
+      redis_test:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://physiotherapy_user:physiotherapy_pass@postgres_test:5432/physiotherapy_test_db?serverVersion=16&charset=utf8
+      - REDIS_URL=redis://redis_test:6379
+      - APP_ENV=test
+      - APP_DEBUG=1
+      - APP_SECRET=test_secret_12345
+
+  # Nginx (Test)
+  nginx_test:
+    image: nginx:alpine
+    container_name: test_physiotherapy_nginx
+    ports:
+      - "8081:80" # Different port than dev
+    volumes:
+      - ../../:/var/www/html
+      - ../dev/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - physiotherapy_test_network
+    depends_on:
+      - php_test
+
+  # Node.js for Vite (Test/Build)
+  # We might not need this running constantly for E2E if we build assets first, 
+  # but useful if we want to test HMR or serve assets.
+  node_test:
+    image: node:20-alpine
+    container_name: test_physiotherapy_node
+    working_dir: /var/www/html
+    volumes:
+      - ../../:/var/www/html
+    networks:
+      - physiotherapy_test_network
+    command: sh -c "npm install && npm run build" # Just build for test environment
+
+networks:
+  physiotherapy_test_network:
+    driver: bridge

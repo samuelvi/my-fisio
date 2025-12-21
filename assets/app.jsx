@@ -1,0 +1,98 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import axios from 'axios';
+import './app.css';
+
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+import Layout from './components/Layout';
+import PatientList from './components/PatientList';
+import PatientDetail from './components/PatientDetail';
+import PatientForm from './components/PatientForm';
+import RecordForm from './components/RecordForm';
+
+// Configure Axios
+axios.defaults.headers.common['Accept'] = 'application/ld+json';
+axios.defaults.headers.common['Content-Type'] = 'application/ld+json';
+
+const token = localStorage.getItem('token');
+if (token) {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+}
+
+const ProtectedRoute = ({ children }) => {
+    const isAuthenticated = !!localStorage.getItem('token');
+    return isAuthenticated ? children : <Navigate to="/login" />;
+};
+
+function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/login" element={<Login />} />
+                
+                <Route path="/" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <Dashboard />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/patients" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <PatientList />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/patients/new" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <PatientForm />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/patients/:id" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <PatientDetail />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                 <Route path="/patients/:patientId/records/new" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <RecordForm />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/appointments" element={
+                    <ProtectedRoute>
+                        <Layout>
+                             <div className="p-4">Appointments Component (Coming Soon)</div>
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                {/* Catch-all for undefined routes */}
+                <Route path="*" element={<Navigate to="/" />} />
+            </Routes>
+        </BrowserRouter>
+    );
+}
+
+const rootElement = document.getElementById('root');
+if (rootElement) {
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+        <React.StrictMode>
+            <App />
+        </React.StrictMode>
+    );
+}

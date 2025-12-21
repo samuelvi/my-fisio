@@ -56,8 +56,16 @@ private/*
 # Docker
 /docker/dev/.env
 
-# Coverage reports
-/var/coverage/
+# Test results
+/playwright-report/
+/test-results/
+/.phpunit.cache/
+
+# Docker Data
+/docker/dev/postgres/data/
+/docker/dev/redis/data/
+/docker/test/postgres/data/
+/docker/test/redis/data/
 
 # Composer
 composer.phar

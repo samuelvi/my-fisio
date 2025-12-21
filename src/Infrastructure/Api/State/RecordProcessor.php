@@ -1,0 +1,56 @@
+<?php
+
+namespace App\Infrastructure\Api\State;
+
+use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\ProcessorInterface;
+use App\Domain\Entity\Patient;
+use App\Domain\Entity\Record;
+use App\Infrastructure\Api\Resource\RecordResource;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+
+class RecordProcessor implements ProcessorInterface
+{
+    public function __construct(
+        private EntityManagerInterface $entityManager
+    ) {
+    }
+
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
+    {
+        if (!$data instanceof RecordResource) {
+            return $data;
+        }
+
+        if (isset($uriVariables['id'])) {
+            $record = $this->entityManager->getRepository(Record::class)->find($uriVariables['id']);
+        } else {
+            $record = new Record();
+        }
+
+        if (!$record) {
+            return null;
+        }
+
+        // Parse patient ID from IRI
+        if (preg_match('#/api/patients/(\d+)#', $data->patient, $matches)) {
+            $patientId = (int)$matches[1];
+            $patient = $this->entityManager->getRepository(Patient::class)->find($patientId);
+            if (!$patient) {
+                throw new BadRequestHttpException("Patient not found");
+            }
+            $record->patient = $patient;
+        }
+
+        $record->physiotherapyTreatment = $data->physiotherapyTreatment;
+
+        $this->entityManager->persist($record);
+        $this->entityManager->flush();
+
+        $data->id = $record->id;
+        $data->createdAt = $record->createdAt;
+
+        return $data;
+    }
+}

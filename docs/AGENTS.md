@@ -82,6 +82,13 @@ src/
 - Centralized API services
 - Responsive design (mobile-first)
 
+## Git Workflow
+- **Commit Messages**: Must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
+    - Format: `type(scope): subject`
+    - **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`.
+    - **Length**: Maximum 200 characters per line.
+    - **Example**: `feat(patient): add patient registration form`
+
 ## Naming Conventions
 
 ### Database (English)
