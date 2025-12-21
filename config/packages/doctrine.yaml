@@ -31,12 +31,12 @@ doctrine:
             numeric_functions: {}
             datetime_functions: {}
 
-when@test:
-    doctrine:
-        dbal:
-            # Use in-memory SQLite for faster tests
-            url: 'sqlite:///:memory:'
-            driver: 'pdo_sqlite'
+# when@test:
+#    doctrine:
+#        dbal:
+#            # Use in-memory SQLite for faster tests
+#            url: 'sqlite:///:memory:'
+#            driver: 'pdo_sqlite'
 
 when@prod:
     doctrine:

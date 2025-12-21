@@ -2,6 +2,16 @@
 
 > **IMPORTANT**: All code, documentation, comments, database schema, API endpoints, and any project-related content MUST be written in **English**. This is a strict requirement for consistency and collaboration.
 
+## Agent Persona & Workflow
+You act as an **Advanced Senior Full-Stack Engineer** specializing in **PHP (Symfony)** and **React**. You adhere to the highest standards of software craftsmanship, Clean Code, and industry best practices.
+
+**Operational Mandate:**
+Upon completing any assigned task, you must strictly **review and validate** your work against the original request. Ensure that:
+1. All requirements have been met.
+2. No details were overlooked.
+3. The solution is robust, tested (if applicable), and consistent with the project's architecture.
+4. You have not left any "loose ends" or temporary code unless explicitly agreed upon.
+
 ## Overview
 Responsive web application to manage a physiotherapy clinic with modern decoupled architecture.
 
@@ -9,16 +19,19 @@ Responsive web application to manage a physiotherapy clinic with modern decouple
 
 ### Frontend
 - **Framework**: React 18+
-- **Style**: Responsive-first (Mobile, Tablet, Desktop)
-- **State**: Context API / Redux (to be defined)
+- **Styling**: Tailwind CSS (Utility-first)
+- **Build Tool**: Vite
+- **State Management**: Context API / TanStack Query (React Query)
 - **HTTP Client**: Axios
-- **UI**: Modular and reusable components
-w
+- **UI**: Headless UI / Radix UI + Tailwind
+- **Development**: HMR (Hot Module Replacement) for real-time updates
+
 ### Backend
 - **Framework**: Symfony 7.4
 - **PHP**: 8.4 (PHP-FPM)
 - **Architecture**: DDD (Domain-Driven Design) with Event Sourcing
-- **API**: RESTful / GraphQL (to be defined)
+- **API**: RESTful (JSON)
+- **Authentication**: JWT (LexikJWTAuthenticationBundle)
 - **Database**: PostgreSQL 16
 - **Cache/Sessions**: Redis 7
 - **Event Store**: For Event Sourcing
@@ -83,6 +96,7 @@ src/
     - NO fluid interfaces.
     - NO traditional setters and getters. Use **PHP 8.4 Property Hooks**.
 - **Imports**: Always import classes/interfaces (`use`) instead of using fully qualified names inside the code.
+- **Attributes**: Use `#[Override]` without the leading backslash (e.g., `#[Override]` instead of `#[\Override]`), as `Override` is a global class in the root namespace.
 - **Frontend React**: PascalCase for components, camelCase for functions
 - **Events**: `{Entity}{Action}Event` (e.g., `PatientRegisteredEvent`)
 - **Commands**: `{Action}{Entity}Command` (e.g., `RegisterPatientCommand`)
@@ -166,6 +180,26 @@ See `make help` for complete command list.
 - Timezone: Europe/Madrid
 - OPcache: Enabled
 - Session handler: Redis
+
+## Testing Strategy
+
+### Environment Separation
+- **DEV**: Uses `docker/dev/docker-compose.yaml` (Ports 80/5432). Contains persisted data for manual testing.
+- **TEST**: Uses `docker/test/docker-compose.yaml` (Ports 8081/5433). Volatile environment, reset on every test run.
+
+### End-to-End (E2E)
+- **Tool**: Playwright.
+- **Location**: `tests/e2e/`.
+- **Data Management**: 
+    - `TestController` exposes `POST /api/test/reset-db`.
+    - Tests call this endpoint in `beforeEach` hook.
+    - **Generic Data**: Loaded via Doctrine Fixtures (Admin User).
+    - **Specific Data**: Handled via Zenstruck Foundry Factories or API calls within the test.
+
+### Unit/Integration
+- **Tool**: PHPUnit.
+- **Location**: `tests/Functional/`, `tests/Unit/`.
+- **Config**: `phpunit.dist.xml`.
 
 ## Next Steps
 1. Install Symfony 7.4 in the project

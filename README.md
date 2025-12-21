@@ -11,17 +11,21 @@ Comprehensive management system for physiotherapy clinics with modern architectu
 - **Cache/Sessions**: Redis 7
 - **Email Testing**: MailPit
 - **Web Server**: Nginx
+- **API**: RESTful (Symfony Controllers / API Platform)
+- **Authentication**: JWT (JSON Web Tokens)
 
 ### Frontend
 - **Framework**: React 18+
-- **Design**: Responsive-first (Mobile, Tablet, Desktop)
-- **HTTP Client**: Axios
+- **Styling**: Tailwind CSS
+- **Build Tool**: Vite (with HMR)
+- **HTTP Client**: Axios / TanStack Query
+- **Architecture**: SPA (Single Page Application) embedded in Symfony
 
 ### Architecture
 - **DDD** (Domain-Driven Design)
 - **Event Sourcing**
 - **CQRS** (Command Query Responsibility Segregation)
-- **API**: RESTful / GraphQL
+- **API-First Approach**
 
 ## Prerequisites
 
@@ -179,6 +183,8 @@ make db-reset
 
 ## Testing
 
+### Unit & Functional Tests (PHPUnit)
+
 ```bash
 # Run tests
 make test
@@ -186,6 +192,35 @@ make test
 # Run tests with coverage
 make test-coverage
 ```
+
+### End-to-End Tests (Playwright)
+
+We use a separate Docker environment for E2E tests to avoid polluting the development database.
+
+**Infrastructure:**
+- **Web**: http://localhost:8081
+- **DB**: Port 5433
+
+**Commands:**
+
+```bash
+# Start Test Environment
+make test-up
+
+# Run E2E Tests (Headless)
+make test-e2e
+
+# Run E2E Tests (UI Mode)
+make test-e2e-ui
+
+# Stop Test Environment
+make test-down
+```
+
+**Data Strategy:**
+- Each E2E test resets the database automatically via `/api/test/reset-db` endpoint.
+- Base fixtures (Admin user) are loaded on reset.
+- Specific scenarios use Factories within the test logic.
 
 The coverage report will be generated in `var/coverage/index.html`.
 
