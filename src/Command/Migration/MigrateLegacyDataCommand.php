@@ -94,19 +94,7 @@ final class MigrateLegacyDataCommand extends Command
                 3 => ['legacy' => 'allDay', 'target' => 'all_day', 'type' => self::TYPE_BOOL],
                 4 => ['legacy' => 'event_start', 'target' => 'starts_at', 'type' => self::TYPE_DATETIME],
                 5 => ['legacy' => 'event_end', 'target' => 'ends_at', 'type' => self::TYPE_DATETIME],
-                6 => ['legacy' => 'url', 'target' => 'url', 'type' => self::TYPE_STRING],
-                7 => ['legacy' => 'className', 'target' => 'class_name', 'type' => self::TYPE_STRING],
-                8 => ['legacy' => 'editable', 'target' => 'editable', 'type' => self::TYPE_BOOL],
-                9 => ['legacy' => 'strartEditable', 'target' => 'start_editable', 'type' => self::TYPE_BOOL],
-                10 => ['legacy' => 'durationEditable', 'target' => 'duration_editable', 'type' => self::TYPE_BOOL],
-                11 => ['legacy' => 'rendering', 'target' => 'rendering', 'type' => self::TYPE_STRING],
-                12 => ['legacy' => 'overlap', 'target' => 'overlap', 'type' => self::TYPE_BOOL],
-                13 => ['legacy' => 'event_constraint', 'target' => 'constraint_id', 'type' => self::TYPE_INT],
-                14 => ['legacy' => 'event_source', 'target' => 'source', 'type' => self::TYPE_STRING],
-                15 => ['legacy' => 'color', 'target' => 'color', 'type' => self::TYPE_STRING],
-                16 => ['legacy' => 'backgroundColor', 'target' => 'background_color', 'type' => self::TYPE_STRING],
-                17 => ['legacy' => 'textColor', 'target' => 'text_color', 'type' => self::TYPE_STRING],
-                18 => ['legacy' => 'customFields', 'target' => 'custom_fields', 'type' => self::TYPE_SERIALIZED],
+                15 => ['legacy' => 'color', 'target' => 'type', 'type' => self::TYPE_STRING],
                 19 => ['legacy' => 'comentario', 'target' => 'notes', 'type' => self::TYPE_STRING],
             ]
         ],
@@ -224,7 +212,18 @@ final class MigrateLegacyDataCommand extends Command
             $targetColumns[] = $colConfig['target'];
             $paramName = $colConfig['target'];
             $queryValues[] = ':' . $paramName;
-            $parameters[$paramName] = $this->transformValue($rawValue, $colConfig['type']);
+            
+            $value = $this->transformValue($rawValue, $colConfig['type']);
+            
+            if ($targetTable === 'appointments' && $colConfig['target'] === 'type') {
+                if ($value === 'cita') {
+                    $value = 'appointment';
+                } elseif ($value === 'otros') {
+                    $value = 'other';
+                }
+            }
+
+            $parameters[$paramName] = $value;
         }
 
         if ($targetTable === 'patients') {

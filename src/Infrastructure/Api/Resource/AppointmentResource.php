@@ -56,30 +56,8 @@ class AppointmentResource
     #[Groups(['appointment:read', 'appointment:write'])]
     public ?string $notes = null;
 
-    // FullCalendar Specific fields
     #[Groups(['appointment:read', 'appointment:write'])]
-    public ?string $url = null;
-
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public ?string $className = null;
-
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public ?bool $editable = null;
-
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public ?bool $startEditable = null;
-
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public ?bool $durationEditable = null;
-
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public ?string $color = null;
-
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public ?string $backgroundColor = null;
-
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public ?string $textColor = null;
+    public ?string $type = null;
 
     #[Groups(['appointment:read'])]
     public ?\DateTimeImmutable $createdAt = null;

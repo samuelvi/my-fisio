@@ -35,19 +35,7 @@ Manages appointment scheduling and calendar events for the physiotherapy clinic.
 | `allDay` | `all_day` | BOOLEAN | All-day event flag | Converted to snake_case |
 | `event_start` | `starts_at` | TIMESTAMP NOT NULL | Appointment start time | Renamed following timestamp convention |
 | `event_end` | `ends_at` | TIMESTAMP NOT NULL | Appointment end time | Renamed following timestamp convention |
-| `url` | `url` | VARCHAR(255) | Associated URL | No change |
-| `className` | `class_name` | VARCHAR(255) | CSS class for styling | Converted to snake_case |
-| `editable` | `editable` | BOOLEAN | Whether appointment is editable | No change |
-| `strartEditable` | `start_editable` | BOOLEAN | Whether start time is editable | Fixed typo, converted to snake_case |
-| `durationEditable` | `duration_editable` | BOOLEAN | Whether duration is editable | Converted to snake_case |
-| `rendering` | `rendering` | VARCHAR(255) | Rendering mode | No change |
-| `overlap` | `overlap` | BOOLEAN | Whether overlap is allowed | No change |
-| `event_constraint` | `constraint_id` | INTEGER | Constraint reference | Renamed, converted to snake_case |
-| `event_source` | `source` | VARCHAR(255) | Event source identifier | Simplified name |
-| `color` | `color` | VARCHAR(255) | Event color | No change |
-| `backgroundColor` | `background_color` | VARCHAR(255) | Background color | Converted to snake_case |
-| `textColor` | `text_color` | VARCHAR(255) | Text color | Converted to snake_case |
-| `customFields` | `custom_fields` | JSON | Additional custom data | Converted to snake_case, changed from LONGTEXT to JSON |
+| `color` | `type` | VARCHAR(255) | Appointment type | Renamed, "cita" -> "appointment", "otros" -> "other" |
 | `comentario` | `notes` | TEXT | Additional notes/comments | Translated to English |
 | N/A | `created_at` | TIMESTAMP NOT NULL | Record creation timestamp | Added per convention |
 | N/A | `updated_at` | TIMESTAMP | Record last update timestamp | Added per convention |
@@ -75,9 +63,9 @@ Manages appointment scheduling and calendar events for the physiotherapy clinic.
 5. **Translation**: Spanish field `comentario` → English `notes`
 6. **Type Improvements**:
    - `TINYINT(1)` → `BOOLEAN` (proper PostgreSQL boolean type)
-   - `LONGTEXT` with array serialization → `JSON` (native JSON support)
    - `DATETIME` → `TIMESTAMP` (PostgreSQL standard)
-7. **Typo Fix**: `strartEditable` → `start_editable`
+7. **Simplified Schema**: Removed multiple FullCalendar-specific fields (`url`, `className`, etc.) to keep the domain model clean.
+8. **Field Renaming**: `color` field renamed to `type` with value transformation.
 
 ## Domain Model
 

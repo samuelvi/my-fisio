@@ -71,14 +71,7 @@ class AppointmentProcessor implements ProcessorInterface
         $appointment->startsAt = $data->startsAt;
         $appointment->endsAt = $data->endsAt;
         $appointment->notes = $data->notes;
-        $appointment->url = $data->url;
-        $appointment->className = $data->className;
-        $appointment->editable = $data->editable;
-        $appointment->startEditable = $data->startEditable;
-        $appointment->durationEditable = $data->durationEditable;
-        $appointment->color = $data->color;
-        $appointment->backgroundColor = $data->backgroundColor;
-        $appointment->textColor = $data->textColor;
+        $appointment->type = $data->type;
 
         $this->entityManager->persist($appointment);
         $this->entityManager->flush();

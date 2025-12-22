@@ -38,43 +38,7 @@ class Appointment
     public \DateTimeImmutable $endsAt;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    public ?string $url = null;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    public ?string $className = null;
-
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    public ?bool $editable = null;
-
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    public ?bool $startEditable = null;
-
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    public ?bool $durationEditable = null;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    public ?string $rendering = null;
-
-    #[ORM\Column(type: 'boolean', nullable: true)]
-    public ?bool $overlap = null;
-
-    #[ORM\Column(type: 'integer', nullable: true)]
-    public ?int $constraintId = null;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    public ?string $source = null;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    public ?string $color = null;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    public ?string $backgroundColor = null;
-
-    #[ORM\Column(type: 'string', length: 255, nullable: true)]
-    public ?string $textColor = null;
-
-    #[ORM\Column(type: 'json', nullable: true)]
-    public ?array $customFields = null;
+    public ?string $type = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     public ?string $notes = null;

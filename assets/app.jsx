@@ -23,6 +23,23 @@ if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
+// Global response interceptor for session expiration
+axios.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && error.response.status === 401) {
+            const message = error.response.data.message || '';
+            if (message.includes('Expired JWT Token') || message.includes('JWT Token not found')) {
+                localStorage.removeItem('token');
+                delete axios.defaults.headers.common['Authorization'];
+                // Use a URL parameter to notify the login screen
+                window.location.href = '/login?expired=1';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 const ProtectedRoute = ({ children }) => {
     const isAuthenticated = !!localStorage.getItem('token');
     return isAuthenticated ? children : <Navigate to="/login" />;

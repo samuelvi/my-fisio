@@ -28,6 +28,7 @@ final class AppointmentFactory extends PersistentProxyObjectFactory
             'endsAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('+1 month', '+2 months')),
             'createdAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
             'title' => self::faker()->sentence(),
+            'type' => self::faker()->randomElement(['appointment', 'other']),
         ];
     }
 

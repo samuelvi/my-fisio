@@ -47,14 +47,7 @@ class AppointmentProvider implements ProviderInterface
         $resource->startsAt = $appointment->startsAt;
         $resource->endsAt = $appointment->endsAt;
         $resource->notes = $appointment->notes;
-        $resource->url = $appointment->url;
-        $resource->className = $appointment->className;
-        $resource->editable = $appointment->editable;
-        $resource->startEditable = $appointment->startEditable;
-        $resource->durationEditable = $appointment->durationEditable;
-        $resource->color = $appointment->color;
-        $resource->backgroundColor = $appointment->backgroundColor;
-        $resource->textColor = $appointment->textColor;
+        $resource->type = $appointment->type;
         $resource->createdAt = $appointment->createdAt;
         
         return $resource;
