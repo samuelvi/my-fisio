@@ -21,7 +21,7 @@ class Record
     public ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Patient::class, inversedBy: 'records')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     #[Groups(['record:read', 'record:write'])]
     public ?Patient $patient = null;
 

@@ -29,33 +29,72 @@ class PatientProvider implements ProviderInterface
         $limit = (int) ($filters['itemsPerPage'] ?? $this->itemsPerPage);
         $offset = ($page - 1) * $limit;
 
-        $criteria = [];
+        // Fetching patients using QueryBuilder to support search
+        $repository = $this->entityManager->getRepository(Patient::class);
+        $qb = $repository->createQueryBuilder('p');
 
         if (isset($filters['status'])) {
             $statusEnum = PatientStatus::tryFrom($filters['status']);
             if ($statusEnum) {
-                $criteria['status'] = $statusEnum;
+                $qb->andWhere('p.status = :status')
+                   ->setParameter('status', $statusEnum);
+            }
+        } else {
+            // Default to active if not specified
+            $qb->andWhere('p.status = :status')
+               ->setParameter('status', PatientStatus::ACTIVE);
+        }
+
+        // Search filter (name, phone, email) - Fuzzy search using pg_trgm similarity
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $searchTerm = '%' . mb_strtolower($search) . '%';
+            
+            // We use a combination of LIKE for pattern matching and similarity for fuzzy matching
+            // We'll use a Native Query or a complex expression. 
+            // To keep it simple and compatible with DQL without extra registration:
+            $qb->andWhere('LOWER(p.firstName) LIKE :search OR LOWER(p.lastName) LIKE :search OR p.phone LIKE :search OR LOWER(p.email) LIKE :search')
+               ->setParameter('search', $searchTerm);
+            
+            // Add fuzzy matching using similarity and levenshtein if the search term is long enough
+            if (strlen($search) >= 3) {
+                // We use a subquery with native SQL to find similar IDs
+                $conn = $this->entityManager->getConnection();
+                
+                // We combine similarity (trigrams) and levenshtein (edit distance)
+                // Levenshtein is great for small typos (Snati vs Santi)
+                // Similarity is better for missing parts or partial matches
+                $similarIds = $conn->fetchFirstColumn(
+                    "SELECT id FROM patients 
+                     WHERE similarity(first_name, :s) > 0.2 
+                        OR similarity(last_name, :s) > 0.2
+                        OR similarity(first_name || ' ' || last_name, :s) > 0.2
+                        OR levenshtein(LOWER(first_name), LOWER(:s)) <= 2
+                        OR levenshtein(LOWER(last_name), LOWER(:s)) <= 2",
+                    ['s' => $search]
+                );
+
+                if (!empty($similarIds)) {
+                    // Update the where clause to include these IDs
+                    $qb->orWhere('p.id IN (:similarIds)')
+                       ->setParameter('similarIds', $similarIds);
+                }
             }
         }
 
-        // Default to active if not specified
-        if (!isset($criteria['status'])) {
-            $criteria['status'] = PatientStatus::ACTIVE;
-        }
-
         // Determine Sort Order
-        $orderBy = ['id' => 'DESC']; // Default: latest
         if (isset($filters['order']) && $filters['order'] === 'alpha') {
-            $orderBy = ['firstName' => 'ASC', 'lastName' => 'ASC'];
+            $qb->orderBy('p.firstName', 'ASC')
+               ->addOrderBy('p.lastName', 'ASC');
+        } else {
+            $qb->orderBy('p.id', 'DESC'); // Default: latest
         }
 
         // Fetch N+1 records to determine if there's a next page without a COUNT query
-        $patients = $this->entityManager->getRepository(Patient::class)->findBy(
-            $criteria, 
-            $orderBy,
-            $limit + 1,
-            $offset
-        );
+        $patients = $qb->setMaxResults($limit + 1)
+                       ->setFirstResult($offset)
+                       ->getQuery()
+                       ->getResult();
 
         return array_map([$this, 'mapToResource'], $patients);
     }

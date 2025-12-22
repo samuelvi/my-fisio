@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import Fuse from 'fuse.js';
 
 export default function PatientList() {
     const [patients, setPatients] = useState([]);
@@ -43,7 +42,8 @@ export default function PatientList() {
                     status: statusFilter,
                     order: sortOrder,
                     page: page,
-                    itemsPerPage: ITEMS_PER_PAGE
+                    itemsPerPage: ITEMS_PER_PAGE,
+                    search: searchTerm
                 }
             });
             console.log('API Response:', response.data);
@@ -73,25 +73,6 @@ export default function PatientList() {
             setPatients([]);
         }
     };
-
-    // Fuse.js configuration for fuzzy search
-    // Lower score is better (0 is exact match). Fuse sorts by score automatically.
-    const fuseOptions = {
-        keys: [
-            { name: 'firstName', weight: 0.3 },
-            { name: 'lastName', weight: 0.3 },
-            { name: 'phone', weight: 0.2 },
-            { name: 'email', weight: 0.2 }
-        ],
-        threshold: 0.4, // Sensitivity: 0.0 (exact) to 1.0 (match anything)
-        includeScore: true
-    };
-
-    let filteredPatients = patients;
-    if (searchTerm) {
-        const fuse = new Fuse(patients, fuseOptions);
-        filteredPatients = fuse.search(searchTerm).map(result => result.item);
-    }
 
     if (loading) return <div className="p-8 text-center text-gray-500">Loading patients...</div>;
 
@@ -224,7 +205,7 @@ export default function PatientList() {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {filteredPatients.map((patient) => (
+                        {patients.map((patient) => (
                             <tr key={patient.id} className="hover:bg-gray-50 transition">
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <Link to={`/patients/${patient.id}`} className="flex items-center group">
@@ -261,7 +242,7 @@ export default function PatientList() {
                                 </td>
                             </tr>
                         ))}
-                        {filteredPatients.length === 0 && (
+                        {patients.length === 0 && (
                             <tr>
                                 <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                                     No patients found matching your search.

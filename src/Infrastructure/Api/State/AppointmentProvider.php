@@ -37,8 +37,10 @@ class AppointmentProvider implements ProviderInterface
     {
         $resource = new AppointmentResource();
         $resource->id = $appointment->id;
-        $resource->patientId = $appointment->patient->id;
-        $resource->patientName = $appointment->patient->firstName . ' ' . $appointment->patient->lastName;
+        if ($appointment->patient) {
+            $resource->patientId = $appointment->patient->id;
+            $resource->patientName = $appointment->patient->firstName . ' ' . $appointment->patient->lastName;
+        }
         $resource->userId = $appointment->userId;
         $resource->title = $appointment->title;
         $resource->allDay = $appointment->allDay;

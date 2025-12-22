@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Command\Migration;
 
 use App\Domain\Enum\PatientStatus;
+use App\Domain\Entity\User;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
@@ -13,6 +14,7 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[AsCommand(
     name: 'app:migrate-legacy-data',
@@ -99,21 +101,24 @@ final class MigrateLegacyDataCommand extends Command
                 10 => ['legacy' => 'durationEditable', 'target' => 'duration_editable', 'type' => self::TYPE_BOOL],
                 11 => ['legacy' => 'rendering', 'target' => 'rendering', 'type' => self::TYPE_STRING],
                 12 => ['legacy' => 'overlap', 'target' => 'overlap', 'type' => self::TYPE_BOOL],
-                14 => ['legacy' => 'event_id_paciente', 'target' => 'patient_id', 'type' => self::TYPE_INT],
-                16 => ['legacy' => 'color', 'target' => 'color', 'type' => self::TYPE_STRING],
-                17 => ['legacy' => 'backgroundColor', 'target' => 'background_color', 'type' => self::TYPE_STRING],
-                18 => ['legacy' => 'textColor', 'target' => 'text_color', 'type' => self::TYPE_STRING],
-                19 => ['legacy' => 'customFields', 'target' => 'custom_fields', 'type' => self::TYPE_SERIALIZED],
-                20 => ['legacy' => 'comentario', 'target' => 'notes', 'type' => self::TYPE_STRING],
+                13 => ['legacy' => 'event_constraint', 'target' => 'constraint_id', 'type' => self::TYPE_INT],
+                14 => ['legacy' => 'event_source', 'target' => 'source', 'type' => self::TYPE_STRING],
+                15 => ['legacy' => 'color', 'target' => 'color', 'type' => self::TYPE_STRING],
+                16 => ['legacy' => 'backgroundColor', 'target' => 'background_color', 'type' => self::TYPE_STRING],
+                17 => ['legacy' => 'textColor', 'target' => 'text_color', 'type' => self::TYPE_STRING],
+                18 => ['legacy' => 'customFields', 'target' => 'custom_fields', 'type' => self::TYPE_SERIALIZED],
+                19 => ['legacy' => 'comentario', 'target' => 'notes', 'type' => self::TYPE_STRING],
             ]
         ],
     ];
 
     private readonly LegacySqlParser $parser;
+    private ?string $hashedDefaultPassword = null;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly string $projectDir
+        private readonly string $projectDir,
+        private readonly UserPasswordHasherInterface $passwordHasher,
     ) {
         parent::__construct();
         $this->parser = new LegacySqlParser();
@@ -159,6 +164,7 @@ final class MigrateLegacyDataCommand extends Command
         foreach ($order as $tableName) {
             $io->text("Importing $tableName...");
             $count = 0;
+            $connection->beginTransaction();
             foreach ($dataByTable[$tableName] as $values) {
                 try {
                     $this->processRow($connection, $tableName, $values);
@@ -166,6 +172,9 @@ final class MigrateLegacyDataCommand extends Command
                 } catch (Exception $e) {
                     // silent
                 }
+            }
+            if ($connection->isTransactionActive()) {
+                $connection->commit();
             }
             $stats[$tableName] = $count;
         }
@@ -198,13 +207,18 @@ final class MigrateLegacyDataCommand extends Command
             $targetColumns[] = 'created_at';
             $queryValues[] = ':created_at';
             $parameters['created_at'] = $this->transformValue($row[4] ?? null, self::TYPE_DATETIME) ?? (new DateTime())->format('Y-m-d H:i:s');
+            $targetColumns[] = 'patient_id';
+            $queryValues[] = ':patient_id';
+            $parameters['patient_id'] = null;
         }
 
         foreach ($columns as $index => $colConfig) {
             $rawValue = $row[$index] ?? null;
-            
-            if ($targetTable === 'appointments' && $colConfig['target'] === 'patient_id' && ($rawValue === null || $rawValue === 'NULL')) {
-                throw new Exception("Null patient_id in appointment");
+            if ($targetTable === 'records' && $colConfig['target'] === 'patient_id') {
+                $rawValue = null;
+            }
+            if ($targetTable === 'users' && $colConfig['target'] === 'password') {
+                $rawValue = $this->getDefaultHashedPassword($row[1] ?? null);
             }
 
             $targetColumns[] = $colConfig['target'];
@@ -289,5 +303,17 @@ final class MigrateLegacyDataCommand extends Command
         try {
             $connection->executeQuery($sql);
         } catch (Exception $e) {}
+    }
+
+    private function getDefaultHashedPassword(?string $email): string
+    {
+        if ($this->hashedDefaultPassword !== null) {
+            return $this->hashedDefaultPassword;
+        }
+
+        $user = User::create($email ?? 'legacy@example.com');
+        $this->hashedDefaultPassword = $this->passwordHasher->hashPassword($user, 'password');
+
+        return $this->hashedDefaultPassword;
     }
 }

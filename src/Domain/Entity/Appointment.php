@@ -19,8 +19,8 @@ class Appointment
     public ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Patient::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    public Patient $patient;
+    #[ORM\JoinColumn(nullable: true)]
+    public ?Patient $patient = null;
 
     #[ORM\Column(type: 'integer', nullable: false)]
     public int $userId; // The therapist/physio
@@ -86,7 +86,7 @@ class Appointment
     public ?\DateTimeImmutable $updatedAt = null;
 
     private function __construct(
-        Patient $patient,
+        ?Patient $patient,
         int $userId,
         \DateTimeImmutable $startsAt,
         \DateTimeImmutable $endsAt
@@ -99,7 +99,7 @@ class Appointment
     }
 
     public static function create(
-        Patient $patient,
+        ?Patient $patient,
         int $userId,
         \DateTimeImmutable $startsAt,
         \DateTimeImmutable $endsAt

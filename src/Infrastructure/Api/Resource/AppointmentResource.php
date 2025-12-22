@@ -33,7 +33,7 @@ class AppointmentResource
     public ?int $id = null;
 
     #[Groups(['appointment:read', 'appointment:write'])]
-    public int $patientId;
+    public ?int $patientId = null;
 
     #[Groups(['appointment:read'])]
     public ?string $patientName = null;

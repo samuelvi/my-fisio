@@ -63,6 +63,32 @@ class AppointmentResourceTest extends ApiTestCase
         ]);
     }
 
+    public function testCreateAppointmentWithoutPatient(): void
+    {
+        $token = $this->authenticate();
+        
+        $client = self::createClient();
+        $client->request('POST', '/api/appointments', [
+            'auth_bearer' => $token,
+            'headers' => [
+                'Content-Type' => 'application/ld+json',
+                'Accept' => 'application/ld+json'
+            ],
+            'json' => [
+                'userId' => 1,
+                'title' => 'General Clinic Prep',
+                'startsAt' => '2025-12-26T09:00:00+00:00',
+                'endsAt' => '2025-12-26T10:00:00+00:00',
+            ]
+        ]);
+
+        $this->assertResponseStatusCodeSame(201);
+        $this->assertJsonContains([
+            '@type' => 'Appointment',
+            'title' => 'General Clinic Prep',
+        ]);
+    }
+
     public function testGetAppointments(): void
     {
         $token = $this->authenticate();

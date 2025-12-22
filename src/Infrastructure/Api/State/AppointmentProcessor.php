@@ -38,9 +38,12 @@ class AppointmentProcessor implements ProcessorInterface
                 throw new NotFoundHttpException('Appointment not found');
             }
         } else {
-            $patient = $this->entityManager->getRepository(Patient::class)->find($data->patientId);
-            if (!$patient) {
-                throw new NotFoundHttpException('Patient not found');
+            $patient = null;
+            if ($data->patientId) {
+                $patient = $this->entityManager->getRepository(Patient::class)->find($data->patientId);
+                if (!$patient) {
+                    throw new NotFoundHttpException('Patient not found');
+                }
             }
 
             $appointment = Appointment::create(
@@ -49,6 +52,17 @@ class AppointmentProcessor implements ProcessorInterface
                 $data->startsAt,
                 $data->endsAt
             );
+        }
+
+        // Update patient if provided (allows changing or setting patient on update)
+        if ($data->patientId !== null) {
+            $patient = $this->entityManager->getRepository(Patient::class)->find($data->patientId);
+            if ($patient) {
+                $appointment->patient = $patient;
+            }
+        } elseif (property_exists($data, 'patientId')) {
+            // If patientId is explicitly null in the request, we might want to unset it
+            $appointment->patient = null;
         }
 
         // Update fields
@@ -70,7 +84,7 @@ class AppointmentProcessor implements ProcessorInterface
         $this->entityManager->flush();
 
         $data->id = $appointment->id;
-        $data->patientName = $appointment->patient->firstName . ' ' . $appointment->patient->lastName;
+        $data->patientName = $appointment->patient ? $appointment->patient->firstName . ' ' . $appointment->patient->lastName : null;
         $data->createdAt = $appointment->createdAt;
             
         return $data;

@@ -20,7 +20,7 @@ export default function Calendar() {
             
             const mappedEvents = data.map(app => ({
                 id: app.id,
-                title: app.title || `Appt: ${app.patientName}`,
+                title: app.title || (app.patientName ? `Appt: ${app.patientName}` : 'Appt: (No patient)'),
                 start: app.startsAt,
                 end: app.endsAt,
                 allDay: app.allDay,
@@ -54,7 +54,7 @@ export default function Calendar() {
     };
 
     const handleEventClick = (clickInfo) => {
-        alert(`Appointment: ${clickInfo.event.title}\nPatient: ${clickInfo.event.extendedProps.patientName}\nNotes: ${clickInfo.event.extendedProps.notes || 'None'}`);
+        alert(`Appointment: ${clickInfo.event.title}\nPatient: ${clickInfo.event.extendedProps.patientName || '(No patient)'}\nNotes: ${clickInfo.event.extendedProps.notes || 'None'}`);
     };
 
     return (
