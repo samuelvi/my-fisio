@@ -28,6 +28,9 @@ export default function Layout({ children }) {
                     <Link to="/appointments" className="block py-3 px-6 hover:bg-indigo-700 transition">
                         Appointments
                     </Link>
+                    <Link to="/invoices" className="block py-3 px-6 hover:bg-indigo-700 transition">
+                        Invoices
+                    </Link>
                 </nav>
             </div>
 

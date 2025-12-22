@@ -13,6 +13,8 @@ import PatientForm from './components/PatientForm';
 import RecordForm from './components/RecordForm';
 import FullHistory from './components/FullHistory';
 import Calendar from './components/Calendar';
+import InvoiceList from './components/invoices/InvoiceList';
+import InvoiceForm from './components/invoices/InvoiceForm';
 
 // 1. Configure Basic Axios Defaults
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
@@ -126,6 +128,22 @@ function App() {
                     <ProtectedRoute>
                         <Layout>
                              <Calendar />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/invoices" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <InvoiceList />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/invoices/new" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <InvoiceForm />
                         </Layout>
                     </ProtectedRoute>
                 } />

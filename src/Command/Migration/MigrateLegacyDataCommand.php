@@ -25,6 +25,7 @@ final class MigrateLegacyDataCommand extends Command
     private const TYPE_INT = 'int';
     private const TYPE_STRING = 'string';
     private const TYPE_BOOL = 'bool';
+    private const TYPE_FLOAT = 'float';
     private const TYPE_DATE = 'date';
     private const TYPE_DATETIME = 'datetime';
     private const TYPE_JSON = 'json';
@@ -98,6 +99,40 @@ final class MigrateLegacyDataCommand extends Command
                 19 => ['legacy' => 'comentario', 'target' => 'notes', 'type' => self::TYPE_STRING],
             ]
         ],
+        'factura' => [
+            'target_table' => 'invoices',
+            'columns' => [
+                0 => ['legacy' => 'factura_id', 'target' => 'id', 'type' => self::TYPE_INT],
+                1 => ['legacy' => 'numero', 'target' => 'number', 'type' => self::TYPE_STRING],
+                2 => ['legacy' => 'fecha_de_factura', 'target' => 'date', 'type' => self::TYPE_DATETIME],
+                3 => ['legacy' => 'total', 'target' => 'amount', 'type' => self::TYPE_FLOAT],
+                4 => ['legacy' => 'nombre', 'target' => 'name', 'type' => self::TYPE_STRING],
+                5 => ['legacy' => 'telefono', 'target' => 'phone', 'type' => self::TYPE_STRING],
+                6 => ['legacy' => 'direccion', 'target' => 'address', 'type' => self::TYPE_STRING],
+                7 => ['legacy' => 'email', 'target' => 'email', 'type' => self::TYPE_STRING],
+                8 => ['legacy' => 'nif', 'target' => 'tax_id', 'type' => self::TYPE_STRING],
+                9 => ['legacy' => 'fecha_de_creacion', 'target' => 'created_at', 'type' => self::TYPE_DATE],
+            ]
+        ],
+        'factura_detalle' => [
+            'target_table' => 'invoice_lines',
+            'columns' => [
+                0 => ['legacy' => 'factura_detalle_id', 'target' => 'id', 'type' => self::TYPE_INT],
+                1 => ['legacy' => 'factura_id', 'target' => 'invoice_id', 'type' => self::TYPE_INT],
+                2 => ['legacy' => 'precio', 'target' => 'price', 'type' => self::TYPE_FLOAT],
+                3 => ['legacy' => 'total', 'target' => 'amount', 'type' => self::TYPE_FLOAT],
+                4 => ['legacy' => 'concepto', 'target' => 'concept', 'type' => self::TYPE_STRING],
+                5 => ['legacy' => 'cantidad', 'target' => 'quantity', 'type' => self::TYPE_INT],
+                6 => ['legacy' => 'descripcion', 'target' => 'description', 'type' => self::TYPE_STRING],
+            ]
+        ],
+        'contador' => [
+            'target_table' => 'counters',
+            'columns' => [
+                0 => ['legacy' => 'nombre', 'target' => 'name', 'type' => self::TYPE_STRING],
+                1 => ['legacy' => 'valor', 'target' => 'value', 'type' => self::TYPE_STRING],
+            ]
+        ],
     ];
 
     private readonly LegacySqlParser $parser;
@@ -116,7 +151,7 @@ final class MigrateLegacyDataCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dumpFile = $this->projectDir . '/private/dump2.sql';
+        $dumpFile = $this->projectDir . '/private/tinafisio-2025-12-22.sql';
 
         if (!file_exists($dumpFile)) {
             $io->error(sprintf('Dump file not found at "%s"', $dumpFile));
@@ -128,7 +163,7 @@ final class MigrateLegacyDataCommand extends Command
         $connection = $this->entityManager->getConnection();
         
         $io->text('Cleaning existing data...');
-        $connection->executeStatement('TRUNCATE TABLE appointments, records, customers, patients RESTART IDENTITY CASCADE');
+        $connection->executeStatement('TRUNCATE TABLE appointments, records, customers, patients, invoices, invoice_lines, counters RESTART IDENTITY CASCADE');
         $connection->executeStatement('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
 
         $io->text('Reading dump file and grouping data...');
@@ -136,7 +171,10 @@ final class MigrateLegacyDataCommand extends Command
             'users' => [],
             'paciente' => [],
             'historial' => [],
-            'event' => []
+            'event' => [],
+            'factura' => [],
+            'factura_detalle' => [],
+            'contador' => [],
         ];
 
         foreach ($this->parser->parse($dumpFile) as $entry) {
@@ -148,7 +186,7 @@ final class MigrateLegacyDataCommand extends Command
 
         $io->text('Importing data in correct order...');
         $stats = [];
-        $order = ['users', 'paciente', 'historial', 'event'];
+        $order = ['users', 'paciente', 'historial', 'event', 'factura', 'factura_detalle', 'contador'];
 
         foreach ($order as $tableName) {
             $io->text("Importing $tableName...");
@@ -175,7 +213,7 @@ final class MigrateLegacyDataCommand extends Command
         }
 
         $io->text('Resetting sequences...');
-        foreach (['users', 'patients', 'records', 'appointments'] as $table) {
+        foreach (['users', 'patients', 'records', 'appointments', 'invoices', 'invoice_lines', 'counters'] as $table) {
             $this->resetSequence($connection, $table);
         }
 
@@ -236,6 +274,12 @@ final class MigrateLegacyDataCommand extends Command
                 }
             }
 
+            if ($targetTable === 'counters' && $colConfig['target'] === 'name') {
+                if (is_string($value) && str_starts_with($value, 'invoice_')) {
+                    $value = 'invoices_' . substr($value, 8);
+                }
+            }
+
             $parameters[$paramName] = $value;
         }
 
@@ -277,6 +321,7 @@ final class MigrateLegacyDataCommand extends Command
 
         return match ($type) {
             self::TYPE_INT => (int) $value,
+            self::TYPE_FLOAT => (float) $value,
             self::TYPE_BOOL => ($value === '' || $value === '0' || $value === 0 || $value === false) ? 0 : 1,
             self::TYPE_DATE => $this->formatDate((string)$value),
             self::TYPE_DATETIME => $this->formatDate((string)$value),

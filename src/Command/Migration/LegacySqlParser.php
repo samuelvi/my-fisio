@@ -28,7 +28,7 @@ final class LegacySqlParser
                 $buffer .= $line;
 
                 if (str_ends_with($line, ';')) {
-                    if (preg_match('/INSERT INTO `([^`]+)` VALUES\s*(.*);$/i', $buffer, $matches)) {
+                    if (preg_match('/INSERT INTO `([^`]+)`(?:\s*\([^)]+\))?\s*VALUES\s*(.*);$/i', $buffer, $matches)) {
                         $tableName = $matches[1];
                         $valuesPart = $matches[2];
                         
