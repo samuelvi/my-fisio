@@ -48,6 +48,8 @@ export default function InvoiceList() {
             let data = [];
             if (response.data && Array.isArray(response.data['hydra:member'])) {
                 data = response.data['hydra:member'];
+            } else if (response.data && Array.isArray(response.data['member'])) {
+                data = response.data['member'];
             } else if (Array.isArray(response.data)) {
                 data = response.data;
             }
