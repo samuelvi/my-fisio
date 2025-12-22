@@ -35,7 +35,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     'name' => 'partial',
-    'number' => 'partial',
     'taxId' => 'exact',
     'customer.firstName' => 'partial',
     'customer.lastName' => 'partial'

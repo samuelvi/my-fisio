@@ -6,14 +6,22 @@ export default function InvoiceList() {
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // Filters state
-    const [nameFilter, setNameFilter] = useState('');
-    const [numberFilter, setNumberFilter] = useState('');
-    const [yearFilter, setYearFilter] = useState('all');
+    // Input States (what user types/selects)
+    const [nameInput, setNameInput] = useState('');
+    const [numberInput, setNumberInput] = useState('');
+    const [yearInput, setYearInput] = useState(new Date().getFullYear().toString());
+
+    // Applied Filter States (what triggers fetch)
+    const [filters, setFilters] = useState({
+        name: '',
+        number: '',
+        year: new Date().getFullYear().toString()
+    });
+
     const [page, setPage] = useState(1);
     const [hasNextPage, setHasNextPage] = useState(false);
     
-    const ITEMS_PER_PAGE = 10; // Or from env
+    const ITEMS_PER_PAGE = 10;
 
     // Generate years for select (2019 to current + 1)
     const currentYear = new Date().getFullYear();
@@ -22,9 +30,10 @@ export default function InvoiceList() {
         years.push(y);
     }
 
+    // Fetch when Page or Applied Filters change
     useEffect(() => {
         fetchInvoices();
-    }, [page, yearFilter, nameFilter, numberFilter]);
+    }, [page, filters]);
 
     const fetchInvoices = async () => {
         setLoading(true);
@@ -32,15 +41,22 @@ export default function InvoiceList() {
             const params = {
                 page: page,
                 itemsPerPage: ITEMS_PER_PAGE,
-                'order[date]': 'desc', // Recent first
+                'order[date]': 'desc',
             };
 
-            if (nameFilter) params['name'] = nameFilter;
-            if (numberFilter) params['number'] = numberFilter;
+            if (filters.name) params['name'] = filters.name;
             
-            if (yearFilter && yearFilter !== 'all') {
-                params['date[after]'] = `${yearFilter}-01-01`;
-                params['date[strictly_before]'] = `${parseInt(yearFilter) + 1}-01-01`;
+            // Logic: Invoice number starts with Year if selected
+            let numberQuery = '';
+            if (filters.year && filters.year !== 'all') {
+                numberQuery = filters.year;
+            }
+            if (filters.number) {
+                numberQuery += filters.number;
+            }
+            
+            if (numberQuery) {
+                params['number'] = numberQuery;
             }
 
             const response = await axios.get('/api/invoices', { params });
@@ -54,7 +70,7 @@ export default function InvoiceList() {
                 data = response.data;
             }
             
-            console.log('Invoices data:', data); // Debug log
+            console.log('Invoices data:', data);
 
             if (data.length > ITEMS_PER_PAGE) {
                 setHasNextPage(true);
@@ -74,14 +90,28 @@ export default function InvoiceList() {
     const handleSearch = (e) => {
         e.preventDefault();
         setPage(1);
-        fetchInvoices();
+        // Apply inputs to filters to trigger fetch
+        setFilters({
+            name: nameInput,
+            number: numberInput,
+            year: yearInput
+        });
     };
 
     const handleClear = () => {
-        setNameFilter('');
-        setNumberFilter('');
-        setYearFilter(new Date().getFullYear().toString());
+        const resetYear = new Date().getFullYear().toString();
+        // Reset inputs
+        setNameInput('');
+        setNumberInput('');
+        setYearInput(resetYear);
+        
+        // Reset filters and page
         setPage(1);
+        setFilters({
+            name: '',
+            number: '',
+            year: resetYear
+        });
     };
 
     const Pagination = () => (
@@ -128,8 +158,8 @@ export default function InvoiceList() {
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Customer Name</label>
                         <input
                             type="text"
-                            value={nameFilter}
-                            onChange={(e) => setNameFilter(e.target.value)}
+                            value={nameInput}
+                            onChange={(e) => setNameInput(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
                             placeholder="e.g. John Doe"
                         />
@@ -138,8 +168,8 @@ export default function InvoiceList() {
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Invoice Number</label>
                         <input
                             type="text"
-                            value={numberFilter}
-                            onChange={(e) => setNumberFilter(e.target.value)}
+                            value={numberInput}
+                            onChange={(e) => setNumberInput(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
                             placeholder="e.g. 202500..."
                         />
@@ -147,8 +177,8 @@ export default function InvoiceList() {
                     <div>
                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Year</label>
                         <select
-                            value={yearFilter}
-                            onChange={(e) => setYearFilter(e.target.value)}
+                            value={yearInput}
+                            onChange={(e) => setYearInput(e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
                         >
                             <option value="all">All Years</option>
