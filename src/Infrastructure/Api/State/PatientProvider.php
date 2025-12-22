@@ -45,41 +45,42 @@ class PatientProvider implements ProviderInterface
                ->setParameter('status', PatientStatus::ACTIVE);
         }
 
-        // Search filter (name, phone, email) - Fuzzy search using pg_trgm similarity
+        // Search filter (name, phone, email)
         if (!empty($filters['search'])) {
             $search = $filters['search'];
             $searchTerm = '%' . mb_strtolower($search) . '%';
+            $useFuzzy = isset($filters['fuzzy']) && ($filters['fuzzy'] === 'true' || $filters['fuzzy'] === true || $filters['fuzzy'] === '1');
             
-            // We use a combination of LIKE for pattern matching and similarity for fuzzy matching
-            // We'll use a Native Query or a complex expression. 
-            // To keep it simple and compatible with DQL without extra registration:
-            $qb->andWhere('LOWER(p.firstName) LIKE :search OR LOWER(p.lastName) LIKE :search OR p.phone LIKE :search OR LOWER(p.email) LIKE :search')
-               ->setParameter('search', $searchTerm);
+            // We use an OR group for all search conditions
+            $searchOr = $qb->expr()->orX();
             
-            // Add fuzzy matching using similarity and levenshtein if the search term is long enough
-            if (strlen($search) >= 3) {
-                // We use a subquery with native SQL to find similar IDs
+            // Standard pattern matching (Case-insensitive)
+            $searchOr->add('LOWER(p.firstName) LIKE :search');
+            $searchOr->add('LOWER(p.lastName) LIKE :search');
+            $searchOr->add('p.phone LIKE :search');
+            $searchOr->add('LOWER(p.email) LIKE :search');
+            $qb->setParameter('search', $searchTerm);
+            
+            // Advanced fuzzy matching (Similarity and Levenshtein)
+            if ($useFuzzy && strlen($search) >= 3) {
                 $conn = $this->entityManager->getConnection();
-                
-                // We combine similarity (trigrams) and levenshtein (edit distance)
-                // Levenshtein is great for small typos (Snati vs Santi)
-                // Similarity is better for missing parts or partial matches
                 $similarIds = $conn->fetchFirstColumn(
                     "SELECT id FROM patients 
-                     WHERE similarity(first_name, :s) > 0.2 
-                        OR similarity(last_name, :s) > 0.2
-                        OR similarity(first_name || ' ' || last_name, :s) > 0.2
-                        OR levenshtein(LOWER(first_name), LOWER(:s)) <= 2
-                        OR levenshtein(LOWER(last_name), LOWER(:s)) <= 2",
+                     WHERE similarity(first_name, :s::text) > 0.2 
+                        OR similarity(last_name, :s::text) > 0.2
+                        OR similarity(first_name || ' ' || last_name, :s::text) > 0.2
+                        OR levenshtein(LOWER(first_name), LOWER(:s::text)) <= 2
+                        OR levenshtein(LOWER(last_name), LOWER(:s::text)) <= 2",
                     ['s' => $search]
                 );
 
                 if (!empty($similarIds)) {
-                    // Update the where clause to include these IDs
-                    $qb->orWhere('p.id IN (:similarIds)')
-                       ->setParameter('similarIds', $similarIds);
+                    $searchOr->add('p.id IN (:similarIds)');
+                    $qb->setParameter('similarIds', $similarIds);
                 }
             }
+            
+            $qb->andWhere($searchOr);
         }
 
         // Determine Sort Order

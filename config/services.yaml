@@ -34,6 +34,11 @@ services:
         arguments:
             $itemsPerPage: '%items_per_page%'
 
+    App\Infrastructure\Api\State\AppointmentProvider:
+        arguments:
+            $entityManager: '@doctrine.orm.entity_manager'
+            $requestStack: '@request_stack'
+
     App\Command\Migration\MigrateLegacyDataCommand:
         arguments:
             $projectDir: '%kernel.project_dir%'

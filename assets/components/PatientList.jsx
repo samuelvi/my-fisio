@@ -9,6 +9,7 @@ export default function PatientList() {
     const [searchTerm, setSearchTerm] = useState(sessionStorage.getItem('patientList_searchTerm') || '');
     const [statusFilter, setStatusFilter] = useState(sessionStorage.getItem('patientList_statusFilter') || 'active');
     const [sortOrder, setSortOrder] = useState(sessionStorage.getItem('patientList_sortOrder') || 'latest');
+    const [useFuzzy, setUseFuzzy] = useState(sessionStorage.getItem('patientList_useFuzzy') === 'true');
     const [page, setPage] = useState(parseInt(sessionStorage.getItem('patientList_page') || '1', 10));
     const [hasNextPage, setHasNextPage] = useState(false);
     const ITEMS_PER_PAGE = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10', 10);
@@ -18,9 +19,10 @@ export default function PatientList() {
         sessionStorage.setItem('patientList_searchTerm', searchTerm);
         sessionStorage.setItem('patientList_statusFilter', statusFilter);
         sessionStorage.setItem('patientList_sortOrder', sortOrder);
+        sessionStorage.setItem('patientList_useFuzzy', useFuzzy.toString());
         sessionStorage.setItem('patientList_page', page.toString());
         fetchPatients();
-    }, [statusFilter, page, searchTerm, sortOrder]);
+    }, [statusFilter, page, searchTerm, sortOrder, useFuzzy]);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -43,7 +45,8 @@ export default function PatientList() {
                     order: sortOrder,
                     page: page,
                     itemsPerPage: ITEMS_PER_PAGE,
-                    search: searchTerm
+                    search: searchTerm,
+                    fuzzy: useFuzzy
                 }
             });
             console.log('API Response:', response.data);
@@ -128,15 +131,40 @@ export default function PatientList() {
             {/* Search Bar & Status Filter */}
             <form onSubmit={handleSearch} className="mb-8 space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
-                    <div className="flex-1">
+                    <div className="flex-1 relative">
                         <input
                             type="text"
-                            placeholder="Search by name or phone..."
-                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
+                            placeholder="Search by name, phone or email..."
+                            className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
                         />
+                        {searchInput && (
+                            <button 
+                                type="button"
+                                onClick={handleClear}
+                                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                            >
+                                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.414 1.414a1 1 0 101.414 1.414L10 11.414l1.414 1.414a1 1 0 001.414-1.414L11.414 10l1.414-1.414a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        )}
                     </div>
+                    
+                    <div className="flex items-center space-x-4 bg-white px-4 py-2 border border-gray-300 rounded-md shadow-sm">
+                        <label className="inline-flex items-center cursor-pointer">
+                            <input 
+                                type="checkbox" 
+                                className="sr-only peer"
+                                checked={useFuzzy}
+                                onChange={(e) => { setUseFuzzy(e.target.checked); setPage(1); }}
+                            />
+                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                            <span className="ms-3 text-sm font-medium text-gray-700">Intelligent Search</span>
+                        </label>
+                    </div>
+
                     <div className="flex items-center space-x-2">
                         <label htmlFor="statusFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
                             Status:

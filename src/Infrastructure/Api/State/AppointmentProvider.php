@@ -7,11 +7,13 @@ use ApiPlatform\State\ProviderInterface;
 use App\Domain\Entity\Appointment;
 use App\Infrastructure\Api\Resource\AppointmentResource;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\RequestStack;
 
 class AppointmentProvider implements ProviderInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private RequestStack $requestStack
     ) {
     }
 
@@ -22,13 +24,36 @@ class AppointmentProvider implements ProviderInterface
             return $appointment ? $this->mapToResource($appointment) : null;
         }
 
-        $filters = $context['filters'] ?? [];
-        $criteria = [];
-        if (isset($filters['patientId'])) {
-            $criteria['patient'] = $filters['patientId'];
+        $request = $this->requestStack->getCurrentRequest();
+        
+        // We only care about the date range for the calendar
+        $start = $request?->query->get('start');
+        $end = $request?->query->get('end');
+        $patientId = $request?->query->get('patientId');
+
+        $repository = $this->entityManager->getRepository(Appointment::class);
+        $qb = $repository->createQueryBuilder('a');
+
+        // Optional filter by patient (e.g. from Patient Detail page)
+        if ($patientId) {
+            $qb->andWhere('a.patient = :patientId')
+               ->setParameter('patientId', $patientId);
         }
 
-        $appointments = $this->entityManager->getRepository(Appointment::class)->findBy($criteria, ['startsAt' => 'ASC']);
+        // Essential filters for the calendar view (Inclusive overlap check)
+        if ($start) {
+            $qb->andWhere('a.endsAt >= :start')
+               ->setParameter('start', new \DateTimeImmutable($start));
+        }
+
+        if ($end) {
+            $qb->andWhere('a.startsAt <= :end')
+               ->setParameter('end', new \DateTimeImmutable($end));
+        }
+
+        $appointments = $qb->orderBy('a.startsAt', 'ASC')
+                           ->getQuery()
+                           ->getResult();
 
         return array_map([$this, 'mapToResource'], $appointments);
     }
@@ -42,7 +67,18 @@ class AppointmentProvider implements ProviderInterface
             $resource->patientName = $appointment->patient->firstName . ' ' . $appointment->patient->lastName;
         }
         $resource->userId = $appointment->userId;
-        $resource->title = $appointment->title;
+        
+        // Logical title fallback: Title -> Patient Name -> Start of Notes -> empty
+        if (!empty($appointment->title)) {
+            $resource->title = $appointment->title;
+        } elseif ($appointment->patient) {
+            $resource->title = $appointment->patient->firstName . ' ' . $appointment->patient->lastName;
+        } elseif (!empty($appointment->notes)) {
+            $resource->title = mb_substr($appointment->notes, 0, 30) . (mb_strlen($appointment->notes) > 30 ? '...' : '');
+        } else {
+            $resource->title = '';
+        }
+        
         $resource->allDay = $appointment->allDay;
         $resource->startsAt = $appointment->startsAt;
         $resource->endsAt = $appointment->endsAt;

@@ -36,6 +36,15 @@ Manages appointment scheduling and calendar events for the physiotherapy clinic.
 | `event_start` | `starts_at` | TIMESTAMP NOT NULL | Appointment start time | Renamed following timestamp convention |
 | `event_end` | `ends_at` | TIMESTAMP NOT NULL | Appointment end time | Renamed following timestamp convention |
 | `color` | `type` | VARCHAR(255) | Appointment type | Renamed, "cita" -> "appointment", "otros" -> "other" |
+
+### UI Color Coding
+
+The calendar interface applies the following color logic based on the appointment data:
+
+- **Marrón (`rgb(160, 112, 94)`)**: Appointments with a non-empty title.
+- **Amarillo (`rgb(245, 239, 224)`)**: Appointments with an empty title (empty slots).
+- **Verde Oliva (`rgb(151, 160, 94)`)**: "Other" type events with a non-empty title.
+
 | `comentario` | `notes` | TEXT | Additional notes/comments | Translated to English |
 | N/A | `created_at` | TIMESTAMP NOT NULL | Record creation timestamp | Added per convention |
 | N/A | `updated_at` | TIMESTAMP | Record last update timestamp | Added per convention |

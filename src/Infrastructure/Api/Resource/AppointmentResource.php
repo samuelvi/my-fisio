@@ -13,6 +13,10 @@ use App\Infrastructure\Api\State\AppointmentProvider;
 use App\Infrastructure\Api\State\AppointmentProcessor;
 use Symfony\Component\Serializer\Attribute\Groups;
 
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+
 #[ApiResource(
     shortName: 'Appointment',
     operations: [
@@ -24,8 +28,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
     ],
     provider: AppointmentProvider::class,
     normalizationContext: ['groups' => ['appointment:read']],
-    denormalizationContext: ['groups' => ['appointment:write']]
+    denormalizationContext: ['groups' => ['appointment:write']],
+    paginationEnabled: false
 )]
+#[ApiFilter(SearchFilter::class, properties: ['patientId' => 'exact'])]
 class AppointmentResource
 {
     #[ApiProperty(identifier: true)]

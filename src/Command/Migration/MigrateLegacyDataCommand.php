@@ -81,7 +81,7 @@ final class MigrateLegacyDataCommand extends Command
                 8 => ['legacy' => 'baja_laboral', 'target' => 'sick_leave', 'type' => self::TYPE_BOOL],
                 9 => ['legacy' => 'tratamiento_de_fisioterapia', 'target' => 'physiotherapy_treatment', 'type' => self::TYPE_STRING],
                 10 => ['legacy' => 'tratamiento_medico', 'target' => 'medical_treatment', 'type' => self::TYPE_STRING],
-                11 => ['legacy' => 'tratamiento_en_casa', 'target' => 'home_treatment', 'type' => self::TYPE_STRING],
+                11 => ['legacy' => 'tratamiento_en casa', 'target' => 'home_treatment', 'type' => self::TYPE_STRING],
                 12 => ['legacy' => 'notas', 'target' => 'notes', 'type' => self::TYPE_STRING],
             ]
         ],
@@ -102,6 +102,7 @@ final class MigrateLegacyDataCommand extends Command
 
     private readonly LegacySqlParser $parser;
     private ?string $hashedDefaultPassword = null;
+    private array $validPatientIds = [];
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -156,6 +157,12 @@ final class MigrateLegacyDataCommand extends Command
             foreach ($dataByTable[$tableName] as $values) {
                 try {
                     $this->processRow($connection, $tableName, $values);
+                    
+                    // Track valid patient IDs for referential integrity
+                    if ($tableName === 'paciente') {
+                        $this->validPatientIds[] = (int) $values[0];
+                    }
+                    
                     $count++;
                 } catch (Exception $e) {
                     // silent
@@ -195,16 +202,22 @@ final class MigrateLegacyDataCommand extends Command
             $targetColumns[] = 'created_at';
             $queryValues[] = ':created_at';
             $parameters['created_at'] = $this->transformValue($row[4] ?? null, self::TYPE_DATETIME) ?? (new DateTime())->format('Y-m-d H:i:s');
+            
+            // Legacy events don't have a patient_id, they will be NULL (deterministic)
             $targetColumns[] = 'patient_id';
             $queryValues[] = ':patient_id';
             $parameters['patient_id'] = null;
         }
 
+        if ($targetTable === 'records') {
+            $patientId = (int) ($row[1] ?? 0);
+            if (!in_array($patientId, $this->validPatientIds, true)) {
+                throw new Exception(sprintf('Inconsistency: Record refers to non-existing patient ID %d', $patientId));
+            }
+        }
+
         foreach ($columns as $index => $colConfig) {
             $rawValue = $row[$index] ?? null;
-            if ($targetTable === 'records' && $colConfig['target'] === 'patient_id') {
-                $rawValue = null;
-            }
             if ($targetTable === 'users' && $colConfig['target'] === 'password') {
                 $rawValue = $this->getDefaultHashedPassword($row[1] ?? null);
             }

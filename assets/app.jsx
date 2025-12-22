@@ -14,7 +14,7 @@ import RecordForm from './components/RecordForm';
 import FullHistory from './components/FullHistory';
 import Calendar from './components/Calendar';
 
-// Configure Axios
+// 1. Configure Basic Axios Defaults
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
 axios.defaults.headers.common['Content-Type'] = 'application/ld+json';
 
@@ -23,18 +23,25 @@ if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
-// Global response interceptor for session expiration
+// 2. Global Response Interceptor for Session Expiration
 axios.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if (response.data && response.data.code === 401) {
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
+            window.location.href = '/login?expired=1';
+            return new Promise(() => {});
+        }
+        return response;
+    },
     (error) => {
-        if (error.response && error.response.status === 401) {
-            const message = error.response.data.message || '';
-            if (message.includes('Expired JWT Token') || message.includes('JWT Token not found')) {
-                localStorage.removeItem('token');
-                delete axios.defaults.headers.common['Authorization'];
-                // Use a URL parameter to notify the login screen
-                window.location.href = '/login?expired=1';
-            }
+        const isUnauthorized = error.response && error.response.status === 401;
+        
+        if (isUnauthorized && !window.location.pathname.includes('/login')) {
+            localStorage.removeItem('token');
+            delete axios.defaults.headers.common['Authorization'];
+            window.location.href = '/login?expired=1';
+            return new Promise(() => {});
         }
         return Promise.reject(error);
     }
