@@ -1,0 +1,92 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Domain\Entity\Invoice;
+use Dompdf\Dompdf;
+use Dompdf\Options;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+
+class InvoiceExportController extends AbstractController
+{
+    #[Route('/api/invoices/{id}/export/{format}', name: 'invoice_export', requirements: ['format' => 'pdf|html'], methods: ['GET'])]
+    public function __invoke(
+        int $id,
+        string $format,
+        Request $request,
+        EntityManagerInterface $entityManager,
+        #[Autowire('%kernel.project_dir%')] string $projectDir,
+        #[Autowire('%company_name%')] string $companyName,
+        #[Autowire('%company_tax_id%')] string $companyTaxId,
+        #[Autowire('%company_address_line1%')] string $companyAddressLine1,
+        #[Autowire('%company_address_line2%')] string $companyAddressLine2,
+        #[Autowire('%company_phone%')] string $companyPhone,
+        #[Autowire('%company_email%')] string $companyEmail,
+        #[Autowire('%company_web%')] string $companyWeb,
+        #[Autowire('%company_logo_path%')] string $companyLogoPath
+    ): Response
+    {
+        $invoice = $entityManager->getRepository(Invoice::class)->find($id);
+
+        if (!$invoice) {
+            throw new NotFoundHttpException('Invoice not found');
+        }
+
+        // 1. Prepare Data
+        $logoPath = $projectDir . '/' . $companyLogoPath;
+        $logoSrc = '';
+        if (file_exists($logoPath)) {
+             $logoData = base64_encode(file_get_contents($logoPath));
+             $logoSrc = 'data:image/png;base64,' . $logoData;
+        }
+
+        // 2. Render HTML (Common for both formats)
+        $html = $this->renderView('invoice/pdf.html.twig', [
+            'invoice' => $invoice,
+            'logo_src' => $logoSrc,
+            'format' => $format,
+            'company' => [
+                'name' => $companyName,
+                'tax_id' => $companyTaxId,
+                'address_line1' => $companyAddressLine1,
+                'address_line2' => $companyAddressLine2,
+                'phone' => $companyPhone,
+                'email' => $companyEmail,
+                'web' => $companyWeb,
+            ]
+        ]);
+
+        // 3. Handle HTML Format
+        if ($format === 'html') {
+            return new Response($html, 200, [
+                'Content-Type' => 'text/html',
+            ]);
+        }
+
+        // 4. Handle PDF Format
+        $pdfOptions = new Options();
+        $pdfOptions->set('defaultFont', 'Arial');
+        $pdfOptions->set('isRemoteEnabled', true);
+
+        $dompdf = new Dompdf($pdfOptions);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        $filename = sprintf('factura_%s.pdf', $invoice->number);
+        $isDownload = $request->query->getBoolean('download', false);
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => ($isDownload ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+        ]);
+    }
+}

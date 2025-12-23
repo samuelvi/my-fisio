@@ -8,6 +8,14 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     items_per_page: '%env(int:ITEMS_PER_PAGE)%'
+    company_name: '%env(COMPANY_NAME)%'
+    company_tax_id: '%env(COMPANY_TAX_ID)%'
+    company_address_line1: '%env(COMPANY_ADDRESS_LINE1)%'
+    company_address_line2: '%env(COMPANY_ADDRESS_LINE2)%'
+    company_phone: '%env(COMPANY_PHONE)%'
+    company_email: '%env(COMPANY_EMAIL)%'
+    company_web: '%env(COMPANY_WEB)%'
+    company_logo_path: '%env(COMPANY_LOGO_PATH)%'
 
 services:
     # default configuration for services in *this* file

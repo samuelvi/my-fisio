@@ -114,6 +114,41 @@ export default function InvoiceList() {
         });
     };
 
+    const handleExport = async (id, number, format, mode = 'view') => {
+        try {
+            // mode: 'view' (inline) or 'download' (attachment)
+            const params = mode === 'download' ? { download: 1 } : {};
+            
+            const response = await axios.get(`/api/invoices/${id}/export/${format}`, {
+                params,
+                responseType: 'blob'
+            });
+
+            const mimeType = format === 'pdf' ? 'application/pdf' : 'text/html';
+            const blob = new Blob([response.data], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+
+            if (mode === 'download') {
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `factura_${number}.${format}`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            } else {
+                // Open in new tab
+                window.open(url, '_blank');
+            }
+            
+            // Clean up URL object after a short delay
+            setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+
+        } catch (error) {
+            console.error('Error exporting invoice:', error);
+            alert('Error exporting invoice');
+        }
+    };
+
     const Pagination = () => (
         <div className="flex items-center justify-between py-3 border-t border-b border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
             <div className="flex items-center space-x-4">
@@ -242,8 +277,35 @@ export default function InvoiceList() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900">
                                         {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(invoice.amount)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <Link to={`/invoices/${invoice.id}`} className="text-indigo-600 hover:text-indigo-900">View</Link>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end space-x-3">
+                                        {/* HTML View */}
+                                        <button 
+                                            onClick={() => handleExport(invoice.id, invoice.number, 'html', 'view')}
+                                            className="text-gray-500 hover:text-orange-600 transition"
+                                            title="View HTML"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                                        </button>
+
+                                        {/* PDF View */}
+                                        <button 
+                                            onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'view')}
+                                            className="text-gray-500 hover:text-blue-600 transition"
+                                            title="View PDF"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                        </button>
+
+                                        {/* Download */}
+                                        <button 
+                                            onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')}
+                                            className="text-gray-500 hover:text-green-600 transition"
+                                            title="Download PDF"
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                                        </button>
+                                        
+                                        <Link to={`/invoices/${invoice.id}`} className="text-indigo-600 hover:text-indigo-900 ml-2">Detail</Link>
                                     </td>
                                 </tr>
                             ))

@@ -11,10 +11,14 @@ RUN apk add --no-cache \
     postgresql-dev \
     oniguruma-dev \
     linux-headers \
+    libpng-dev \
+    libjpeg-turbo-dev \
+    freetype-dev \
     $PHPIZE_DEPS
 
-# Install PHP extensions
-RUN docker-php-ext-install \
+# Configure and install PHP extensions
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install \
     pdo \
     pdo_pgsql \
     pgsql \
@@ -22,7 +26,8 @@ RUN docker-php-ext-install \
     opcache \
     zip \
     mbstring \
-    bcmath
+    bcmath \
+    gd
 
 # Install Redis extension
 RUN pecl install redis && docker-php-ext-enable redis

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Factura {{ invoice.number }}</title>
+    <style>
+        /* PDF / Global Styles */
+        @page {
+            margin: 0; /* Control margins via body padding for consistency */
+        }
+        
+        body {
+            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-size: 10pt;
+            color: #333;
+            line-height: 1.4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .content-wrapper {
+            padding: 40px 50px;
+        }
+
+        .header-table {
+            width: 100%;
+            margin-bottom: 40px;
+            border-collapse: collapse;
+        }
+        
+        .invoice-title {
+            font-size: 28pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            color: #000;
+            text-align: right;
+        }
+
+        .meta-table {
+            float: right;
+            border-collapse: collapse;
+        }
+        .meta-table td {
+            padding: 2px 0;
+            font-size: 10pt;
+        }
+        .meta-label {
+            color: #8c6b5d;
+            font-weight: bold;
+            text-transform: uppercase;
+            padding-right: 15px;
+            text-align: right;
+        }
+        .meta-value {
+            text-align: right;
+            color: #333;
+        }
+        
+        /* Addresses */
+        .addresses-table {
+            width: 100%;
+            margin-bottom: 50px;
+            border-collapse: collapse;
+        }
+        .address-header {
+            border-bottom: 1px solid #96705B;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #96705B;
+            font-size: 10pt;
+        }
+        .address-content {
+            font-size: 10pt;
+            padding-top: 5px;
+        }
+        .address-content strong {
+            display: block;
+            margin-bottom: 3px;
+            font-size: 11pt;
+            color: #000;
+        }
+
+        /* Items Table */
+        table.items {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table.items th {
+            text-align: left;
+            padding: 12px 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 9pt;
+            border-bottom: 2px solid #96705B;
+            color: #333;
+        }
+        table.items td {
+            padding: 15px 8px;
+            border-bottom: 1px solid #f0f0f0;
+            background-color: #f9f9f9; 
+        }
+        .text-right { text-align: right; }
+
+        /* Totals */
+        .totals-container {
+            width: 100%;
+            margin-top: 0; 
+        }
+        .totals-table {
+            width: 250px;
+            float: right;
+            border-collapse: collapse;
+        }
+        .totals-table td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #fff;
+        }
+        .totals-label {
+            font-weight: bold;
+            color: #333;
+            background-color: #f0f0f0;
+            width: 100px;
+        }
+        .totals-value {
+            background-color: #f9f9f9;
+        }
+        .total-row .totals-label,
+        .total-row .totals-value {
+            background-color: #96705B;
+            color: white;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        /* Footer */
+        .footer {
+            position: fixed;
+            bottom: 30px;
+            left: 50px;
+            right: 50px;
+            text-align: center;
+            font-size: 8pt;
+            color: #666;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+        .page-number:after {
+            content: counter(page);
+        }
+
+        /* Helper to clear floats */
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+    </style>
+
+    {% if format == 'html' %}
+    <style>
+        body {
+            background: #525659;
+            padding: 40px 0;
+        }
+        .page-container {
+            background: white;
+            width: 21cm;
+            min-height: 29.7cm;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+            position: relative;
+        }
+        .footer {
+            position: absolute;
+            bottom: 40px;
+        }
+        .page-number:after {
+            content: "1" !important;
+        }
+    </style>
+    {% endif %}
+</head>
+<body>
+    {% if format == 'html' %}
+    <div class="page-container">
+    {% endif %}
+        
+        <div class="content-wrapper">
+            <!-- Header -->
+            <table class="header-table">
+                <tr>
+                    <td width="50%" valign="top">
+                        {% if logo_src %}
+                            <img src="{{ logo_src }}" alt="Logo" style="width: 180px; height: auto;">
+                        {% else %}
+                            <div style="font-weight: bold; font-size: 20pt; color: #96705B;">TINA</div>
+                            <div style="font-size: 10pt; letter-spacing: 2px; text-transform: uppercase;">Fisioterapia</div>
+                        {% endif %}
+                    </td>
+                    <td width="50%" valign="top">
+                        <div class="invoice-title">FACTURA</div>
+                        <table class="meta-table">
+                            <tr>
+                                <td class="meta-label">Nº FACTURA:</td>
+                                <td class="meta-value">{{ invoice.number }}</td>
+                            </tr>
+                            <tr>
+                                <td class="meta-label">FECHA:</td>
+                                <td class="meta-value">{{ invoice.date|date('d/m/Y') }}</td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Addresses -->
+            <table class="addresses-table">
+                <tr>
+                    <td width="45%" valign="top">
+                        <div class="address-header">DE</div>
+                        <div class="address-content">
+                            <strong>{{ company.name }}</strong>
+                            {{ company.tax_id }}<br>
+                            {{ company.address_line1 }}<br>
+                            {{ company.address_line2 }}<br>
+                            {{ company.phone }}<br>
+                            {{ company.email }}<br>
+                            {{ company.web }}
+                        </div>
+                    </td>
+                    <td width="10%"></td>
+                    <td width="45%" valign="top">
+                        <div class="address-header">PARA</div>
+                        <div class="address-content">
+                            <strong>{{ invoice.name }}</strong>
+                            {% if invoice.taxId %}
+                                {{ invoice.taxId }}<br>
+                            {% else %}
+                                -<br>
+                            {% endif %}
+                            {% if invoice.address %}
+                                {{ invoice.address }}<br>
+                            {% else %}
+                                -<br>
+                            {% endif %}
+                            {% if invoice.phone %}
+                                Tel: {{ invoice.phone }}<br>
+                            {% endif %}
+                            {% if invoice.email %}
+                                {{ invoice.email }}
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Items -->
+            <table class="items">
+                <thead>
+                    <tr>
+                        <th width="10%">CANT</th>
+                        <th width="45%">CONCEPTO</th>
+                        <th width="15%" class="text-right">IMPUESTOS</th>
+                        <th width="15%" class="text-right">PRECIO</th>
+                        <th width="15%" class="text-right">TOTAL DE</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in invoice.lines %}
+                        <tr>
+                            <td>{{ line.quantity }}</td>
+                            <td>
+                                <strong>{{ line.concept ? line.concept : 'Sesión de fisioterapia' }}</strong>
+                                {% if line.description %}
+                                    <div style="font-size: 8pt; color: #666; margin-top: 4px;">{{ line.description }}</div>
+                                {% endif %}
+                            </td>
+                            <td class="text-right">€ 0,00</td>
+                            <td class="text-right">€ {{ line.price|number_format(2, ',', '.') }}</td>
+                            <td class="text-right">€ {{ line.amount|number_format(2, ',', '.') }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td>1</td>
+                            <td><strong>Sesión de fisioterapia</strong></td>
+                            <td class="text-right">€ 0,00</td>
+                            <td class="text-right">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
+                            <td class="text-right">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <!-- Totals Area -->
+            <div class="totals-container clearfix">
+                <table class="totals-table">
+                    <tr>
+                        <td class="totals-label">Base</td>
+                        <td class="totals-value">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
+                    </tr>
+                    <tr>
+                        <td class="totals-label">IVA 0%</td>
+                        <td class="totals-value">€ 0,00</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td class="totals-label">Total</td>
+                        <td class="totals-value">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            móvil: {{ company.phone }} | web: {{ company.web }} | e-mail: {{ company.email }}
+            <span style="float: right;">Página <span class="page-number"></span></span>
+        </div>
+
+    {% if format == 'html' %}
+    </div>
+    {% endif %}
+</body>
+</html>

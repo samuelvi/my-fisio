@@ -361,6 +361,34 @@ To ensure high performance even with large datasets, the system uses an optimize
 - **N+1 Fetch**: We always request one extra record from the database. If that record exists, we know there is a next page.
 - **Performance**: This reduces database load by approximately 50% per listing request and ensures scalability as the data grows.
 
+## Customization
+
+### Invoice Configuration
+
+You can customize the invoice details and the company logo through the environment variables.
+
+1.  **Company Details**: Edit `.env.dev.local` (or your environment-specific file) and update the keys under `###> invoice/company-details ###`.
+
+    ```dotenv
+    COMPANY_NAME="Your Company Name"
+    COMPANY_TAX_ID="12345678A"
+    COMPANY_ADDRESS_LINE1="Street 123"
+    COMPANY_ADDRESS_LINE2="City, Country"
+    COMPANY_PHONE="+34 000 000 000"
+    COMPANY_EMAIL="info@example.com"
+    COMPANY_WEB="www.example.com"
+    ```
+
+2.  **Company Logo**: 
+    -   Place your logo file in the `private/` directory (e.g., `private/logo.png`).
+    -   Update the `COMPANY_LOGO_PATH` variable in `.env.dev.local`:
+        
+        ```dotenv
+        COMPANY_LOGO_PATH="private/logo.png"
+        ```
+    
+    *Note: Files in `private/` are ignored by git (except `.gitkeep`), keeping your assets secure and local.*
+
 ## Contributing
 
 1. All code must be in **English**
