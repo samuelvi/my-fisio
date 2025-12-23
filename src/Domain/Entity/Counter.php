@@ -26,9 +26,14 @@ class Counter
     #[Groups(['counter:read', 'counter:write'])]
     public string $value;
 
-    public function __construct(string $name, string $value)
+    private function __construct(string $name, string $value)
     {
         $this->name = $name;
         $this->value = $value;
+    }
+
+    public static function create(string $name, string $value): self
+    {
+        return new self($name, $value);
     }
 }

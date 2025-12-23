@@ -145,7 +145,7 @@ final class MigrateLegacyDataCommand extends Command
         private readonly UserPasswordHasherInterface $passwordHasher,
     ) {
         parent::__construct();
-        $this->parser = new LegacySqlParser();
+        $this->parser = LegacySqlParser::create();
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

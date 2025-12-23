@@ -26,7 +26,7 @@ class RecordProcessor implements ProcessorInterface
         if (isset($uriVariables['id'])) {
             $record = $this->entityManager->getRepository(Record::class)->find($uriVariables['id']);
         } else {
-            $record = new Record();
+            $record = Record::create();
         }
 
         if (!$record) {

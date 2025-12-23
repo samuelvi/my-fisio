@@ -97,7 +97,7 @@ class Invoice
     #[Groups(['invoice:read'])]
     public DateTimeInterface $createdAt;
 
-    public function __construct(string $number, float $amount, string $name)
+    private function __construct(string $number, float $amount, string $name)
     {
         $this->number = $number;
         $this->amount = $amount;
@@ -105,5 +105,10 @@ class Invoice
         $this->date = new DateTimeImmutable();
         $this->createdAt = new DateTimeImmutable();
         $this->lines = new ArrayCollection();
+    }
+
+    public static function create(string $number, float $amount, string $name): self
+    {
+        return new self($number, $amount, $name);
     }
 }

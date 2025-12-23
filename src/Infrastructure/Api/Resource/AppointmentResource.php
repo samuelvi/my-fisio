@@ -14,7 +14,6 @@ use App\Infrastructure\Api\State\AppointmentProcessor;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 
 #[ApiResource(
@@ -67,4 +66,11 @@ class AppointmentResource
 
     #[Groups(['appointment:read'])]
     public ?\DateTimeImmutable $createdAt = null;
+
+    private function __construct() {}
+
+    public static function create(): self
+    {
+        return new self();
+    }
 }

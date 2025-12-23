@@ -31,7 +31,7 @@ class RecordResource
     public ?int $id = null;
 
     #[Groups(['record:read', 'record:write'])]
-    public string $patient; // IRI format expected by API Platform /api/patients/{id}
+    public string $patient; 
 
     #[Groups(['record:read', 'record:write'])]
     public string $physiotherapyTreatment;
@@ -65,4 +65,11 @@ class RecordResource
 
     #[Groups(['record:read'])]
     public ?\DateTimeImmutable $createdAt = null;
+
+    private function __construct() {}
+
+    public static function create(): self
+    {
+        return new self();
+    }
 }

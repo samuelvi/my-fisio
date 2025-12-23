@@ -52,10 +52,15 @@ class InvoiceLine
     #[Groups(['invoice:read', 'invoice:write'])]
     public float $amount; // Total for this line (price * quantity)
 
-    public function __construct(int $quantity, float $price, float $amount)
+    private function __construct(int $quantity, float $price, float $amount)
     {
         $this->quantity = $quantity;
         $this->price = $price;
         $this->amount = $amount;
+    }
+
+    public static function create(int $quantity, float $price, float $amount): self
+    {
+        return new self($quantity, $price, $amount);
     }
 }

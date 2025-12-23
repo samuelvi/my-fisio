@@ -39,4 +39,11 @@ final class PatientInput
     public ?string $accidents = null;
 
     public ?string $notes = null;
+
+    private function __construct() {}
+
+    public static function create(): self
+    {
+        return new self();
+    }
 }

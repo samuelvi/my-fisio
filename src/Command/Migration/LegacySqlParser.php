@@ -6,6 +6,13 @@ namespace App\Command\Migration;
 
 final class LegacySqlParser
 {
+    private function __construct() {}
+
+    public static function create(): self
+    {
+        return new self();
+    }
+
     /**
      * @return \Generator<array{table: string, values: array}>
      */

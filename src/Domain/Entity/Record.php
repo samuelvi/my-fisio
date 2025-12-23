@@ -69,8 +69,13 @@ class Record
     #[Groups(['record:read', 'record:write'])]
     public ?string $notes = null;
 
-    public function __construct()
+    private function __construct()
     {
         $this->createdAt = new DateTimeImmutable();
+    }
+
+    public static function create(): self
+    {
+        return new self();
     }
 }

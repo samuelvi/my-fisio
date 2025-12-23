@@ -6,7 +6,12 @@ namespace App\Application\Query\Invoice\GetInvoiceExport;
 
 final readonly class GetInvoiceExportQuery
 {
-    public function __construct(
+    private function __construct(
         public int $id
     ) {}
+
+    public static function create(int $id): self
+    {
+        return new self($id);
+    }
 }

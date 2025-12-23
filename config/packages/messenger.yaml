@@ -12,8 +12,6 @@ framework:
                 default_middleware:
                     enabled: true
                     allow_no_handlers: true
-                middleware:
-                    - allow_no_handlers
 
         transports:
             sync: 'sync://'

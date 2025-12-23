@@ -60,7 +60,7 @@ class AppointmentProvider implements ProviderInterface
 
     private function mapToResource(Appointment $appointment): AppointmentResource
     {
-        $resource = new AppointmentResource();
+        $resource = AppointmentResource::create();
         $resource->id = $appointment->id;
         if ($appointment->patient) {
             $resource->patientId = $appointment->patient->id;

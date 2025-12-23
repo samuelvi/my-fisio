@@ -48,14 +48,13 @@ final class RecordFactory extends PersistentObjectFactory
         ];
     }
 
-    /**
-     * @see https://symfony.com/bundles/ZenstruckFoundryBundle/current/index.html#initialization
-     */
     #[Override]
     protected function initialize(): static
     {
         return $this
-            // ->afterInstantiate(function(Record $record): void {})
+            ->instantiateWith(function(): Record {
+                return Record::create();
+            })
         ;
     }
 }

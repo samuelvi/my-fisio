@@ -11,7 +11,7 @@ final readonly class InvoiceExportView
     /**
      * @param InvoiceLineView[] $lines
      */
-    public function __construct(
+    private function __construct(
         public int $id,
         public string $number,
         public DateTimeInterface $date,
@@ -23,11 +23,26 @@ final readonly class InvoiceExportView
         public ?string $email,
         public array $lines
     ) {}
+
+    public static function create(
+        int $id,
+        string $number,
+        DateTimeInterface $date,
+        float $amount,
+        string $name,
+        ?string $taxId,
+        ?string $address,
+        ?string $phone,
+        ?string $email,
+        array $lines
+    ): self {
+        return new self($id, $number, $date, $amount, $name, $taxId, $address, $phone, $email, $lines);
+    }
 }
 
 final readonly class InvoiceLineView
 {
-    public function __construct(
+    private function __construct(
         public int $id,
         public ?string $concept,
         public ?string $description,
@@ -35,4 +50,15 @@ final readonly class InvoiceLineView
         public float $price,
         public float $amount
     ) {}
+
+    public static function create(
+        int $id,
+        ?string $concept,
+        ?string $description,
+        int $quantity,
+        float $price,
+        float $amount
+    ): self {
+        return new self($id, $concept, $description, $quantity, $price, $amount);
+    }
 }

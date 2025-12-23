@@ -102,7 +102,7 @@ class PatientProvider implements ProviderInterface
 
     private function mapToResource(Patient $patient): PatientResource
     {
-        $resource = new PatientResource();
+        $resource = PatientResource::create();
         $resource->id = $patient->id;
         $resource->status = $patient->status;
         $resource->firstName = $patient->firstName;

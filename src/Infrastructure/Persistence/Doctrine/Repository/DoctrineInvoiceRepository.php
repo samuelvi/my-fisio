@@ -38,7 +38,7 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
         $data = $result[0];
 
         $lines = array_map(function (array $lineData) {
-            return new InvoiceLineView(
+            return InvoiceLineView::create(
                 id: $lineData['id'],
                 concept: $lineData['concept'],
                 description: $lineData['description'],
@@ -48,7 +48,7 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             );
         }, $data['lines']);
 
-        return new InvoiceExportView(
+        return InvoiceExportView::create(
             id: $data['id'],
             number: $data['number'],
             date: $data['date'],

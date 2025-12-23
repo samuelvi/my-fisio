@@ -14,7 +14,6 @@ use App\Domain\Enum\PatientStatus;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 
 #[ApiResource(
@@ -105,4 +104,11 @@ class PatientResource
     /** @var array<int, mixed> */
     #[Groups(['patient:read'])]
     public array $records = [];
+
+    private function __construct() {}
+
+    public static function create(): self
+    {
+        return new self();
+    }
 }

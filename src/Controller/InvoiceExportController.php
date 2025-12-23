@@ -43,7 +43,7 @@ class InvoiceExportController extends AbstractController
     ): Response
     {
         // CQRS: Query for the View DTO
-        $invoice = $this->handle(new GetInvoiceExportQuery($id));
+        $invoice = $this->handle(GetInvoiceExportQuery::create($id));
 
         if (!$invoice) {
             throw new NotFoundHttpException('Invoice not found');
