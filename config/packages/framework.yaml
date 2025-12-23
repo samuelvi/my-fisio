@@ -4,7 +4,10 @@ framework:
     test: true
 
     # Note that the session will be started ONLY if you read or write from it.
-    session: true
+    session:
+        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
+        cookie_lifetime: 1296000
+        gc_maxlifetime: 1296000
 
     #esi: true
     #fragments: true

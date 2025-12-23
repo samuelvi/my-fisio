@@ -43,5 +43,13 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
+    App\Filter\InvoiceNumberFilter:
+        tags: [ 'api_platform.filter' ]
+
+    Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler:
+        arguments:
+            - '@snc_redis.default'
+            - { prefix: 'session_', ttl: 1296000 }
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

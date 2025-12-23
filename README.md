@@ -97,6 +97,22 @@ View all available URLs:
 make urls
 ```
 
+## Production Considerations
+
+When deploying to a production environment, ensure the following steps are taken:
+
+### Environment Variables
+The `.env` file must be properly configured for production. Never use development secrets or database credentials in production. Key variables to review include:
+- `APP_ENV=prod`
+- `APP_SECRET`
+- `DATABASE_URL`
+- `JWT_SECRET_KEY`, `JWT_PUBLIC_KEY`, and `JWT_PASSPHRASE`
+- `REDIS_URL`
+
+### Assets
+- **Favicon**: Ensure `public/favicon.ico` is the desired icon for your production site.
+- **Build**: Assets must be built for production using `npm run build`.
+
 ## Container Management
 
 ### Container Access

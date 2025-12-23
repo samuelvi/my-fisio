@@ -78,6 +78,9 @@ composer.phar
 *.tmp
 *.bak
 
+# Custom data
+favicon.ico
+
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
