@@ -62,7 +62,10 @@ class RecordProvider implements ProviderInterface
         $resource->homeTreatment = $data['homeTreatment'] ?? null;
         $resource->notes = $data['notes'] ?? null;
         $resource->sickLeave = $data['sickLeave'] ?? false;
-        $resource->createdAt = $data['createdAt'];
+
+        $resource->createdAt = $data['createdAt'] instanceof \DateTimeInterface 
+            ? \DateTimeImmutable::createFromInterface($data['createdAt']) 
+            : new \DateTimeImmutable($data['createdAt']);
         
         return $resource;
     }

@@ -86,11 +86,21 @@ class AppointmentProvider implements ProviderInterface
         }
         
         $resource->allDay = $data['allDay'] ?? null;
-        $resource->startsAt = $data['startsAt'];
-        $resource->endsAt = $data['endsAt'];
+
+        $resource->startsAt = $data['startsAt'] instanceof \DateTimeInterface 
+            ? \DateTimeImmutable::createFromInterface($data['startsAt']) 
+            : new \DateTimeImmutable($data['startsAt']);
+
+        $resource->endsAt = $data['endsAt'] instanceof \DateTimeInterface 
+            ? \DateTimeImmutable::createFromInterface($data['endsAt']) 
+            : new \DateTimeImmutable($data['endsAt']);
+
         $resource->notes = $data['notes'] ?? null;
         $resource->type = $data['type'] ?? null;
-        $resource->createdAt = $data['createdAt'];
+
+        $resource->createdAt = $data['createdAt'] instanceof \DateTimeInterface 
+            ? \DateTimeImmutable::createFromInterface($data['createdAt']) 
+            : new \DateTimeImmutable($data['createdAt']);
         
         return $resource;
     }

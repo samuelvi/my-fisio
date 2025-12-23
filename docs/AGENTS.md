@@ -75,7 +75,9 @@ src/
 - CQRS: read/write separation using Symfony Messenger buses (`command.bus`, `query.bus`).
 - Repositories only in domain layer (interfaces)
 - **Doctrine & Performance Standards**:
-    - **No Lazy Loading**: Avoid lazy loading at all costs.
+    - **No UnitOfWork Cache**: To ensure absolute data freshness, all read queries MUST bypass Doctrine's Identity Map. 
+        - Use `getArrayResult()` exclusively for data fetching (it ignores the UOW and Identity Map).
+        - If a sequential process requires high consistency after multiple writes, call `$entityManager->clear()` to purge the UnitOfWork.
     - **Native Queries**: Use `QueryBuilder` for all interactions. Magic methods like `find()` or `findBy()` are prohibited.
     - Efficient Fetching: Always use `getArrayResult()` for data fetching.
     - Mapping: Manually map array results to specialized DTOs (Read model) or Entities.

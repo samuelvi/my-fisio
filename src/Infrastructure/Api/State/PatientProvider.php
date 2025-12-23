@@ -53,17 +53,50 @@ class PatientProvider implements ProviderInterface
         }
 
         if (!empty($filters['search'])) {
-            $search = $filters['search'];
-            $searchTerm = '%' . mb_strtolower($search) . '%';
+            $search = trim($filters['search']);
+            $searchTermFull = '%' . $search . '%';
+            $useFuzzy = isset($filters['fuzzy']) && ($filters['fuzzy'] === 'true' || $filters['fuzzy'] === true || $filters['fuzzy'] === '1');
             
+            // Search builder
             $searchOr = $qb->expr()->orX();
-            $searchOr->add('LOWER(p.firstName) LIKE :search');
-            $searchOr->add('LOWER(p.lastName) LIKE :search');
-            $searchOr->add('p.phone LIKE :search');
-            $searchOr->add('LOWER(p.email) LIKE :search');
-            $qb->setParameter('search', $searchTerm);
-            
+
+            // 1. Direct match against fullName, phone or email
+            $searchOr->add('p.fullName LIKE :searchFull');
+            $searchOr->add('p.phone LIKE :searchFull');
+            $searchOr->add('p.email LIKE :searchFull');
+            $qb->setParameter('searchFull', $searchTermFull);
+
+            // 2. Intelligent Fuzzy Matching (PostgreSQL specific)
+            if ($useFuzzy && strlen($search) >= 3) {
+                $conn = $this->entityManager->getConnection();
+                // We search for the full query string in the fuzzy index
+                $similarIds = $conn->fetchFirstColumn(
+                    "SELECT id FROM patients 
+                     WHERE similarity(full_name, :s::text) > 0.3 
+                        OR levenshtein(full_name::text, :s::text) <= 3",
+                    ['s' => $search]
+                );
+
+                if (!empty($similarIds)) {
+                    $searchOr->add('p.id IN (:similarIds)');
+                    $qb->setParameter('similarIds', $similarIds);
+                }
+            }
+
             $qb->andWhere($searchOr);
+
+            // 3. Tokenized search: Only apply if NOT using fuzzy or as an additional filter
+            // Actually, if we use fuzzy, we don't want the strict AND tokenized search to kill the results
+            if (!$useFuzzy) {
+                $words = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
+                if (count($words) > 1) {
+                    foreach ($words as $index => $word) {
+                        $paramName = 'word_' . $index;
+                        $qb->andWhere('p.fullName LIKE :' . $paramName);
+                        $qb->setParameter($paramName, '%' . $word . '%');
+                    }
+                }
+            }
         }
 
         if (isset($filters['order']) && $filters['order'] === 'alpha') {
@@ -84,7 +117,12 @@ class PatientProvider implements ProviderInterface
     {
         $resource = PatientResource::create();
         $resource->id = $data['id'];
-        $resource->status = PatientStatus::from($data['status']);
+        
+        // Handle Enum (getArrayResult might return the object if enumType is used)
+        $resource->status = $data['status'] instanceof PatientStatus 
+            ? $data['status'] 
+            : PatientStatus::from($data['status']);
+
         $resource->firstName = $data['firstName'];
         $resource->lastName = $data['lastName'];
         $resource->dateOfBirth = $data['dateOfBirth'] ?? null;
@@ -105,22 +143,31 @@ class PatientProvider implements ProviderInterface
         $resource->bruxism = $data['bruxism'] ?? null;
         $resource->insoles = $data['insoles'] ?? null;
         $resource->others = $data['others'] ?? null;
-        $resource->createdAt = $data['createdAt'];
         
-        $resource->records = array_map(fn($r) => [
-            'id' => $r['id'],
-            'createdAt' => $r['createdAt']->format(\DateTimeInterface::ATOM),
-            'physiotherapyTreatment' => $r['physiotherapyTreatment'],
-            'consultationReason' => $r['consultationReason'] ?? null,
-            'currentSituation' => $r['currentSituation'] ?? null,
-            'evolution' => $r['evolution'] ?? null,
-            'radiologyTests' => $r['radiologyTests'] ?? null,
-            'medicalTreatment' => $r['medicalTreatment'] ?? null,
-            'homeTreatment' => $r['homeTreatment'] ?? null,
-            'notes' => $r['notes'] ?? null,
-            'sickLeave' => $r['sickLeave'] ?? false,
-            'onset' => $r['onset'] ?? null,
-        ], $data['records'] ?? []);
+        $resource->createdAt = $data['createdAt'] instanceof \DateTimeInterface 
+            ? \DateTimeImmutable::createFromInterface($data['createdAt']) 
+            : new \DateTimeImmutable($data['createdAt']);
+        
+        $resource->records = array_map(function($r) {
+            $recordCreatedAt = $r['createdAt'] instanceof \DateTimeInterface 
+                ? $r['createdAt'] 
+                : new \DateTimeImmutable($r['createdAt']);
+
+            return [
+                'id' => $r['id'],
+                'createdAt' => $recordCreatedAt->format(\DateTimeInterface::ATOM),
+                'physiotherapyTreatment' => $r['physiotherapyTreatment'],
+                'consultationReason' => $r['consultationReason'] ?? null,
+                'currentSituation' => $r['currentSituation'] ?? null,
+                'evolution' => $r['evolution'] ?? null,
+                'radiologyTests' => $r['radiologyTests'] ?? null,
+                'medicalTreatment' => $r['medicalTreatment'] ?? null,
+                'homeTreatment' => $r['homeTreatment'] ?? null,
+                'notes' => $r['notes'] ?? null,
+                'sickLeave' => $r['sickLeave'] ?? false,
+                'onset' => $r['onset'] ?? null,
+            ];
+        }, $data['records'] ?? []);
         
         return $resource;
     }

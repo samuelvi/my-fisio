@@ -23,13 +23,27 @@ class Patient
     #[Groups(['patient:read', 'record:read'])]
     public ?int $id = null;
 
+    #[ORM\Column(type: Types::STRING, length: 150, nullable: false)]
+    #[Groups(['patient:read'])]
+    public string $fullName;
+
     #[ORM\Column(type: Types::STRING, length: 50, nullable: false)]
     #[Groups(['patient:read', 'patient:write', 'record:read'])]
-    public string $firstName;
+    public string $firstName {
+        set {
+            $this->firstName = $value;
+            $this->updateFullName();
+        }
+    }
 
     #[ORM\Column(type: Types::STRING, length: 100, nullable: false)]
     #[Groups(['patient:read', 'patient:write', 'record:read'])]
-    public string $lastName;
+    public string $lastName {
+        set {
+            $this->lastName = $value;
+            $this->updateFullName();
+        }
+    }
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
     #[Groups(['patient:read', 'patient:write'])]
@@ -122,6 +136,7 @@ class Patient
     {
         $this->firstName = $firstName;
         $this->lastName = $lastName;
+        $this->updateFullName();
         $this->createdAt = new DateTimeImmutable();
         $this->records = new ArrayCollection();
     }
@@ -129,5 +144,10 @@ class Patient
     public static function create(string $firstName, string $lastName): self
     {
         return new self($firstName, $lastName);
+    }
+
+    private function updateFullName(): void
+    {
+        $this->fullName = trim(sprintf('%s %s', $this->firstName, $this->lastName));
     }
 }

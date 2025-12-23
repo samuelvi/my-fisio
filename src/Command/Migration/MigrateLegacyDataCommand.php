@@ -290,6 +290,11 @@ final class MigrateLegacyDataCommand extends Command
             $targetColumns[] = 'status';
             $queryValues[] = ':status';
             $parameters['status'] = PatientStatus::ACTIVE->value;
+
+            // Atomic calculation of full_name for the new column
+            $targetColumns[] = 'full_name';
+            $queryValues[] = ':full_name';
+            $parameters['full_name'] = trim(sprintf('%s %s', $parameters['first_name'] ?? '', $parameters['last_name'] ?? ''));
         }
 
         if ($targetTable === 'records' && empty($parameters['created_at'])) {

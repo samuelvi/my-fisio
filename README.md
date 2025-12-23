@@ -281,6 +281,7 @@ For more details about the architecture, see [docs/AGENTS.md](docs/AGENTS.md).
 - **CQRS & DDD**: 
     - Separate read/write concerns using dedicated buses.
     - Repositories must use `QueryBuilder` and `getArrayResult()`.
+    - **Fresh Data Strategy**: Bypass the UnitOfWork Identity Map by using `getArrayResult()` and explicit mapping to ensure each query retrieves the current database state, ignoring previous memory snapshots.
     - Manual mapping from arrays to DTOs/Entities is required to prevent lazy loading and optimize performance.
 - **Imports**: Always import classes/interfaces (`use App\Class;`) instead of using fully qualified names (`\App\Class`) inside the code.
 - **Frontend React**: PascalCase for components, camelCase for functions.
