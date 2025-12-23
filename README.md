@@ -278,6 +278,10 @@ For more details about the architecture, see [docs/AGENTS.md](docs/AGENTS.md).
 - **Doctrine Entities**: 
     - NO fluid interfaces (setters should not return `$this`).
     - NO traditional setters and getters. Use **PHP 8.4 Property Hooks** to manage property access and logic.
+- **CQRS & DDD**: 
+    - Separate read/write concerns using dedicated buses.
+    - Repositories must use `QueryBuilder` and `getArrayResult()`.
+    - Manual mapping from arrays to DTOs/Entities is required to prevent lazy loading and optimize performance.
 - **Imports**: Always import classes/interfaces (`use App\Class;`) instead of using fully qualified names (`\App\Class`) inside the code.
 - **Frontend React**: PascalCase for components, camelCase for functions.
 - **Events**: `{Entity}{Action}Event` (e.g., `PatientRegisteredEvent`)

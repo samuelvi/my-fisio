@@ -72,8 +72,14 @@ src/
 - Explicit Commands and Events
 - Aggregates as consistency boundaries
 - Event Sourcing: state rebuilt from events
-- CQRS: read/write separation
+- CQRS: read/write separation using Symfony Messenger buses (`command.bus`, `query.bus`).
 - Repositories only in domain layer (interfaces)
+- **Doctrine & Performance Standards**:
+    - **No Lazy Loading**: Avoid lazy loading at all costs.
+    - **Native Queries**: Use `QueryBuilder` for all interactions. Magic methods like `find()` or `findBy()` are prohibited.
+    - Efficient Fetching: Always use `getArrayResult()` for data fetching.
+    - Mapping: Manually map array results to specialized DTOs (Read model) or Entities.
+    - **SQL Compatibility**: All queries must be as SQL compliant and database-agnostic as possible. Avoid vendor-specific features (like PostgreSQL's `ON CONFLICT` or `RETURNING`) in favor of Doctrine-standard mechanisms (like Pessimistic Locking) to ensure compatibility between MySQL, Oracle, and PostgreSQL.
 - Dependency Injection with Symfony
 - **Pagination Strategy**: Implement the **N+1 Fetch Pattern** for all collection endpoints.
     - **Operation**: Fetch `N+1` records from the database when `N` items are requested per page.

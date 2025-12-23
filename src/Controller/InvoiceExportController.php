@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Domain\Entity\Invoice;
+use App\Application\Query\Invoice\GetInvoiceExport\GetInvoiceExportQuery;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -12,17 +12,25 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\HandleTrait;
 
 class InvoiceExportController extends AbstractController
 {
+    use HandleTrait;
+
+    public function __construct(
+        private MessageBusInterface $queryBus
+    ) {
+        $this->messageBus = $queryBus;
+    }
+
     #[Route('/api/invoices/{id}/export/{format}', name: 'invoice_export', requirements: ['format' => 'pdf|html'], methods: ['GET'])]
     public function __invoke(
         int $id,
         string $format,
         Request $request,
-        EntityManagerInterface $entityManager,
         #[Autowire('%kernel.project_dir%')] string $projectDir,
         #[Autowire('%company_name%')] string $companyName,
         #[Autowire('%company_tax_id%')] string $companyTaxId,
@@ -34,13 +42,14 @@ class InvoiceExportController extends AbstractController
         #[Autowire('%company_logo_path%')] string $companyLogoPath
     ): Response
     {
-        $invoice = $entityManager->getRepository(Invoice::class)->find($id);
+        // CQRS: Query for the View DTO
+        $invoice = $this->handle(new GetInvoiceExportQuery($id));
 
         if (!$invoice) {
             throw new NotFoundHttpException('Invoice not found');
         }
 
-        // 1. Prepare Data
+        // Prepare Logo
         $logoPath = $projectDir . '/' . $companyLogoPath;
         $logoSrc = '';
         if (file_exists($logoPath)) {
@@ -48,7 +57,6 @@ class InvoiceExportController extends AbstractController
              $logoSrc = 'data:image/png;base64,' . $logoData;
         }
 
-        // 2. Render HTML (Common for both formats)
         $html = $this->renderView('invoice/pdf.html.twig', [
             'invoice' => $invoice,
             'logo_src' => $logoSrc,
@@ -64,14 +72,11 @@ class InvoiceExportController extends AbstractController
             ]
         ]);
 
-        // 3. Handle HTML Format
         if ($format === 'html') {
-            return new Response($html, 200, [
-                'Content-Type' => 'text/html',
-            ]);
+            return new Response($html, 200, ['Content-Type' => 'text/html']);
         }
 
-        // 4. Handle PDF Format
+        // PDF Generation
         $pdfOptions = new Options();
         $pdfOptions->set('defaultFont', 'Arial');
         $pdfOptions->set('isRemoteEnabled', true);
