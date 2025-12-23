@@ -47,6 +47,12 @@ services:
             $entityManager: '@doctrine.orm.entity_manager'
             $requestStack: '@request_stack'
 
+    # DDD Repository Bindings
+    App\Domain\Repository\PatientRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrinePatientRepository'
+    App\Domain\Repository\AppointmentRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineAppointmentRepository'
+    App\Domain\Repository\InvoiceRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineInvoiceRepository'
+    App\Domain\Repository\CounterRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineCounterRepository'
+
     App\Command\Migration\MigrateLegacyDataCommand:
         arguments:
             $projectDir: '%kernel.project_dir%'

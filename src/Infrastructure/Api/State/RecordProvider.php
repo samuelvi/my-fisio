@@ -17,9 +17,17 @@ class RecordProvider implements ProviderInterface
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
+        $repository = $this->entityManager->getRepository(Record::class);
+
         if (isset($uriVariables['id'])) {
-            $record = $this->entityManager->getRepository(Record::class)->find($uriVariables['id']);
-            return $record ? $this->mapToResource($record) : null;
+            $qb = $repository->createQueryBuilder('r')
+                ->select('r', 'p')
+                ->leftJoin('r.patient', 'p')
+                ->where('r.id = :id')
+                ->setParameter('id', $uriVariables['id']);
+
+            $result = $qb->getQuery()->getArrayResult();
+            return !empty($result) ? $this->mapToResource($result[0]) : null;
         }
 
         $filters = $context['filters'] ?? [];
@@ -27,33 +35,34 @@ class RecordProvider implements ProviderInterface
         $limit = (int) ($filters['itemsPerPage'] ?? 10);
         $offset = ($page - 1) * $limit;
 
-        // Fetch N+1 records
-        $records = $this->entityManager->getRepository(Record::class)->findBy(
-            [], 
-            ['id' => 'DESC'],
-            $limit + 1,
-            $offset
-        );
+        $qb = $repository->createQueryBuilder('r')
+            ->select('r', 'p')
+            ->leftJoin('r.patient', 'p')
+            ->orderBy('r.id', 'DESC')
+            ->setMaxResults($limit + 1)
+            ->setFirstResult($offset);
 
-        return array_map([$this, 'mapToResource'], $records);
+        $results = $qb->getQuery()->getArrayResult();
+
+        return array_map([$this, 'mapToResource'], $results);
     }
 
-    private function mapToResource(Record $record): RecordResource
+    private function mapToResource(array $data): RecordResource
     {
         $resource = RecordResource::create();
-        $resource->id = $record->id;
-        $resource->patient = '/api/patients/' . $record->patient->id;
-        $resource->physiotherapyTreatment = $record->physiotherapyTreatment;
-        $resource->consultationReason = $record->consultationReason;
-        $resource->onset = $record->onset;
-        $resource->currentSituation = $record->currentSituation;
-        $resource->evolution = $record->evolution;
-        $resource->radiologyTests = $record->radiologyTests;
-        $resource->medicalTreatment = $record->medicalTreatment;
-        $resource->homeTreatment = $record->homeTreatment;
-        $resource->notes = $record->notes;
-        $resource->sickLeave = $record->sickLeave ?? false;
-        $resource->createdAt = $record->createdAt;
+        $resource->id = $data['id'];
+        $resource->patient = '/api/patients/' . $data['patient']['id'];
+        $resource->physiotherapyTreatment = $data['physiotherapyTreatment'];
+        $resource->consultationReason = $data['consultationReason'] ?? null;
+        $resource->onset = $data['onset'] ?? null;
+        $resource->currentSituation = $data['currentSituation'] ?? null;
+        $resource->evolution = $data['evolution'] ?? null;
+        $resource->radiologyTests = $data['radiologyTests'] ?? null;
+        $resource->medicalTreatment = $data['medicalTreatment'] ?? null;
+        $resource->homeTreatment = $data['homeTreatment'] ?? null;
+        $resource->notes = $data['notes'] ?? null;
+        $resource->sickLeave = $data['sickLeave'] ?? false;
+        $resource->createdAt = $data['createdAt'];
         
         return $resource;
     }

@@ -9,4 +9,6 @@ use App\Application\Dto\Invoice\InvoiceExportView;
 interface InvoiceRepositoryInterface
 {
     public function getInvoiceExportView(int $id): ?InvoiceExportView;
+
+    public function countByYear(int $year): int;
 }

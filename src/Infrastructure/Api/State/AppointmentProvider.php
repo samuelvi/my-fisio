@@ -19,28 +19,33 @@ class AppointmentProvider implements ProviderInterface
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
+        $repository = $this->entityManager->getRepository(Appointment::class);
+
         if (isset($uriVariables['id'])) {
-            $appointment = $this->entityManager->getRepository(Appointment::class)->find($uriVariables['id']);
-            return $appointment ? $this->mapToResource($appointment) : null;
+            $qb = $repository->createQueryBuilder('a')
+                ->select('a', 'p')
+                ->leftJoin('a.patient', 'p')
+                ->where('a.id = :id')
+                ->setParameter('id', $uriVariables['id']);
+
+            $result = $qb->getQuery()->getArrayResult();
+            return !empty($result) ? $this->mapToResource($result[0]) : null;
         }
 
         $request = $this->requestStack->getCurrentRequest();
-        
-        // We only care about the date range for the calendar
         $start = $request?->query->get('start');
         $end = $request?->query->get('end');
         $patientId = $request?->query->get('patientId');
 
-        $repository = $this->entityManager->getRepository(Appointment::class);
-        $qb = $repository->createQueryBuilder('a');
+        $qb = $repository->createQueryBuilder('a')
+            ->select('a', 'p')
+            ->leftJoin('a.patient', 'p');
 
-        // Optional filter by patient (e.g. from Patient Detail page)
         if ($patientId) {
-            $qb->andWhere('a.patient = :patientId')
+            $qb->andWhere('p.id = :patientId')
                ->setParameter('patientId', $patientId);
         }
 
-        // Essential filters for the calendar view (Inclusive overlap check)
         if ($start) {
             $qb->andWhere('a.endsAt >= :start')
                ->setParameter('start', new \DateTimeImmutable($start));
@@ -51,40 +56,41 @@ class AppointmentProvider implements ProviderInterface
                ->setParameter('end', new \DateTimeImmutable($end));
         }
 
-        $appointments = $qb->orderBy('a.startsAt', 'ASC')
-                           ->getQuery()
-                           ->getResult();
+        $results = $qb->orderBy('a.startsAt', 'ASC')
+                      ->getQuery()
+                      ->getArrayResult();
 
-        return array_map([$this, 'mapToResource'], $appointments);
+        return array_map([$this, 'mapToResource'], $results);
     }
 
-    private function mapToResource(Appointment $appointment): AppointmentResource
+    private function mapToResource(array $data): AppointmentResource
     {
         $resource = AppointmentResource::create();
-        $resource->id = $appointment->id;
-        if ($appointment->patient) {
-            $resource->patientId = $appointment->patient->id;
-            $resource->patientName = $appointment->patient->firstName . ' ' . $appointment->patient->lastName;
-        }
-        $resource->userId = $appointment->userId;
+        $resource->id = $data['id'];
         
-        // Logical title fallback: Title -> Patient Name -> Start of Notes -> empty
-        if (!empty($appointment->title)) {
-            $resource->title = $appointment->title;
-        } elseif ($appointment->patient) {
-            $resource->title = $appointment->patient->firstName . ' ' . $appointment->patient->lastName;
-        } elseif (!empty($appointment->notes)) {
-            $resource->title = mb_substr($appointment->notes, 0, 30) . (mb_strlen($appointment->notes) > 30 ? '...' : '');
+        if (isset($data['patient'])) {
+            $resource->patientId = $data['patient']['id'];
+            $resource->patientName = $data['patient']['firstName'] . ' ' . $data['patient']['lastName'];
+        }
+        
+        $resource->userId = $data['userId'];
+        
+        if (!empty($data['title'])) {
+            $resource->title = $data['title'];
+        } elseif (isset($data['patient'])) {
+            $resource->title = $data['patient']['firstName'] . ' ' . $data['patient']['lastName'];
+        } elseif (!empty($data['notes'])) {
+            $resource->title = mb_substr($data['notes'], 0, 30) . (mb_strlen($data['notes']) > 30 ? '...' : '');
         } else {
             $resource->title = '';
         }
         
-        $resource->allDay = $appointment->allDay;
-        $resource->startsAt = $appointment->startsAt;
-        $resource->endsAt = $appointment->endsAt;
-        $resource->notes = $appointment->notes;
-        $resource->type = $appointment->type;
-        $resource->createdAt = $appointment->createdAt;
+        $resource->allDay = $data['allDay'] ?? null;
+        $resource->startsAt = $data['startsAt'];
+        $resource->endsAt = $data['endsAt'];
+        $resource->notes = $data['notes'] ?? null;
+        $resource->type = $data['type'] ?? null;
+        $resource->createdAt = $data['createdAt'];
         
         return $resource;
     }

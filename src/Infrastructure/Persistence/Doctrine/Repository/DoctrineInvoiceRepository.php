@@ -61,4 +61,21 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             lines: $lines
         );
     }
+
+    public function countByYear(int $year): int
+    {
+        $start = sprintf('%d-01-01 00:00:00', $year);
+        $end = sprintf('%d-12-31 23:59:59', $year);
+
+        $qb = $this->createQueryBuilder('i')
+            ->select('COUNT(i.id) as total')
+            ->where('i.date >= :start')
+            ->andWhere('i.date <= :end')
+            ->setParameter('start', $start)
+            ->setParameter('end', $end);
+
+        $result = $qb->getQuery()->getArrayResult();
+
+        return (int) ($result[0]['total'] ?? 0);
+    }
 }
