@@ -117,6 +117,44 @@ export default function Calendar() {
         }
     };
 
+    const handleEventDrop = async (dropInfo) => {
+        const { event } = dropInfo;
+        try {
+            const payload = {
+                title: event.title,
+                notes: event.extendedProps.notes,
+                type: event.extendedProps.type,
+                startsAt: event.start.toISOString(),
+                endsAt: event.end ? event.end.toISOString() : null,
+                allDay: event.allDay,
+                userId: 1
+            };
+            await axios.put(`/api/appointments/${event.id}`, payload);
+        } catch (error) {
+            console.error('Error moving appointment:', error);
+            dropInfo.revert();
+        }
+    };
+
+    const handleEventResize = async (resizeInfo) => {
+        const { event } = resizeInfo;
+        try {
+            const payload = {
+                title: event.title,
+                notes: event.extendedProps.notes,
+                type: event.extendedProps.type,
+                startsAt: event.start.toISOString(),
+                endsAt: event.end ? event.end.toISOString() : null,
+                allDay: event.allDay,
+                userId: 1
+            };
+            await axios.put(`/api/appointments/${event.id}`, payload);
+        } catch (error) {
+            console.error('Error resizing appointment:', error);
+            resizeInfo.revert();
+        }
+    };
+
     return (
         <div className="bg-white p-6 rounded-lg shadow h-full overflow-hidden relative">
             <div className="mb-4 flex justify-between items-center">
@@ -139,7 +177,9 @@ export default function Calendar() {
                     headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
                     initialView="timeGridWeek"
                     editable={true} selectable={true} selectMirror={true} dayMaxEvents={true} weekends={true}
-                    events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick} height="700px"
+                    events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick} 
+                    eventDrop={handleEventDrop} eventResize={handleEventResize}
+                    height="700px"
                 />
             </div>
 

@@ -115,7 +115,7 @@ class PatientProvider implements ProviderInterface
 
     private function mapToResource(array $data): PatientResource
     {
-        $resource = PatientResource::create();
+        $resource = new PatientResource();
         $resource->id = $data['id'];
         
         // Handle Enum (getArrayResult might return the object if enumType is used)

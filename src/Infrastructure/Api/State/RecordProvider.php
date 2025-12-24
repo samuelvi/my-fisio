@@ -49,7 +49,7 @@ class RecordProvider implements ProviderInterface
 
     private function mapToResource(array $data): RecordResource
     {
-        $resource = RecordResource::create();
+        $resource = new RecordResource();
         $resource->id = $data['id'];
         $resource->patient = '/api/patients/' . $data['patient']['id'];
         $resource->physiotherapyTreatment = $data['physiotherapyTreatment'];
