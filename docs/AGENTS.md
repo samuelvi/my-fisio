@@ -11,6 +11,8 @@ Upon completing any assigned task, you must strictly **review and validate** you
 2. No details were overlooked.
 3. The solution is robust, tested (if applicable), and consistent with the project's architecture.
 4. You have not left any "loose ends" or temporary code unless explicitly agreed upon.
+5. **Documentation Review**: You check if `README.md`, `AGENTS.md`, or `Makefile` need updates to reflect the changes made.
+6. **Self-Correction**: You explicitly verify that the task was executed correctly and completely, ensuring nothing was missed before declaring completion.
 
 ## Overview
 Responsive web application to manage a physiotherapy clinic with modern decoupled architecture.
