@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -11,6 +11,7 @@ export default function Calendar() {
     const [modalOpen, setModalOpen] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(null);
     const [calendarRef, setCalendarRef] = useState(null);
+    const titleInputRef = useRef(null);
     const [formData, setFormData] = useState({
         title: '',
         notes: '',
@@ -21,6 +22,18 @@ export default function Calendar() {
     });
     const [validationError, setValidationError] = useState(null);
     const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || 10);
+    const DEFAULT_DURATION = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || 1);
+    const SLOT_DURATION_MINUTES = parseInt(import.meta.env.VITE_CALENDAR_SLOT_DURATION_MINUTES || 15);
+    const slotDurationString = `00:${SLOT_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
+
+    useEffect(() => {
+        if (modalOpen) {
+            // Small timeout to ensure DOM is ready
+            setTimeout(() => {
+                titleInputRef.current?.focus();
+            }, 50);
+        }
+    }, [modalOpen]);
 
     useEffect(() => {
         if (!modalOpen) {
@@ -91,12 +104,22 @@ export default function Calendar() {
     };
 
     const handleDateSelect = (selectInfo) => {
+        const start = new Date(selectInfo.startStr);
+        let end = new Date(selectInfo.endStr);
+        
+        // If it's a simple click (usually 30 mins in timeGrid), 
+        // or if start and end are same, apply DEFAULT_DURATION
+        const diffMs = end - start;
+        if (diffMs <= 1800000) { // 30 mins or less
+            end = new Date(start.getTime() + (DEFAULT_DURATION * 3600000));
+        }
+
         setFormData({
             title: '',
             notes: '',
             type: 'appointment',
-            startsAt: selectInfo.startStr,
-            endsAt: selectInfo.endStr,
+            startsAt: start.toISOString(),
+            endsAt: end.toISOString(),
             allDay: selectInfo.allDay
         });
         setCurrentEvent(null);
@@ -192,7 +215,14 @@ export default function Calendar() {
                 <button 
                     onClick={() => {
                         const now = new Date();
-                        handleDateSelect({ startStr: now.toISOString(), endStr: new Date(now.getTime() + 3600000).toISOString(), allDay: false });
+                        // Round to next hour for cleaner start time
+                        now.setMinutes(0, 0, 0);
+                        now.setHours(now.getHours() + 1);
+                        handleDateSelect({ 
+                            startStr: now.toISOString(), 
+                            endStr: new Date(now.getTime() + (DEFAULT_DURATION * 3600000)).toISOString(), 
+                            allDay: false 
+                        });
                     }}
                     className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition font-medium shadow-sm"
                 >
@@ -207,6 +237,9 @@ export default function Calendar() {
                     headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
                     initialView="timeGridWeek"
                     editable={true} selectable={true} selectMirror={true} dayMaxEvents={true} weekends={true}
+                    slotDuration={slotDurationString}
+                    snapDuration={slotDurationString}
+                    slotLabelInterval="01:00"
                     events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick} 
                     eventDrop={handleEventDrop} eventResize={handleEventResize}
                     height="700px"
@@ -242,6 +275,7 @@ export default function Calendar() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Title</label>
                                             <input
+                                                ref={titleInputRef}
                                                 type="text"
                                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                                 value={formData.title}
@@ -270,7 +304,7 @@ export default function Calendar() {
                                                     onChange={(date) => setFormData({...formData, startsAt: date ? date.toISOString() : ''})}
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
-                                                    timeIntervals={15}
+                                                    timeIntervals={SLOT_DURATION_MINUTES}
                                                     dateFormat="MMMM d, yyyy h:mm aa"
                                                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                                     wrapperClassName="w-full"
@@ -283,7 +317,7 @@ export default function Calendar() {
                                                     onChange={(date) => setFormData({...formData, endsAt: date ? date.toISOString() : ''})}
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
-                                                    timeIntervals={15}
+                                                    timeIntervals={SLOT_DURATION_MINUTES}
                                                     dateFormat="MMMM d, yyyy h:mm aa"
                                                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                                     wrapperClassName="w-full"
