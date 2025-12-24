@@ -3,6 +3,8 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import DatePicker from 'react-datepicker';
+import "react-datepicker/dist/react-datepicker.css";
 import axios from 'axios';
 
 export default function Calendar() {
@@ -17,6 +19,31 @@ export default function Calendar() {
         endsAt: '',
         allDay: false
     });
+    const [validationError, setValidationError] = useState(null);
+    const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || 10);
+
+    useEffect(() => {
+        if (!modalOpen) {
+            setValidationError(null);
+            return;
+        }
+        
+        const start = new Date(formData.startsAt);
+        const end = new Date(formData.endsAt);
+        
+        if (end <= start) {
+            setValidationError('End time must be after start time.');
+            return;
+        }
+
+        const diffHours = Math.abs(end - start) / 36e5;
+        if (diffHours > MAX_DURATION) {
+            setValidationError(`Appointment cannot exceed ${MAX_DURATION} hours.`);
+            return;
+        }
+
+        setValidationError(null);
+    }, [formData.startsAt, formData.endsAt, modalOpen, MAX_DURATION]);
 
     const getEventColors = (title, type) => {
         if (!title || title.trim() === '') {
@@ -92,6 +119,9 @@ export default function Calendar() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (validationError) return;
+
         try {
             const payload = { ...formData, userId: 1 };
             if (currentEvent) {
@@ -191,9 +221,23 @@ export default function Calendar() {
                         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
                             <form onSubmit={handleSubmit}>
                                 <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <h3 className="text-lg leading-6 font-bold text-gray-900 mb-4">
-                                        {currentEvent ? 'Edit Appointment' : 'New Appointment'}
-                                    </h3>
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg leading-6 font-bold text-gray-900">
+                                            {currentEvent ? 'Edit Appointment' : 'New Appointment'}
+                                        </h3>
+                                        {currentEvent && (
+                                            <button 
+                                                type="button" 
+                                                onClick={handleDelete} 
+                                                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
+                                                title="Delete Appointment"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        )}
+                                    </div>
                                     <div className="space-y-4">
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Title</label>
@@ -218,17 +262,53 @@ export default function Calendar() {
                                                 </label>
                                             </div>
                                         </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">Start</label>
+                                                <DatePicker
+                                                    selected={formData.startsAt ? new Date(formData.startsAt) : null}
+                                                    onChange={(date) => setFormData({...formData, startsAt: date ? date.toISOString() : ''})}
+                                                    showTimeSelect
+                                                    timeFormat="HH:mm"
+                                                    timeIntervals={15}
+                                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    wrapperClassName="w-full"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1">End</label>
+                                                <DatePicker
+                                                    selected={formData.endsAt ? new Date(formData.endsAt) : null}
+                                                    onChange={(date) => setFormData({...formData, endsAt: date ? date.toISOString() : ''})}
+                                                    showTimeSelect
+                                                    timeFormat="HH:mm"
+                                                    timeIntervals={15}
+                                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    wrapperClassName="w-full"
+                                                />
+                                            </div>
+                                        </div>
+                                        {validationError && (
+                                            <div className="text-red-600 text-sm font-medium">
+                                                {validationError}
+                                            </div>
+                                        )}
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700">Notes</label>
                                             <textarea rows="3" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
-                                    <button type="submit" className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 sm:ml-3 sm:w-auto sm:text-sm">
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 flex flex-row-reverse items-center gap-2">
+                                    <button 
+                                        type="submit" 
+                                        disabled={!!validationError}
+                                        className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white sm:w-auto sm:text-sm ${validationError ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                    >
                                         {currentEvent ? 'Update' : 'Create'}
                                     </button>
-                                    {currentEvent && <button type="button" onClick={handleDelete} className="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 sm:mt-0 sm:w-auto sm:text-sm">Delete</button>}
                                     <button type="button" onClick={() => setModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
                                 </div>
                             </form>
