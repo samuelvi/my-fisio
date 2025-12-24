@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import RecordTimeline from './RecordTimeline';
+import { useLanguage } from './LanguageContext';
 
 export default function PatientDetail() {
+    const { t } = useLanguage();
     const { id } = useParams();
     const navigate = useNavigate();
     const [patient, setPatient] = useState(null);
@@ -38,78 +40,79 @@ export default function PatientDetail() {
         navigate(`/patients/${id}/edit`);
     };
 
-    if (loading) return <div className="p-8">Loading details...</div>;
-    if (!patient) return <div className="p-8">Patient not found</div>;
+    if (loading) return <div className="p-8 text-center font-bold text-gray-500">{t('loading')}...</div>;
+    if (!patient) return <div className="p-8 text-center text-red-600 font-bold">{t('error_could_not_load_patient')}</div>;
 
     return (
-        <div className="space-y-6">
-            <button onClick={() => navigate('/patients')} className="text-indigo-600 hover:text-indigo-800 mb-4 inline-flex items-center">
-                ← Back to List
+        <div className="space-y-8 p-6">
+            <button onClick={() => navigate('/patients')} className="text-primary font-bold hover:text-primary-dark mb-4 inline-flex items-center transition">
+                ← {t('back_to_list')}
             </button>
 
             {/* Top Section: Patient 360 Card */}
-            <div className="bg-white shadow rounded-lg overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                        Patient Information
+            <div className="bg-white shadow-sm rounded-2xl overflow-hidden border border-gray-200">
+                <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight">
+                        {t('patient_information')}
                     </h3>
-                    <div className="flex items-center space-x-4">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${patient.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            {patient.status.toUpperCase()}
+                    <div className="flex items-center space-x-6">
+                        <span className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${patient.status === 'active' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                            {t(patient.status)}
                         </span>
-                        <button onClick={handleEdit} className="text-sm text-indigo-600 hover:text-indigo-900 font-medium">
-                            Edit Details
+                        <button onClick={handleEdit} className="text-sm text-primary hover:text-primary-dark font-black transition-colors flex items-center">
+                            <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                            {t('edit_details')}
                         </button>
                     </div>
                 </div>
-                <div className="px-6 py-5">
-                    <div className="flex items-start space-x-6">
+                <div className="px-8 py-8">
+                    <div className="flex items-start space-x-10">
                         {/* Avatar */}
                         <div className="flex-shrink-0">
-                            <span className="h-24 w-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-3xl font-bold border-4 border-white shadow-sm">
+                            <span className="h-28 w-28 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-4xl font-black border border-primary/10 shadow-inner">
                                 {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
                             </span>
                         </div>
                         
                         {/* Details Grid */}
-                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
+                        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-sm">
                             <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Full Name</dt>
-                                <dd className="mt-1 text-lg font-semibold text-gray-900">{patient.firstName} {patient.lastName}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('full_name')}</dt>
+                                <dd className="text-lg font-bold text-gray-900">{patient.firstName} {patient.lastName}</dd>
                             </div>
                             <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Phone</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">{patient.phone || 'N/A'}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('phone')}</dt>
+                                <dd className="text-gray-900 font-bold">{patient.phone || '-'}</dd>
                             </div>
                             <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Email</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">{patient.email || 'N/A'}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('email')}</dt>
+                                <dd className="text-gray-900 font-bold truncate" title={patient.email}>{patient.email || '-'}</dd>
                             </div>
                             <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Date of Birth</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">
-                                    {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('date_of_birth')}</dt>
+                                <dd className="text-gray-900 font-bold">
+                                    {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : '-'}
                                 </dd>
                             </div>
                              <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Profession</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">{patient.profession || 'N/A'}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('profession')}</dt>
+                                <dd className="text-gray-900 font-bold">{patient.profession || '-'}</dd>
                             </div>
                              <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Sports Activity</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">{patient.sportsActivity || 'N/A'}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('sports_activity')}</dt>
+                                <dd className="text-gray-900 font-bold">{patient.sportsActivity || '-'}</dd>
                             </div>
                             <div className="col-span-1 md:col-span-2 lg:col-span-3">
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Address</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">{patient.address || 'N/A'}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('address')}</dt>
+                                <dd className="text-gray-900 font-bold">{patient.address || '-'}</dd>
                             </div>
                             <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">Rate</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">{patient.rate || 'N/A'}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('rate')}</dt>
+                                <dd className="text-gray-900 font-bold">{patient.rate || '-'}</dd>
                             </div>
                             <div>
-                                <dt className="font-medium text-gray-500 uppercase text-xs">DNI</dt>
-                                <dd className="mt-1 text-gray-900 font-medium">{patient.identityDocument || 'N/A'}</dd>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('dni')}</dt>
+                                <dd className="text-gray-900 font-bold">{patient.identityDocument || '-'}</dd>
                             </div>
                         </div>
                     </div>
@@ -117,7 +120,7 @@ export default function PatientDetail() {
             </div>
 
             {/* Medical Info Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content (Records) - Takes up 2/3 space on large screens */}
                 <div className="lg:col-span-2">
                     <RecordTimeline 
@@ -129,69 +132,69 @@ export default function PatientDetail() {
                 </div>
 
                 {/* Side Panel (Medical Alerts & Appointments) - Takes up 1/3 space */}
-                <div className="space-y-6">
-                    <div className="bg-white shadow rounded-lg p-6 border-l-4 border-indigo-500">
-                        <h4 className="text-md font-bold text-gray-900 mb-3 flex justify-between items-center">
-                            Next Appointments
-                            <button className="text-xs text-indigo-600 hover:underline">Schedule</button>
+                <div className="space-y-8">
+                    <div className="bg-white shadow-sm rounded-2xl p-6 border-l-4 border-primary border border-gray-200">
+                        <h4 className="text-sm font-black text-gray-900 mb-4 flex justify-between items-center uppercase tracking-widest">
+                            {t('next_appointments')}
+                            <button onClick={() => navigate('/appointments')} className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-lg hover:bg-primary hover:text-white transition-all uppercase">{t('schedule')}</button>
                         </h4>
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {appointments.length > 0 ? (
                                 appointments.slice(0, 3).map(app => (
-                                    <div key={app.id} className="text-sm border-b border-gray-100 pb-2 last:border-0 last:pb-0">
-                                        <p className="font-semibold text-gray-800">{new Date(app.startsAt).toLocaleDateString()} - {new Date(app.startsAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                                        <p className="text-gray-500 truncate">{app.title}</p>
+                                    <div key={app.id} className="text-sm border-b border-gray-50 pb-3 last:border-0 last:pb-0">
+                                        <p className="font-bold text-gray-800">{new Date(app.startsAt).toLocaleDateString()} - {new Date(app.startsAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                        <p className="text-gray-500 truncate mt-0.5 font-medium">{app.title}</p>
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-sm text-gray-500 italic">No upcoming appointments</p>
+                                <p className="text-xs text-gray-400 italic font-medium">{t('no_upcoming_appointments')}</p>
                             )}
                         </div>
                     </div>
 
-                    <div className="bg-white shadow rounded-lg p-6 border-l-4 border-red-500">
-                        <h4 className="text-md font-bold text-gray-900 mb-3">Medical Alerts</h4>
-                        <div className="space-y-2 text-sm">
+                    <div className="bg-white shadow-sm rounded-2xl p-6 border-l-4 border-red-500 border border-gray-200">
+                        <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-widest">{t('medical_alerts')}</h4>
+                        <div className="space-y-4 text-xs font-bold">
                             <div>
-                                <span className="font-semibold text-gray-500">Allergies:</span>
-                                <p className="text-gray-900">{patient.allergies || 'None recorded'}</p>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('allergies')}</span>
+                                <p className="text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">{patient.allergies || t('none_recorded')}</p>
                             </div>
                             <div>
-                                <span className="font-semibold text-gray-500">Systemic Diseases:</span>
-                                <p className="text-gray-900">{patient.systemicDiseases || 'None recorded'}</p>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('systemic_diseases')}</span>
+                                <p className="text-gray-900 bg-gray-50 p-2 rounded-lg border border-gray-100">{patient.systemicDiseases || t('none_recorded')}</p>
                             </div>
                              <div>
-                                <span className="font-semibold text-gray-500">Medication:</span>
-                                <p className="text-gray-900">{patient.medication || 'None recorded'}</p>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('current_medication')}</span>
+                                <p className="text-gray-900 bg-gray-50 p-2 rounded-lg border border-gray-100">{patient.medication || t('none_recorded')}</p>
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white shadow rounded-lg p-6 border-l-4 border-yellow-500">
-                        <h4 className="text-md font-bold text-gray-900 mb-3">History Details</h4>
-                         <div className="space-y-2 text-sm">
-                            <div>
-                                <span className="font-semibold text-gray-500">Surgeries:</span>
-                                <p className="text-gray-900">{patient.surgeries || '-'}</p>
+                    <div className="bg-white shadow-sm rounded-2xl p-6 border-l-4 border-yellow-500 border border-gray-200">
+                        <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-widest">{t('history_details')}</h4>
+                         <div className="space-y-4 text-xs font-bold">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('surgeries')}</span>
+                                    <p className="text-gray-900 truncate">{patient.surgeries || '-'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('accidents')}</span>
+                                    <p className="text-gray-900 truncate">{patient.accidents || '-'}</p>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('bruxism')}</span>
+                                    <p className="text-gray-900">{patient.bruxism || '-'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('insoles')}</span>
+                                    <p className="text-gray-900">{patient.insoles || '-'}</p>
+                                </div>
                             </div>
                             <div>
-                                <span className="font-semibold text-gray-500">Accidents:</span>
-                                <p className="text-gray-900">{patient.accidents || '-'}</p>
-                            </div>
-                            <div>
-                                <span className="font-semibold text-gray-500">Injuries:</span>
-                                <p className="text-gray-900">{patient.injuries || '-'}</p>
-                            </div>
-                            <div>
-                                <span className="font-semibold text-gray-500">Bruxism:</span>
-                                <p className="text-gray-900">{patient.bruxism || '-'}</p>
-                            </div>
-                            <div>
-                                <span className="font-semibold text-gray-500">Insoles:</span>
-                                <p className="text-gray-900">{patient.insoles || '-'}</p>
-                            </div>
-                            <div>
-                                <span className="font-semibold text-gray-500">Others:</span>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('others')}</span>
                                 <p className="text-gray-900">{patient.others || '-'}</p>
                             </div>
                         </div>

@@ -204,14 +204,14 @@
                         {% endif %}
                     </td>
                     <td width="50%" valign="top">
-                        <div class="invoice-title">FACTURA</div>
+                        <div class="invoice-title">{{ 'invoice_uppercase'|trans }}</div>
                         <table class="meta-table">
                             <tr>
-                                <td class="meta-label">Nº FACTURA:</td>
+                                <td class="meta-label">{{ 'number'|trans }}:</td>
                                 <td class="meta-value">{{ invoice.number }}</td>
                             </tr>
                             <tr>
-                                <td class="meta-label">FECHA:</td>
+                                <td class="meta-label">{{ 'date'|trans }}:</td>
                                 <td class="meta-value">{{ invoice.date|date('d/m/Y') }}</td>
                             </tr>
                         </table>
@@ -223,7 +223,7 @@
             <table class="addresses-table">
                 <tr>
                     <td width="45%" valign="top">
-                        <div class="address-header">DE</div>
+                        <div class="address-header">{{ 'from'|trans }}</div>
                         <div class="address-content">
                             <strong>{{ company.name }}</strong>
                             {{ company.tax_id }}<br>
@@ -236,7 +236,7 @@
                     </td>
                     <td width="10%"></td>
                     <td width="45%" valign="top">
-                        <div class="address-header">PARA</div>
+                        <div class="address-header">{{ 'to'|trans }}</div>
                         <div class="address-content">
                             <strong>{{ invoice.name }}</strong>
                             {% if invoice.taxId %}
@@ -264,11 +264,11 @@
             <table class="items">
                 <thead>
                     <tr>
-                        <th width="10%">CANT</th>
-                        <th width="45%">CONCEPTO</th>
-                        <th width="15%" class="text-right">IMPUESTOS</th>
-                        <th width="15%" class="text-right">PRECIO</th>
-                        <th width="15%" class="text-right">TOTAL DE</th>
+                        <th width="10%">{{ 'qty'|trans }}</th>
+                        <th width="45%">{{ 'concept'|trans }}</th>
+                        <th width="15%" class="text-right">{{ 'taxes'|trans }}</th>
+                        <th width="15%" class="text-right">{{ 'price'|trans }}</th>
+                        <th width="15%" class="text-right">TOTAL</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -276,22 +276,22 @@
                         <tr>
                             <td>{{ line.quantity }}</td>
                             <td>
-                                <strong>{{ line.concept ? line.concept : 'Sesión de fisioterapia' }}</strong>
+                                <strong>{{ line.concept ? line.concept : 'Session' }}</strong>
                                 {% if line.description %}
                                     <div style="font-size: 8pt; color: #666; margin-top: 4px;">{{ line.description }}</div>
                                 {% endif %}
                             </td>
-                            <td class="text-right">€ 0,00</td>
-                            <td class="text-right">€ {{ line.price|number_format(2, ',', '.') }}</td>
-                            <td class="text-right">€ {{ line.amount|number_format(2, ',', '.') }}</td>
+                            <td class="text-right">0,00 €</td>
+                            <td class="text-right">{{ line.price|number_format(2, ',', '.') }} €</td>
+                            <td class="text-right">{{ line.amount|number_format(2, ',', '.') }} €</td>
                         </tr>
                     {% else %}
                         <tr>
                             <td>1</td>
-                            <td><strong>Sesión de fisioterapia</strong></td>
-                            <td class="text-right">€ 0,00</td>
-                            <td class="text-right">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
-                            <td class="text-right">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
+                            <td><strong>Session</strong></td>
+                            <td class="text-right">0,00 €</td>
+                            <td class="text-right">{{ invoice.amount|number_format(2, ',', '.') }} €</td>
+                            <td class="text-right">{{ invoice.amount|number_format(2, ',', '.') }} €</td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -301,16 +301,16 @@
             <div class="totals-container clearfix">
                 <table class="totals-table">
                     <tr>
-                        <td class="totals-label">Base</td>
-                        <td class="totals-value">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
+                        <td class="totals-label">{{ 'base'|trans }}</td>
+                        <td class="totals-value">{{ invoice.amount|number_format(2, ',', '.') }} €</td>
                     </tr>
                     <tr>
-                        <td class="totals-label">IVA 0%</td>
-                        <td class="totals-value">€ 0,00</td>
+                        <td class="totals-label">{{ 'iva'|trans }} 0%</td>
+                        <td class="totals-value">0,00 €</td>
                     </tr>
                     <tr class="total-row">
                         <td class="totals-label">Total</td>
-                        <td class="totals-value">€ {{ invoice.amount|number_format(2, ',', '.') }}</td>
+                        <td class="totals-value">{{ invoice.amount|number_format(2, ',', '.') }} €</td>
                     </tr>
                 </table>
             </div>
@@ -318,8 +318,8 @@
 
         <!-- Footer -->
         <div class="footer">
-            móvil: {{ company.phone }} | web: {{ company.web }} | e-mail: {{ company.email }}
-            <span style="float: right;">Página <span class="page-number"></span></span>
+            {{ 'mobile'|trans }}: {{ company.phone }} | {{ 'web'|trans }}: {{ company.web }} | e-mail: {{ company.email }}
+            <span style="float: right;">{{ 'page'|trans }} <span class="page-number"></span></span>
         </div>
 
     {% if format == 'html' %}

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../LanguageContext';
 
 export default function InvoiceForm() {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -48,7 +50,7 @@ export default function InvoiceForm() {
         setError(null);
 
         if (!customerName || !customerTaxId) {
-            setError('Customer Name and Tax ID are required.');
+            setError(t('error_required_fields_missing'));
             setLoading(false);
             return;
         }
@@ -76,7 +78,7 @@ export default function InvoiceForm() {
             navigate('/invoices');
         } catch (err) {
             console.error('Error creating invoice:', err);
-            setError('Failed to create invoice. Please check your input.');
+            setError(t('error_failed_to_create_invoice'));
         } finally {
             setLoading(false);
         }
@@ -91,16 +93,16 @@ export default function InvoiceForm() {
                 value={value}
                 onChange={(e) => setter(e.target.value)}
                 placeholder={placeholder}
-                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
             />
         </div>
     );
 
     return (
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto p-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">Issue Invoice</h1>
-                <p className="text-sm text-gray-500">Create a new fiscal document for a customer.</p>
+                <h1 className="text-2xl font-bold text-gray-900">{t('new_invoice')}</h1>
+                <p className="text-sm text-gray-500">{t('new_invoice_subtitle')}</p>
             </div>
 
             {error && (
@@ -111,25 +113,25 @@ export default function InvoiceForm() {
 
             <form onSubmit={handleSubmit} className="space-y-6 pb-20">
                 {/* Customer Section */}
-                <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                        <h2 className="text-lg font-medium text-gray-900">Customer Information</h2>
+                        <h2 className="text-lg font-medium text-gray-900">{t('customer_information')}</h2>
                     </div>
                     <div className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Input label="Invoice Date" value={date} setter={setDate} type="date" required />
-                            <Input label="Customer Full Name" value={customerName} setter={setCustomerName} required placeholder="Legal entity or person" />
-                            <Input label="Tax Identifier (CIF/NIF)" value={customerTaxId} setter={setCustomerTaxId} required placeholder="Ex: 12345678A" />
-                            <Input label="Contact Email" value={customerEmail} setter={setCustomerEmail} type="email" />
-                            <Input label="Phone Number" value={customerPhone} setter={setCustomerPhone} />
+                            <Input label={t('invoice_date')} value={date} setter={setDate} type="date" required />
+                            <Input label={t('customer_name')} value={customerName} setter={setCustomerName} required placeholder={t('customer_name_placeholder')} />
+                            <Input label={t('tax_id')} value={customerTaxId} setter={setCustomerTaxId} required placeholder="Ex: 12345678A" />
+                            <Input label={t('email')} value={customerEmail} setter={setCustomerEmail} type="email" />
+                            <Input label={t('phone')} value={customerPhone} setter={setCustomerPhone} />
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Billing Address</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
                                 <input 
                                     type="text" 
                                     value={customerAddress} 
                                     onChange={(e) => setCustomerAddress(e.target.value)} 
-                                    placeholder="Official mailing address" 
-                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                    placeholder={t('billing_address_placeholder')} 
+                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                 />
                             </div>
                         </div>
@@ -137,15 +139,15 @@ export default function InvoiceForm() {
                 </div>
 
                 {/* Items Section */}
-                <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+                <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                        <h2 className="text-lg font-medium text-gray-900">Invoice Items</h2>
+                        <h2 className="text-lg font-medium text-gray-900">{t('invoice_items')}</h2>
                         <button 
                             type="button" 
                             onClick={handleAddLine} 
-                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 transition"
+                            className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-md text-primary bg-primary/10 hover:bg-primary/20 transition"
                         >
-                            + Add Item
+                            + {t('add_item')}
                         </button>
                     </div>
                     
@@ -153,47 +155,47 @@ export default function InvoiceForm() {
                         {lines.map((line, index) => (
                             <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 rounded-lg bg-gray-50 border border-gray-100">
                                 <div className="col-span-12 md:col-span-5 space-y-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase">Description</label>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('concept')}</label>
                                     <input 
                                         type="text" 
                                         required 
                                         value={line.concept} 
                                         onChange={(e) => handleLineChange(index, 'concept', e.target.value)} 
-                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" 
-                                        placeholder="Concept (e.g. Session)" 
+                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
+                                        placeholder={t('concept_placeholder')} 
                                     />
                                     <input 
                                         type="text" 
                                         value={line.description} 
                                         onChange={(e) => handleLineChange(index, 'description', e.target.value)} 
                                         className="w-full border border-gray-200 rounded-md py-1.5 px-3 text-xs text-gray-500" 
-                                        placeholder="Additional notes" 
+                                        placeholder={t('additional_notes')} 
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Qty</label>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('qty')}</label>
                                     <input 
                                         type="number" 
                                         min="1" 
                                         required 
                                         value={line.quantity} 
                                         onChange={(e) => handleLineChange(index, 'quantity', e.target.value)} 
-                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-center" 
+                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center" 
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Price</label>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('price')}</label>
                                     <input 
                                         type="number" 
                                         step="0.01" 
                                         required 
                                         value={line.price} 
                                         onChange={(e) => handleLineChange(index, 'price', e.target.value)} 
-                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm text-center" 
+                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center" 
                                     />
                                 </div>
                                 <div className="col-span-3 md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Total</label>
+                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('total')}</label>
                                     <div className="py-2 text-sm font-bold text-gray-900">
                                         {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(line.amount)}
                                     </div>
@@ -212,26 +214,26 @@ export default function InvoiceForm() {
                     </div>
 
                     <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end items-center">
-                        <span className="text-sm font-medium text-gray-500 mr-4">Total Amount:</span>
-                        <span className="text-2xl font-bold text-indigo-600">
+                        <span className="text-sm font-medium text-gray-500 mr-4">{t('total_amount')}:</span>
+                        <span className="text-2xl font-bold text-primary">
                             {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(calculateTotal())}
                         </span>
                     </div>
                 </div>
 
                 {/* Footer Actions */}
-                <div className="flex justify-between items-center bg-gray-50 px-6 py-4 rounded-lg border border-gray-200 shadow-sm">
+                <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <button 
                         type="button" 
                         onClick={() => navigate('/invoices')} 
-                        className="inline-flex items-center px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                        className="inline-flex items-center px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition"
                     >
-                        Cancel
+                        {t('cancel')}
                     </button>
                     <button 
                         type="submit" 
                         disabled={loading} 
-                        className="inline-flex items-center px-8 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:opacity-50 flex items-center"
+                        className="inline-flex items-center px-8 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-dark focus:outline-none disabled:opacity-50 transition"
                     >
                         {loading && (
                             <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
@@ -239,7 +241,7 @@ export default function InvoiceForm() {
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         )}
-                        {loading ? 'Processing...' : 'Confirm Issuance'}
+                        {loading ? t('processing') : t('confirm_issuance')}
                     </button>
                 </div>
             </form>

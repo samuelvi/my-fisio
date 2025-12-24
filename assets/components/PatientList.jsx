@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { useTranslation } from './LanguageContext';
+import { useLanguage } from './LanguageContext';
 
 export default function PatientList() {
-    const { t } = useTranslation();
+    const { t } = useLanguage();
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchInput, setSearchInput] = useState(sessionStorage.getItem('patientList_searchInput') || '');
@@ -51,7 +51,6 @@ export default function PatientList() {
                     fuzzy: useFuzzy
                 }
             });
-            console.log('API Response:', response.data);
             
             let data = [];
             if (Array.isArray(response.data)) {
@@ -62,10 +61,9 @@ export default function PatientList() {
                 data = response.data['member'];
             }
             
-            // N+1 Logic: If we got more than ITEMS_PER_PAGE, there is a next page
             if (data.length > ITEMS_PER_PAGE) {
                 setHasNextPage(true);
-                setPatients(data.slice(0, ITEMS_PER_PAGE)); // Only show N
+                setPatients(data.slice(0, ITEMS_PER_PAGE));
             } else {
                 setHasNextPage(false);
                 setPatients(data);
@@ -79,23 +77,23 @@ export default function PatientList() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
+    if (loading) return <div className="p-8 text-center text-gray-500 font-bold">{t('loading')}...</div>;
 
     const Pagination = () => (
         <div className="flex items-center justify-between py-3 border-t border-b border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
             <div className="flex items-center space-x-4">
                 <div className="flex items-center">
-                    <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest mr-2">Page</span>
-                    <div className="h-10 w-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold shadow-md">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-3">{t('page')}</span>
+                    <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-black shadow-lg">
                         {page}
                     </div>
                 </div>
                 {page > 1 && (
                     <button
                         onClick={() => setPage(1)}
-                        className="text-xs font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-tighter bg-white border border-indigo-200 px-3 py-2 rounded-md shadow-sm transition"
+                        className="text-xs font-black text-primary hover:text-primary-dark uppercase tracking-tighter bg-white border border-primary/20 px-4 py-2 rounded-xl shadow-sm transition active:scale-95"
                     >
-                        « Back to Start
+                        « {t('back_to_start')}
                     </button>
                 )}
             </div>
@@ -103,179 +101,205 @@ export default function PatientList() {
                 <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1 || loading}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-tighter"
+                    className="inline-flex items-center px-5 py-2 border border-gray-200 text-xs font-black rounded-xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-widest"
                 >
-                    {t('previous') || 'Previous'}
+                    {t('previous')}
                 </button>
                 <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={!hasNextPage || loading}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-tighter"
+                    className="inline-flex items-center px-5 py-2 border border-gray-200 text-xs font-black rounded-xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-widest"
                 >
-                    {t('next') || 'Next'}
+                    {t('next')}
                 </button>
             </div>
         </div>
     );
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">{t('patients')}</h1>
+        <div className="p-6">
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('patients')}</h1>
                 <Link 
                     to="/patients/new"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition"
+                    className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl font-black text-sm transition shadow-lg shadow-primary/20 active:scale-95 flex items-center"
                 >
-                    + {t('new_patient')}
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                    {t('new_patient')}
                 </Link>
             </div>
 
             {/* Search Bar & Status Filter */}
-            <form onSubmit={handleSearch} className="mb-8 space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0">
-                    <div className="flex-1 relative">
-                        <input
-                            type="text"
-                            placeholder={t('search') + "..."}
-                            className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
-                            value={searchInput}
-                            onChange={(e) => setSearchInput(e.target.value)}
-                        />
-                        {searchInput && (
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+                <form onSubmit={handleSearch} className="space-y-6">
+                    <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-4 md:space-y-0">
+                        <div className="flex-1 relative">
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('intelligent_search')}</label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder={t('search_placeholder')}
+                                    className="w-full pl-12 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
+                                    value={searchInput}
+                                    onChange={(e) => setSearchInput(e.target.value)}
+                                />
+                                <div className="absolute left-4 top-3.5 text-gray-400">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                </div>
+                                {searchInput && (
+                                    <button 
+                                        type="button"
+                                        onClick={handleClear}
+                                        className="absolute right-3 top-3.5 text-gray-400 hover:text-red-500 transition-colors"
+                                    >
+                                        <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.414 1.414a1 1 0 101.414 1.414L10 11.414l1.414 1.414a1 1 0 001.414-1.414L11.414 10l1.414-1.414a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                        </svg>
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-6">
+                            <div className="flex flex-col">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('fuzzy_search') || 'Fuzzy'}</label>
+                                <div className="flex items-center h-[46px] bg-gray-50 px-4 border border-gray-200 rounded-xl">
+                                    <label className="inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            className="sr-only peer"
+                                            checked={useFuzzy}
+                                            onChange={(e) => { setUseFuzzy(e.target.checked); setPage(1); }}
+                                        />
+                                        <div className="relative w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col">
+                                <label htmlFor="statusFilter" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                                    {t('status')}
+                                </label>
+                                <select
+                                    id="statusFilter"
+                                    value={statusFilter}
+                                    onChange={(e) => setStatusFilter(e.target.value)}
+                                    className="h-[46px] bg-gray-50 pl-4 pr-10 text-sm border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold rounded-xl"
+                                >
+                                    <option value="active">{t('active')}</option>
+                                    <option value="disabled">{t('inactive')}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 pt-4 border-t border-gray-100">
+                        <div className="flex items-center space-x-4">
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('sort_by')}</span>
+                            <div className="flex space-x-2">
+                                <button 
+                                    type="button"
+                                    onClick={() => { setSortOrder('latest'); setPage(1); }}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${sortOrder === 'latest' ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                >
+                                    {t('latest_added')}
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={() => { setSortOrder('alpha'); setPage(1); }}
+                                    className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${sortOrder === 'alpha' ? 'bg-primary text-white shadow-md shadow-primary/20' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                                >
+                                    {t('alphabetical')}
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-end space-x-4">
                             <button 
                                 type="button"
                                 onClick={handleClear}
-                                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 text-xs font-black uppercase tracking-widest px-4 py-2 transition-colors"
                             >
-                                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.414 1.414a1 1 0 101.414 1.414L10 11.414l1.414 1.414a1 1 0 001.414-1.414L11.414 10l1.414-1.414a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                </svg>
+                                {t('clear')}
                             </button>
-                        )}
+                            <button 
+                                type="submit"
+                                className="bg-gray-900 hover:bg-black text-white px-10 py-2.5 rounded-xl font-black text-sm transition shadow-lg active:scale-95"
+                            >
+                                {t('search')}
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-4 bg-white px-4 py-2 border border-gray-300 rounded-md shadow-sm">
-                        <label className="inline-flex items-center cursor-pointer">
-                            <input 
-                                type="checkbox" 
-                                className="sr-only peer"
-                                checked={useFuzzy}
-                                onChange={(e) => { setUseFuzzy(e.target.checked); setPage(1); }}
-                            />
-                            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
-                            <span className="ms-3 text-sm font-medium text-gray-700">Intelligent Search</span>
-                        </label>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                        <label htmlFor="statusFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                            {t('status')}:
-                        </label>
-                        <select
-                            id="statusFilter"
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
-                        >
-                            <option value="active">Active</option>
-                            <option value="disabled">Inactive</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
-                    <div className="flex items-center space-x-2">
-                        <label htmlFor="sortOrder" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                            Sort by:
-                        </label>
-                        <select
-                            id="sortOrder"
-                            value={sortOrder}
-                            onChange={(e) => { setSortOrder(e.target.value); setPage(1); }}
-                            className="block w-full md:w-64 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md shadow-sm"
-                        >
-                            <option value="latest">Latest added</option>
-                            <option value="alpha">Alphabetical (Name)</option>
-                        </select>
-                    </div>
-                    
-                    <div className="flex items-center justify-end space-x-3 pt-2 md:pt-0">
-                        <button 
-                            type="button"
-                            onClick={handleClear}
-                            className="text-gray-500 hover:text-gray-700 text-sm font-medium px-4 py-2"
-                        >
-                            {t('clear')}
-                        </button>
-                        <button 
-                            type="submit"
-                            className="bg-gray-800 hover:bg-gray-900 text-white px-8 py-2 rounded-md font-medium transition shadow-sm"
-                        >
-                            {t('search')}
-                        </button>
-                    </div>
-                </div>
-            </form>
+                </form>
+            </div>
 
             <Pagination />
 
             {/* Patients Table */}
-            <div className="bg-white rounded-lg shadow overflow-hidden">
-                <table className="min-w-full divide-y divide-gray-200">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-100">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('name') || 'Name'}</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('phone') || 'Phone'}</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('email') || 'Email'}</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('status') || 'Status'}</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('created') || 'Created'}</th>
-                            <th className="relative px-6 py-3">
-                                <span className="sr-only">{t('actions') || 'Actions'}</span>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('name')}</th>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('phone')}</th>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('email')}</th>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('status')}</th>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('created')}</th>
+                            <th className="relative px-8 py-4">
+                                <span className="sr-only">{t('actions')}</span>
                             </th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-100">
                         {patients.map((patient) => (
-                            <tr key={patient.id} className="hover:bg-gray-50 transition">
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <Link to={`/patients/${patient.id}`} className="flex items-center group">
-                                        <div className="h-10 w-10 flex-shrink-0">
-                                            <span className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold group-hover:bg-indigo-200 transition">
+                            <tr key={patient.id} className="hover:bg-gray-50 transition-colors group">
+                                <td className="px-8 py-5 whitespace-nowrap">
+                                    <Link to={`/patients/${patient.id}`} className="flex items-center">
+                                        <div className="h-11 w-11 flex-shrink-0">
+                                            <span className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm border border-primary/10 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                                                 {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
                                             </span>
                                         </div>
                                         <div className="ml-4">
-                                            <div className="text-sm font-medium text-gray-900 group-hover:text-indigo-600 transition">
+                                            <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">
                                                 {patient.firstName} {patient.lastName}
                                             </div>
                                         </div>
                                     </Link>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
                                     {patient.phone || '-'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
                                     {patient.email || '-'}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap">
-                                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${patient.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                        {patient.status === 'active' ? (t('active') || 'Active') : (t('inactive') || 'Inactive')}
+                                <td className="px-8 py-5 whitespace-nowrap">
+                                    <span className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${patient.status === 'active' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                                        {t(patient.status)}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
                                     {new Date(patient.createdAt).toLocaleDateString()}
                                 </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <Link to={`/patients/${patient.id}`} className="text-indigo-600 hover:text-indigo-900">
-                                        {t('view') || 'View'}
+                                <td className="px-8 py-5 whitespace-nowrap text-right text-sm font-bold">
+                                    <Link to={`/patients/${patient.id}`} className="text-primary hover:text-primary-dark transition-colors inline-flex items-center">
+                                        {t('view')}
+                                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
                                     </Link>
                                 </td>
                             </tr>
                         ))}
                         {patients.length === 0 && (
                             <tr>
-                                <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                                    {t('no_patients_found') || 'No patients found.'}
+                                <td colSpan="6" className="px-8 py-20 text-center">
+                                    <div className="flex flex-col items-center">
+                                        <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+                                            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                        </div>
+                                        <p className="text-gray-400 font-bold max-w-xs mx-auto">
+                                            {t('no_patients_found')}
+                                        </p>
+                                    </div>
                                 </td>
                             </tr>
                         )}

@@ -23,17 +23,38 @@ export const LanguageProvider = ({ children }) => {
         setLocale(newLocale);
     };
 
-    return (
-        <LanguageContext.Provider value={{ locale, t, changeLanguage }}>
-            {children}
-        </LanguageContext.Provider>
-    );
-};
+        return (
 
-export const useTranslation = () => {
-    const context = useContext(LanguageContext);
-    if (!context) {
-        throw new Error('useTranslation must be used within a LanguageProvider');
-    }
-    return context;
-};
+            <LanguageContext.Provider value={{ language: locale, locale, t, changeLanguage }}>
+
+                {children}
+
+            </LanguageContext.Provider>
+
+        );
+
+    };
+
+    
+
+    export const useLanguage = () => {
+
+        const context = useContext(LanguageContext);
+
+        if (!context) {
+
+            throw new Error('useLanguage must be used within a LanguageProvider');
+
+        }
+
+        return context;
+
+    };
+
+    
+
+    // Backward compatibility alias
+
+    export const useTranslation = useLanguage;
+
+    

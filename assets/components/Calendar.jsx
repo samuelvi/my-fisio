@@ -6,8 +6,10 @@ import interactionPlugin from '@fullcalendar/interaction';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import axios from 'axios';
+import { useLanguage } from './LanguageContext';
 
 export default function Calendar() {
+    const { t, language } = useLanguage();
     const [modalOpen, setModalOpen] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(null);
     const [calendarRef, setCalendarRef] = useState(null);
@@ -55,18 +57,18 @@ export default function Calendar() {
         const end = new Date(formData.endsAt);
         
         if (end <= start) {
-            setValidationError('End time must be after start time.');
+            setValidationError(t('error_end_after_start'));
             return;
         }
 
         const diffHours = Math.abs(end - start) / 36e5;
         if (diffHours > MAX_DURATION) {
-            setValidationError(`Appointment cannot exceed ${MAX_DURATION} hours.`);
+            setValidationError(`${t('error_max_duration')} ${MAX_DURATION} ${t('hours')}.`);
             return;
         }
 
         setValidationError(null);
-    }, [formData.startsAt, formData.endsAt, modalOpen, MAX_DURATION]);
+    }, [formData.startsAt, formData.endsAt, modalOpen, MAX_DURATION, t]);
 
     const getEventColors = (title, type) => {
         if (!title || title.trim() === '') {
@@ -172,7 +174,7 @@ export default function Calendar() {
     };
 
     const handleDelete = async () => {
-        if (!currentEvent || !window.confirm('Delete this appointment?')) return;
+        if (!currentEvent || !window.confirm(t('confirm_delete_appointment'))) return;
         try {
             await axios.delete(`/api/appointments/${currentEvent.id}`);
             setModalOpen(false);
@@ -221,9 +223,9 @@ export default function Calendar() {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow h-full overflow-hidden relative">
-            <div className="mb-4 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Clinic Calendar</h2>
+        <div className="bg-white p-6 rounded-lg shadow-sm h-full overflow-hidden relative border border-gray-200">
+            <div className="mb-6 flex justify-between items-center">
+                <h2 className="text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>
                 <button 
                     onClick={() => {
                         const now = new Date();
@@ -236,18 +238,19 @@ export default function Calendar() {
                             allDay: false 
                         });
                     }}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition font-medium shadow-sm"
+                    className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-md font-bold transition shadow-sm"
                 >
-                    + New Appointment
+                    + {t('new_appointment')}
                 </button>
             </div>
             
-            <div className="calendar-container">
+            <div className="calendar-container border rounded-lg overflow-hidden border-gray-100 shadow-sm">
                 <FullCalendar
                     ref={ref => setCalendarRef(ref)}
                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                     headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
                     initialView="timeGridWeek"
+                    locale={language}
                     editable={true} selectable={true} selectMirror={true} dayMaxEvents={true} weekends={true}
                     slotDuration={slotDurationString}
                     snapDuration={slotDurationString}
@@ -264,56 +267,56 @@ export default function Calendar() {
             {modalOpen && (
                 <div className="fixed inset-0 z-50 overflow-y-auto">
                     <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={() => setModalOpen(false)}></div>
+                        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity" onClick={() => setModalOpen(false)}></div>
                         <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+                        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200">
                             <form onSubmit={handleSubmit}>
-                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <div className="flex justify-between items-center mb-4">
-                                        <h3 className="text-lg leading-6 font-bold text-gray-900">
-                                            {currentEvent ? 'Edit Appointment' : 'New Appointment'}
+                                <div className="bg-white px-4 pt-5 pb-4 sm:p-8 sm:pb-6">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="text-xl leading-6 font-bold text-gray-900">
+                                            {currentEvent ? t('edit_appointment') : t('new_appointment')}
                                         </h3>
                                         {currentEvent && (
                                             <button 
                                                 type="button" 
                                                 onClick={handleDelete} 
-                                                className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-100"
-                                                title="Delete Appointment"
+                                                className="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50"
+                                                title={t('delete')}
                                             >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
                                             </button>
                                         )}
                                     </div>
-                                    <div className="space-y-4">
+                                    <div className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Title</label>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t('title')}</label>
                                             <input
                                                 ref={titleInputRef}
                                                 type="text"
-                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                                 value={formData.title}
                                                 onChange={(e) => setFormData({...formData, title: e.target.value})}
-                                                placeholder="Leave empty for quick slot"
+                                                placeholder={t('quick_slot_placeholder')}
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-2">{t('type')}</label>
                                             <div className="flex space-x-4">
-                                                <label className={`flex-1 flex items-center justify-center py-3 px-4 border rounded-md cursor-pointer transition ${formData.type === 'appointment' ? 'ring-2 ring-offset-1 ring-[rgb(160,112,94)] border-transparent bg-[rgb(160,112,94)] text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                                                <label className={`flex-1 flex items-center justify-center py-3 px-4 border rounded-md cursor-pointer transition ${formData.type === 'appointment' ? 'ring-2 ring-offset-1 ring-primary/50 border-transparent bg-[rgb(160,112,94)] text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                                                     <input type="radio" className="sr-only" value="appointment" checked={formData.type === 'appointment'} onChange={(e) => setFormData({...formData, type: e.target.value})}/>
-                                                    <span className="text-sm font-bold uppercase tracking-wide">Appointment</span>
+                                                    <span className="text-xs font-bold uppercase tracking-wider">{t('appointment')}</span>
                                                 </label>
-                                                <label className={`flex-1 flex items-center justify-center py-3 px-4 border rounded-md cursor-pointer transition ${formData.type === 'other' ? 'ring-2 ring-offset-1 ring-[rgb(151,160,94)] border-transparent bg-[rgb(151,160,94)] text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                                                <label className={`flex-1 flex items-center justify-center py-3 px-4 border rounded-md cursor-pointer transition ${formData.type === 'other' ? 'ring-2 ring-offset-1 ring-primary/50 border-transparent bg-[rgb(151,160,94)] text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
                                                     <input type="radio" className="sr-only" value="other" checked={formData.type === 'other'} onChange={(e) => setFormData({...formData, type: e.target.value})}/>
-                                                    <span className="text-sm font-bold uppercase tracking-wide">Other</span>
+                                                    <span className="text-xs font-bold uppercase tracking-wider">{t('other')}</span>
                                                 </label>
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">Start</label>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('start')}</label>
                                                 <DatePicker
                                                     selected={formData.startsAt ? new Date(formData.startsAt) : null}
                                                     onChange={(date) => setFormData({...formData, startsAt: date ? date.toISOString() : ''})}
@@ -321,12 +324,12 @@ export default function Calendar() {
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}
                                                     dateFormat="MMMM d, yyyy h:mm aa"
-                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                                     wrapperClassName="w-full"
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">End</label>
+                                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('end')}</label>
                                                 <DatePicker
                                                     selected={formData.endsAt ? new Date(formData.endsAt) : null}
                                                     onChange={(date) => setFormData({...formData, endsAt: date ? date.toISOString() : ''})}
@@ -334,30 +337,30 @@ export default function Calendar() {
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}
                                                     dateFormat="MMMM d, yyyy h:mm aa"
-                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                                     wrapperClassName="w-full"
                                                 />
                                             </div>
                                         </div>
                                         {validationError && (
-                                            <div className="text-red-600 text-sm font-medium">
+                                            <div className="text-red-600 text-xs font-bold bg-red-50 p-2 rounded border border-red-100">
                                                 {validationError}
                                             </div>
                                         )}
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-700">Notes</label>
-                                            <textarea rows="3" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t('notes')}</label>
+                                            <textarea rows="3" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center gap-2">
-                                    <button type="button" onClick={() => { setModalOpen(false); calendarRef?.getApi()?.unselect(); }} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm">Cancel</button>
+                                <div className="bg-gray-50 px-6 py-4 sm:px-8 flex justify-between items-center gap-4">
+                                    <button type="button" onClick={() => { setModalOpen(false); calendarRef?.getApi()?.unselect(); }} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-bold text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition">{t('cancel')}</button>
                                     <button 
                                         type="submit" 
                                         disabled={!!validationError}
-                                        className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 text-base font-medium text-white sm:w-auto sm:text-sm ${validationError ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                                        className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 text-base font-bold text-white sm:w-auto sm:text-sm transition ${validationError ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'}`}
                                     >
-                                        {currentEvent ? 'Update' : 'Create'}
+                                        {currentEvent ? t('update') : t('create')}
                                     </button>
                                 </div>
                             </form>
@@ -367,21 +370,24 @@ export default function Calendar() {
             )}
 
             <style dangerouslySetInnerHTML={{ __html: `
-                .fc .fc-button-primary { background-color: #4f46e5; border-color: #4f46e5; text-transform: uppercase; font-size: 0.75rem; font-weight: 700; }
-                .fc .fc-button-primary:hover { background-color: #4338ca; }
-                .fc .fc-toolbar-title { font-size: 1.25rem; font-weight: 700; color: #111827; }
+                .fc .fc-button-primary { background-color: var(--color-primary, #4f46e5); border-color: var(--color-primary, #4f46e5); text-transform: uppercase; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem 1rem; }
+                .fc .fc-button-primary:hover { background-color: var(--color-primary-dark, #4338ca); border-color: var(--color-primary-dark, #4338ca); }
+                .fc .fc-button-primary:disabled { background-color: #d1d5db; border-color: #d1d5db; color: #9ca3af; }
+                .fc .fc-toolbar-title { font-size: 1.25rem; font-weight: 800; color: #1f2937; }
                 .fc-event { cursor: pointer; padding: 2px 4px; border-radius: 4px; border: none !important; }
-                .fc-event-title { font-weight: 600; font-size: 0.85rem; }
-                .fc-v-event { box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-                .fc .fc-timegrid-slot { height: 1.5rem !important; }
+                .fc-event-title { font-weight: 700; font-size: 0.8rem; }
+                .fc-v-event { box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid rgba(0,0,0,0.1) !important; }
+                .fc .fc-timegrid-slot { height: 2rem !important; }
+                .fc .fc-timegrid-slot-label { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; }
                 .fc-timegrid-event-harness-shadow .fc-timegrid-event, 
                 .fc-timegrid-bg-harness .fc-highlight,
                 .fc-daygrid-bg-harness .fc-highlight,
                 .fc-event-mirror { 
-                    background-color: rgb(230, 220, 190) !important; 
-                    border-color: rgb(200, 190, 160) !important;
+                    background-color: rgba(79, 70, 229, 0.1) !important; 
+                    border: 2px dashed #4f46e5 !important;
                     opacity: 1;
                 }
+                .fc .fc-day-today { background-color: #f8faff !important; }
             `}} />
         </div>
     );
