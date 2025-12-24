@@ -103,7 +103,7 @@ export default function RecordForm() {
 
     const InputArea = ({ label, name, required = false, rows = 3 }) => (
         <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
-            <label htmlFor={name} className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{label} {required && "*"}</label>
+            <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">{label} {required && "*"}</label>
             <textarea
                 name={name}
                 id={name}
@@ -111,103 +111,105 @@ export default function RecordForm() {
                 required={required}
                 value={formData[name]}
                 onChange={handleChange}
-                className={`block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800 ${errors[name] ? 'border-red-500' : ''}`}
+                className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm ${errors[name] ? 'border-red-500' : ''}`}
             />
-            {errors[name] && <p className="mt-1 text-xs font-bold text-red-600 uppercase tracking-tight">{errors[name]}</p>}
+            {errors[name] && <p className="mt-1 text-sm text-red-600">{errors[name]}</p>}
         </div>
     );
 
     if (loading && isEditing && !formData.physiotherapyTreatment) {
-        return <div className="p-8 text-center text-gray-400 font-black uppercase tracking-[0.3em] animate-pulse">Loading Record...</div>;
+        return <div className="p-8 text-center text-gray-500">Loading Record...</div>;
     }
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8">
-             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div className="flex-1 min-w-0">
-                    <h2 className="text-4xl font-black text-primary-dark tracking-tighter uppercase">
-                        {isEditing ? 'Update History' : 'New History Entry'}
-                    </h2>
-                    {patientName && (
-                        <p className="mt-1 text-gray-400 font-bold uppercase text-[10px] tracking-widest italic">Patient File: <span className="text-primary-dark font-black">{patientName}</span></p>
+        <div className="max-w-4xl mx-auto">
+            <button onClick={() => navigate(`/patients/${patientId}`)} className="text-indigo-600 hover:text-indigo-800 mb-6 inline-flex items-center">
+                ← Back to Patient
+            </button>
+
+             <div className="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+                <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-900">
+                            {isEditing ? 'Update Clinical History' : 'New Clinical History Entry'}
+                        </h2>
+                        {patientName && (
+                            <p className="mt-1 text-sm text-gray-500">Patient: <span className="font-medium text-gray-900">{patientName}</span></p>
+                        )}
+                    </div>
+                </div>
+
+                <div className="p-6">
+                    {errors.global && (
+                        <div className="mb-6 rounded-md bg-red-50 p-4 border border-red-200">
+                            <h3 className="text-sm font-medium text-red-800">{errors.global}</h3>
+                        </div>
                     )}
-                </div>
-                <div className="flex space-x-3">
-                    <button
-                        type="button"
-                        onClick={() => navigate(`/patients/${patientId}`)}
-                        className="px-8 py-4 bg-white border-2 border-gray-100 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-btn-secondary hover:text-btn-secondary transition-all"
-                    >
-                        Discard
-                    </button>
-                    <button
-                        type="submit"
-                        form="record-form"
-                        disabled={loading}
-                        className="px-10 py-4 bg-btn-success text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:brightness-95 shadow-xl shadow-btn-success/20 transition-all disabled:opacity-50"
-                    >
-                        {loading ? 'Processing...' : 'Confirm Entry'}
-                    </button>
-                </div>
-            </div>
 
-             {errors.global && (
-                <div className="rounded-2xl bg-red-50 p-4 border-2 border-red-100">
-                    <h3 className="text-xs font-black text-red-800 uppercase tracking-widest text-center">{errors.global}</h3>
-                </div>
-            )}
-
-            <form id="record-form" onSubmit={handleSubmit} className="space-y-8">
-                <div className="bg-white shadow-sm border border-gray-100 rounded-[2rem] p-10">
-                    <div className="grid grid-cols-6 gap-8">
-                        
-                        <InputArea label="Main Physiotherapy Treatment" name="physiotherapyTreatment" required rows={5} />
-                        
-                        <div className="col-span-6 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-50 pt-8 mt-4">
+                    <form id="record-form" onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-6 gap-6">
+                            
+                            <InputArea label="Main Physiotherapy Treatment" name="physiotherapyTreatment" required rows={4} />
+                            
                             <InputArea label="Consultation Reason" name="consultationReason" rows={2} />
                             <InputArea label="Onset Details" name="onset" rows={2} />
                             <InputArea label="Current Situation" name="currentSituation" rows={2} />
                             <InputArea label="Evolution / Progress" name="evolution" rows={2} />
-                        </div>
 
-                        <div className="col-span-6 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-50 pt-8 mt-4">
-                            <div className="col-span-1">
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tests & Radiology</label>
-                                <input type="text" name="radiologyTests" value={formData.radiologyTests} onChange={handleChange} className="block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800" />
+                            <div className="col-span-6 sm:col-span-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Tests & Radiology</label>
+                                <input type="text" name="radiologyTests" value={formData.radiologyTests} onChange={handleChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                             </div>
-                            <div className="col-span-1">
-                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Parallel Medical Treatment</label>
-                                <input type="text" name="medicalTreatment" value={formData.medicalTreatment} onChange={handleChange} className="block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800" />
+                            <div className="col-span-6 sm:col-span-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Parallel Medical Treatment</label>
+                                <input type="text" name="medicalTreatment" value={formData.medicalTreatment} onChange={handleChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
                             </div>
-                        </div>
 
-                        <InputArea label="Home Tasks / Treatment" name="homeTreatment" rows={3} />
-                        
-                        <div className="col-span-6">
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Confidential Notes</label>
-                            <input type="text" name="notes" value={formData.notes} onChange={handleChange} className="block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800 italic" />
-                        </div>
+                            <InputArea label="Home Tasks / Treatment" name="homeTreatment" rows={3} />
+                            
+                            <div className="col-span-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Confidential Notes</label>
+                                <input type="text" name="notes" value={formData.notes} onChange={handleChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm italic" placeholder="Private notes..." />
+                            </div>
 
-                        <div className="col-span-6 pt-4 border-t border-gray-50">
-                            <label className="inline-flex items-center cursor-pointer bg-gray-50 p-6 rounded-[2rem] border-2 border-transparent hover:border-primary/10 transition-all w-full sm:w-auto">
-                                <input
-                                    type="checkbox"
-                                    name="sickLeave"
-                                    checked={formData.sickLeave}
-                                    onChange={handleChange}
-                                    className="sr-only peer"
-                                />
-                                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-btn-danger"></div>
-                                <div className="ml-4">
-                                    <span className="block text-sm font-black text-gray-800 uppercase tracking-tight">Active Sick Leave</span>
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Mark if patient is currently unfit for work</span>
+                            <div className="col-span-6">
+                                <div className="flex items-center">
+                                    <input
+                                        id="sickLeave"
+                                        name="sickLeave"
+                                        type="checkbox"
+                                        checked={formData.sickLeave}
+                                        onChange={handleChange}
+                                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                    />
+                                    <label htmlFor="sickLeave" className="ml-2 block text-sm text-gray-900 font-medium">
+                                        Active Sick Leave
+                                    </label>
                                 </div>
-                            </label>
+                                <p className="mt-1 ml-6 text-xs text-gray-500">Mark if the patient is currently unfit for work due to this condition.</p>
+                            </div>
+
                         </div>
 
-                    </div>
+                        <div className="pt-5 border-t border-gray-200 flex justify-end space-x-3">
+                            <button
+                                type="button"
+                                onClick={() => navigate(`/patients/${patientId}`)}
+                                className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                            >
+                                {loading ? 'Saving...' : (isEditing ? 'Update History' : 'Save History Entry')}
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </form>
+            </div>
         </div>
     );
 }
