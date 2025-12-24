@@ -358,6 +358,7 @@ export default function Calendar() {
                 .fc-event { cursor: pointer; padding: 2px 4px; border-radius: 4px; border: none !important; }
                 .fc-event-title { font-weight: 600; font-size: 0.85rem; }
                 .fc-v-event { box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+                .fc .fc-timegrid-slot { height: 1.5rem !important; }
             `}} />
         </div>
     );

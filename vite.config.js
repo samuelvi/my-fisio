@@ -16,6 +16,13 @@ export default defineConfig({
             input: {
                 app: "./assets/app.jsx"
             },
+            output: {
+                manualChunks: {
+                    vendor: ['react', 'react-dom', 'react-router-dom', 'axios'],
+                    fullcalendar: ['@fullcalendar/react', '@fullcalendar/daygrid', '@fullcalendar/timegrid', '@fullcalendar/interaction'],
+                    ui: ['@headlessui/react', '@heroicons/react', 'react-datepicker']
+                }
+            }
         }
     },
 });
