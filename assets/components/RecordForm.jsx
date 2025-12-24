@@ -27,16 +27,12 @@ export default function RecordForm() {
         const loadInitialData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch patient name for context
                 const patientResponse = await axios.get(`/api/patients/${patientId}`);
                 setPatientName(`${patientResponse.data.firstName} ${patientResponse.data.lastName}`);
 
-                // 2. Fetch Record if editing
                 if (isEditing) {
-                    console.log(`Fetching record ${recordId}...`);
                     const recordResponse = await axios.get(`/api/records/${recordId}`);
                     const data = recordResponse.data;
-                    console.log("Record data received:", data);
                     
                     setFormData({
                         physiotherapyTreatment: data.physiotherapyTreatment || '',
@@ -105,181 +101,108 @@ export default function RecordForm() {
         }
     };
 
+    const InputArea = ({ label, name, required = false, rows = 3 }) => (
+        <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
+            <label htmlFor={name} className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{label} {required && "*"}</label>
+            <textarea
+                name={name}
+                id={name}
+                rows={rows}
+                required={required}
+                value={formData[name]}
+                onChange={handleChange}
+                className={`block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800 ${errors[name] ? 'border-red-500' : ''}`}
+            />
+            {errors[name] && <p className="mt-1 text-xs font-bold text-red-600 uppercase tracking-tight">{errors[name]}</p>}
+        </div>
+    );
+
     if (loading && isEditing && !formData.physiotherapyTreatment) {
-        return <div className="p-8 text-center text-gray-500">Loading record data...</div>;
+        return <div className="p-8 text-center text-gray-400 font-black uppercase tracking-[0.3em] animate-pulse">Loading Record...</div>;
     }
 
     return (
-        <div className="max-w-3xl mx-auto">
-             <div className="md:flex md:items-center md:justify-between mb-6">
+        <div className="max-w-5xl mx-auto space-y-8">
+             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="flex-1 min-w-0">
-                    <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                        {isEditing ? 'Edit Clinical Record' : 'New Clinical Record'}
+                    <h2 className="text-4xl font-black text-primary-dark tracking-tighter uppercase">
+                        {isEditing ? 'Update History' : 'New History Entry'}
                     </h2>
                     {patientName && (
-                        <p className="mt-1 text-sm text-gray-500">For Patient: <span className="font-semibold">{patientName}</span></p>
+                        <p className="mt-1 text-gray-400 font-bold uppercase text-[10px] tracking-widest italic">Patient File: <span className="text-primary-dark font-black">{patientName}</span></p>
                     )}
                 </div>
-                <div className="mt-4 flex md:mt-0 md:ml-4">
+                <div className="flex space-x-3">
                     <button
                         type="button"
                         onClick={() => navigate(`/patients/${patientId}`)}
-                        className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                        className="px-8 py-4 bg-white border-2 border-gray-100 text-gray-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-btn-secondary hover:text-btn-secondary transition-all"
                     >
-                        Cancel
+                        Discard
                     </button>
                     <button
                         type="submit"
                         form="record-form"
                         disabled={loading}
-                        className="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:opacity-50"
+                        className="px-10 py-4 bg-btn-success text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:brightness-95 shadow-xl shadow-btn-success/20 transition-all disabled:opacity-50"
                     >
-                        {loading ? 'Saving...' : 'Save Record'}
+                        {loading ? 'Processing...' : 'Confirm Entry'}
                     </button>
                 </div>
             </div>
 
              {errors.global && (
-                <div className="rounded-md bg-red-50 p-4 mb-6">
-                    <div className="flex">
-                        <div className="ml-3">
-                            <h3 className="text-sm font-medium text-red-800">{errors.global}</h3>
-                        </div>
-                    </div>
+                <div className="rounded-2xl bg-red-50 p-4 border-2 border-red-100">
+                    <h3 className="text-xs font-black text-red-800 uppercase tracking-widest text-center">{errors.global}</h3>
                 </div>
             )}
 
-            <form id="record-form" onSubmit={handleSubmit} className="space-y-6">
-                <div className="bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-                    <div className="grid grid-cols-6 gap-6">
+            <form id="record-form" onSubmit={handleSubmit} className="space-y-8">
+                <div className="bg-white shadow-sm border border-gray-100 rounded-[2rem] p-10">
+                    <div className="grid grid-cols-6 gap-8">
+                        
+                        <InputArea label="Main Physiotherapy Treatment" name="physiotherapyTreatment" required rows={5} />
+                        
+                        <div className="col-span-6 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-50 pt-8 mt-4">
+                            <InputArea label="Consultation Reason" name="consultationReason" rows={2} />
+                            <InputArea label="Onset Details" name="onset" rows={2} />
+                            <InputArea label="Current Situation" name="currentSituation" rows={2} />
+                            <InputArea label="Evolution / Progress" name="evolution" rows={2} />
+                        </div>
+
+                        <div className="col-span-6 grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-gray-50 pt-8 mt-4">
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Tests & Radiology</label>
+                                <input type="text" name="radiologyTests" value={formData.radiologyTests} onChange={handleChange} className="block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800" />
+                            </div>
+                            <div className="col-span-1">
+                                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Parallel Medical Treatment</label>
+                                <input type="text" name="medicalTreatment" value={formData.medicalTreatment} onChange={handleChange} className="block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800" />
+                            </div>
+                        </div>
+
+                        <InputArea label="Home Tasks / Treatment" name="homeTreatment" rows={3} />
                         
                         <div className="col-span-6">
-                            <label htmlFor="physiotherapyTreatment" className="block text-sm font-medium text-gray-700">Physiotherapy Treatment *</label>
-                            <textarea
-                                name="physiotherapyTreatment"
-                                id="physiotherapyTreatment"
-                                rows={4}
-                                required
-                                value={formData.physiotherapyTreatment}
-                                onChange={handleChange}
-                                className={`mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md ${errors.physiotherapyTreatment ? 'border-red-500' : ''}`}
-                            />
-                            {errors.physiotherapyTreatment && <p className="mt-1 text-sm text-red-600">{errors.physiotherapyTreatment}</p>}
+                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Confidential Notes</label>
+                            <input type="text" name="notes" value={formData.notes} onChange={handleChange} className="block w-full bg-gray-50 border-2 border-transparent rounded-2xl py-3 px-4 focus:bg-white focus:border-primary/20 outline-none transition-all font-bold text-gray-800 italic" />
                         </div>
 
-                        <div className="col-span-6 sm:col-span-3">
-                            <label htmlFor="consultationReason" className="block text-sm font-medium text-gray-700">Reason for Consultation</label>
-                             <textarea
-                                name="consultationReason"
-                                id="consultationReason"
-                                rows={3}
-                                value={formData.consultationReason}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                        <div className="col-span-6 sm:col-span-3">
-                            <label htmlFor="onset" className="block text-sm font-medium text-gray-700">Onset (Aparición)</label>
-                             <textarea
-                                name="onset"
-                                id="onset"
-                                rows={3}
-                                value={formData.onset}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                         <div className="col-span-6 sm:col-span-3">
-                            <label htmlFor="currentSituation" className="block text-sm font-medium text-gray-700">Current Situation</label>
-                             <textarea
-                                name="currentSituation"
-                                id="currentSituation"
-                                rows={3}
-                                value={formData.currentSituation}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                        <div className="col-span-6">
-                            <label htmlFor="evolution" className="block text-sm font-medium text-gray-700">Evolution / Progress</label>
-                            <textarea
-                                name="evolution"
-                                id="evolution"
-                                rows={3}
-                                value={formData.evolution}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                        <div className="col-span-6 sm:col-span-3">
-                            <label htmlFor="radiologyTests" className="block text-sm font-medium text-gray-700">Radiology / Tests</label>
-                            <input
-                                type="text"
-                                name="radiologyTests"
-                                id="radiologyTests"
-                                value={formData.radiologyTests}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                         <div className="col-span-6 sm:col-span-3">
-                            <label htmlFor="medicalTreatment" className="block text-sm font-medium text-gray-700">Medical Treatment</label>
-                            <input
-                                type="text"
-                                name="medicalTreatment"
-                                id="medicalTreatment"
-                                value={formData.medicalTreatment}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                        <div className="col-span-6">
-                            <label htmlFor="homeTreatment" className="block text-sm font-medium text-gray-700">Home Treatment</label>
-                            <textarea
-                                name="homeTreatment"
-                                id="homeTreatment"
-                                rows={3}
-                                value={formData.homeTreatment}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                        <div className="col-span-6">
-                            <label htmlFor="notes" className="block text-sm font-medium text-gray-700">Additional Notes</label>
-                            <input
-                                type="text"
-                                name="notes"
-                                id="notes"
-                                value={formData.notes}
-                                onChange={handleChange}
-                                className="mt-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
-                            />
-                        </div>
-
-                        <div className="col-span-6">
-                            <div className="flex items-start">
-                                <div className="flex items-center h-5">
-                                    <input
-                                        id="sickLeave"
-                                        name="sickLeave"
-                                        type="checkbox"
-                                        checked={formData.sickLeave}
-                                        onChange={handleChange}
-                                        className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
-                                    />
+                        <div className="col-span-6 pt-4 border-t border-gray-50">
+                            <label className="inline-flex items-center cursor-pointer bg-gray-50 p-6 rounded-[2rem] border-2 border-transparent hover:border-primary/10 transition-all w-full sm:w-auto">
+                                <input
+                                    type="checkbox"
+                                    name="sickLeave"
+                                    checked={formData.sickLeave}
+                                    onChange={handleChange}
+                                    className="sr-only peer"
+                                />
+                                <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-btn-danger"></div>
+                                <div className="ml-4">
+                                    <span className="block text-sm font-black text-gray-800 uppercase tracking-tight">Active Sick Leave</span>
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Mark if patient is currently unfit for work</span>
                                 </div>
-                                <div className="ml-3 text-sm">
-                                    <label htmlFor="sickLeave" className="font-medium text-gray-700">Sick Leave</label>
-                                    <p className="text-gray-500">Is the patient currently on sick leave?</p>
-                                </div>
-                            </div>
+                            </label>
                         </div>
 
                     </div>

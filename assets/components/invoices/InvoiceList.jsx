@@ -6,12 +6,12 @@ export default function InvoiceList() {
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     
-    // Input States (what user types/selects)
+    // Input States
     const [nameInput, setNameInput] = useState('');
     const [numberInput, setNumberInput] = useState('');
     const [yearInput, setYearInput] = useState(new Date().getFullYear().toString());
 
-    // Applied Filter States (what triggers fetch)
+    // Applied Filter States
     const [filters, setFilters] = useState({
         name: '',
         number: '',
@@ -23,14 +23,12 @@ export default function InvoiceList() {
     
     const ITEMS_PER_PAGE = 10;
 
-    // Generate years for select (2019 to current + 1)
     const currentYear = new Date().getFullYear();
     const years = [];
     for (let y = currentYear + 1; y >= 2019; y--) {
         years.push(y);
     }
 
-    // Fetch when Page or Applied Filters change
     useEffect(() => {
         fetchInvoices();
     }, [page, filters]);
@@ -46,7 +44,6 @@ export default function InvoiceList() {
 
             if (filters.name) params['name'] = filters.name;
             
-            // Logic: Invoice number starts with Year if selected
             let numberQuery = '';
             if (filters.year && filters.year !== 'all') {
                 numberQuery = filters.year;
@@ -61,16 +58,7 @@ export default function InvoiceList() {
 
             const response = await axios.get('/api/invoices', { params });
             
-            let data = [];
-            if (response.data && Array.isArray(response.data['hydra:member'])) {
-                data = response.data['hydra:member'];
-            } else if (response.data && Array.isArray(response.data['member'])) {
-                data = response.data['member'];
-            } else if (Array.isArray(response.data)) {
-                data = response.data;
-            }
-            
-            console.log('Invoices data:', data);
+            let data = response.data['member'] || response.data['hydra:member'] || (Array.isArray(response.data) ? response.data : []);
 
             if (data.length > ITEMS_PER_PAGE) {
                 setHasNextPage(true);
@@ -90,7 +78,6 @@ export default function InvoiceList() {
     const handleSearch = (e) => {
         e.preventDefault();
         setPage(1);
-        // Apply inputs to filters to trigger fetch
         setFilters({
             name: nameInput,
             number: numberInput,
@@ -100,12 +87,9 @@ export default function InvoiceList() {
 
     const handleClear = () => {
         const resetYear = new Date().getFullYear().toString();
-        // Reset inputs
         setNameInput('');
         setNumberInput('');
         setYearInput(resetYear);
-        
-        // Reset filters and page
         setPage(1);
         setFilters({
             name: '',
@@ -116,9 +100,7 @@ export default function InvoiceList() {
 
     const handleExport = async (id, number, format, mode = 'view') => {
         try {
-            // mode: 'view' (inline) or 'download' (attachment)
             const params = mode === 'download' ? { download: 1 } : {};
-            
             const response = await axios.get(`/api/invoices/${id}/export/${format}`, {
                 params,
                 responseType: 'blob'
@@ -136,13 +118,9 @@ export default function InvoiceList() {
                 link.click();
                 link.remove();
             } else {
-                // Open in new tab
                 window.open(url, '_blank');
             }
-            
-            // Clean up URL object after a short delay
             setTimeout(() => window.URL.revokeObjectURL(url), 1000);
-
         } catch (error) {
             console.error('Error exporting invoice:', error);
             alert('Error exporting invoice');
@@ -176,10 +154,10 @@ export default function InvoiceList() {
     return (
         <div className="p-6">
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Invoices Manager</h1>
+                <h1 className="text-2xl font-bold text-gray-800 uppercase tracking-tight">Invoices Manager</h1>
                 <Link 
                     to="/invoices/new"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition flex items-center"
+                    className="bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-md font-medium transition flex items-center"
                 >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                     New Invoice
@@ -195,18 +173,18 @@ export default function InvoiceList() {
                             type="text"
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary outline-none"
                             placeholder="e.g. John Doe"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Invoice Number</label>
+                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Number</label>
                         <input
                             type="text"
                             value={numberInput}
                             onChange={(e) => setNumberInput(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                            placeholder="e.g. 202500..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary outline-none"
+                            placeholder="e.g. 000454"
                         />
                     </div>
                     <div>
@@ -214,7 +192,7 @@ export default function InvoiceList() {
                         <select
                             value={yearInput}
                             onChange={(e) => setYearInput(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary outline-none"
                         >
                             <option value="all">All Years</option>
                             {years.map(y => (
@@ -223,19 +201,8 @@ export default function InvoiceList() {
                         </select>
                     </div>
                     <div className="flex space-x-2">
-                        <button 
-                            type="submit"
-                            className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-900 transition"
-                        >
-                            Search Invoices
-                        </button>
-                        <button 
-                            type="button"
-                            onClick={handleClear}
-                            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
-                        >
-                            Clear
-                        </button>
+                        <button type="submit" className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-black transition">Search</button>
+                        <button type="button" onClick={handleClear} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition">Clear</button>
                     </div>
                 </form>
             </div>
@@ -254,58 +221,36 @@ export default function InvoiceList() {
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
-                            <tr>
-                                <td colSpan="5" className="px-6 py-12 text-center text-gray-500">Loading...</td>
-                            </tr>
+                            <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">Loading invoices...</td></tr>
                         ) : invoices.length === 0 ? (
-                            <tr>
-                                <td colSpan="5" className="px-6 py-12 text-center text-gray-500">No invoices found.</td>
-                            </tr>
+                            <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">No invoices found.</td></tr>
                         ) : (
                             invoices.map((invoice) => (
                                 <tr key={invoice.id} className="hover:bg-gray-50 transition">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-indigo-600">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-dark">
                                         {invoice.number}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         {new Date(invoice.date).toLocaleDateString()}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {invoice.name}
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-gray-900">{invoice.name}</div>
                                         <div className="text-xs text-gray-400">{invoice.taxId}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900">
                                         {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(invoice.amount)}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end space-x-3">
-                                        {/* HTML View */}
-                                        <button 
-                                            onClick={() => handleExport(invoice.id, invoice.number, 'html', 'view')}
-                                            className="text-gray-500 hover:text-orange-600 transition"
-                                            title="View HTML"
-                                        >
+                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'html', 'view')} className="text-gray-400 hover:text-primary transition-colors" title="View HTML">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                                         </button>
-
-                                        {/* PDF View */}
-                                        <button 
-                                            onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'view')}
-                                            className="text-gray-500 hover:text-blue-600 transition"
-                                            title="View PDF"
-                                        >
+                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'view')} className="text-gray-400 hover:text-primary transition-colors" title="View PDF">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                         </button>
-
-                                        {/* Download */}
-                                        <button 
-                                            onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')}
-                                            className="text-gray-500 hover:text-green-600 transition"
-                                            title="Download PDF"
-                                        >
+                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')} className="text-gray-400 hover:text-primary transition-colors" title="Download">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                         </button>
-                                        
-                                        <Link to={`/invoices/${invoice.id}`} className="text-indigo-600 hover:text-indigo-900 ml-2">Detail</Link>
+                                        <Link to={`/invoices/${invoice.id}`} className="text-primary-dark hover:text-primary ml-2 font-bold">Detail</Link>
                                     </td>
                                 </tr>
                             ))
@@ -313,7 +258,6 @@ export default function InvoiceList() {
                     </tbody>
                 </table>
             </div>
-            
             <Pagination />
         </div>
     );
