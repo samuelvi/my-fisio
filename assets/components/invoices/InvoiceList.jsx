@@ -250,7 +250,6 @@ export default function InvoiceList() {
                                         <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')} className="text-gray-400 hover:text-primary transition-colors" title="Download">
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                         </button>
-                                        <Link to={`/invoices/${invoice.id}`} className="text-primary-dark hover:text-primary ml-2 font-bold">Detail</Link>
                                     </td>
                                 </tr>
                             ))
