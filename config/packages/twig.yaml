@@ -1,5 +1,7 @@
 twig:
     file_name_pattern: '*.twig'
+    globals:
+        app_title: '%env(VITE_APP_TITLE)%'
 
 when@test:
     twig:

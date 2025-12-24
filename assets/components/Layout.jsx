@@ -15,7 +15,11 @@ export default function Layout({ children }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const appTitle = import.meta.env.VITE_APP_TITLE || '@TODO';
+    const appTitle = import.meta.env.VITE_APP_TITLE || 'PhysioApp';
+    
+    React.useEffect(() => {
+        document.title = appTitle;
+    }, [appTitle]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
