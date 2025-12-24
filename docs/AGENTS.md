@@ -94,6 +94,12 @@ src/
     - **Indicator**: Use the `N+1` record as a signal to enable the "Next" button in the UI.
     - **Performance**: Eliminates costly `COUNT(*)` queries and reduces database load by ~50% (one query instead of two).
     - **Scalability**: Ensures constant time performance regardless of dataset size.
+- **Multi-language Support (Server-Side Injection)**: 
+    - **Strategy**: Synchronous injection of the translation catalog from Symfony to React.
+    - **Implementation**: `DefaultController` extracts messages from YAML files and exposes them via `window.APP_TRANSLATIONS`.
+    - **Why**: Eliminates async API calls, prevents 401 errors on the login screen, and ensures instant UI rendering with the correct locale.
+    - **Context**: Managed via `LanguageContext` in React using a `t()` helper function.
+    - **Config**: Default locale is driven by `VITE_DEFAULT_LOCALE` but persisted in `localStorage`.
 
 ### Frontend
 - Functional Components with Hooks

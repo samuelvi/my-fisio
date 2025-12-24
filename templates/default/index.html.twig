@@ -3,5 +3,8 @@
 {% block title %}{{ app_title }}{% endblock %}
 
 {% block body %}
+    <script>
+        window.APP_TRANSLATIONS = {{ translations|json_encode|raw }};
+    </script>
     <div id="root"></div>
 {% endblock %}

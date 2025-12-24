@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './app.css';
+import { LanguageProvider } from './components/LanguageContext';
 
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -160,7 +161,9 @@ if (rootElement) {
     const root = ReactDOM.createRoot(rootElement);
     root.render(
         <React.StrictMode>
-            <App />
+            <LanguageProvider>
+                <App />
+            </LanguageProvider>
         </React.StrictMode>
     );
 }

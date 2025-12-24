@@ -358,9 +358,19 @@ make dev-ps
 docker-compose -f docker/dev/docker-compose.yaml restart postgres
 ```
 
-## Technical Decisions
+### Technical Decisions
 
-### Efficient Pagination (N+1 Fetch Pattern)
+#### Multi-language Support (Synchronous Injection Strategy)
+The application uses a high-performance translation system designed to eliminate network latency and permission issues:
+- **Backend as Source of Truth**: All strings are defined in standard Symfony YAML files (`translations/messages.{locale}.yaml`), allowing reuse in emails, PDFs, and PHP code.
+- **Twig Injection**: Instead of an API, Symfony's `DefaultController` reads the translation catalog and injects it directly into the HTML as a global JavaScript object (`window.APP_TRANSLATIONS`).
+- **Why this approach?**: 
+    1. **Instant Loading**: No "flicker" or loading spinners while fetching translations via AJAX.
+    2. **Security**: Eliminates 401 Unauthorized errors during login (since no API calls are needed before authentication).
+    3. **Robustness**: If the page loads, the translations are guaranteed to be there.
+- **Persistence**: User language preference is stored in `localStorage` and persists across sessions.
+
+#### Efficient Pagination (N+1 Fetch Pattern)
 To ensure high performance even with large datasets, the system uses an optimized pagination strategy:
 - **No `COUNT(*)` queries**: We avoid the overhead of counting the total records in the database.
 - **N+1 Fetch**: We always request one extra record from the database. If that record exists, we know there is a next page.

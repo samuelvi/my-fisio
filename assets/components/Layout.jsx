@@ -1,22 +1,24 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
-import {
-    ChevronLeftIcon,
-    ChevronRightIcon,
-    HomeIcon,
-    UsersIcon,
-    CalendarIcon,
+import { useTranslation } from './LanguageContext';
+import { 
+    ChevronLeftIcon, 
+    ChevronRightIcon, 
+    HomeIcon, 
+    UsersIcon, 
+    CalendarIcon, 
     DocumentTextIcon,
-    ArrowLeftOnRectangleIcon
+    ArrowLeftOnRectangleIcon,
+    GlobeAltIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout({ children }) {
     const navigate = useNavigate();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-    const appTitle = import.meta.env.VITE_APP_TITLE || 'PhysioApp';
-    
+    const { locale, t, changeLanguage } = useTranslation();
+    const appTitle = import.meta.env.VITE_APP_TITLE || 'PhysioApp';    
     React.useEffect(() => {
         document.title = appTitle;
     }, [appTitle]);
@@ -28,10 +30,10 @@ export default function Layout({ children }) {
     };
 
     const navItems = [
-        { name: 'Dashboard', path: '/', icon: HomeIcon },
-        { name: 'Patients', path: '/patients', icon: UsersIcon },
-        { name: 'Appointments', path: '/appointments', icon: CalendarIcon },
-        { name: 'Invoices', path: '/invoices', icon: DocumentTextIcon },
+        { name: t('dashboard'), path: '/', icon: HomeIcon },
+        { name: t('patients'), path: '/patients', icon: UsersIcon },
+        { name: t('appointments'), path: '/appointments', icon: CalendarIcon },
+        { name: t('invoices'), path: '/invoices', icon: DocumentTextIcon },
     ];
 
     return (
@@ -97,32 +99,58 @@ export default function Layout({ children }) {
                     })}
                 </nav>
 
-                {/* Logout at bottom */}
-                <div className="p-3 border-t border-indigo-700">
-                    <button
-                        onClick={handleLogout}
-                        className={`flex items-center w-full p-3 rounded-lg text-indigo-100 hover:bg-red-700 hover:text-white transition-colors group relative ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
-                        title={!isSidebarOpen ? 'Logout' : ''}
-                    >
-                        <ArrowLeftOnRectangleIcon className="h-6 w-6 flex-shrink-0 text-indigo-300 group-hover:text-white" />
-                        <span className={`ml-3 font-medium transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>
-                            Logout
-                        </span>
-                        {!isSidebarOpen && (
-                            <div className="absolute left-16 bg-red-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
-                                Logout
-                            </div>
-                        )}
-                    </button>
-                </div>
-            </div>
+                                {/* Language Switcher */}
+                                <div className="p-3 border-t border-indigo-700">
+                                    <div className={`flex items-center ${isSidebarOpen ? 'justify-between px-3' : 'justify-center'} py-2`}>
+                                        {isSidebarOpen && (
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">
+                                                {t('language')}
+                                            </span>
+                                        )}
+                                        <div className={`flex ${isSidebarOpen ? 'space-x-2' : 'flex-col space-y-2'} items-center`}>
+                                            <button 
+                                                onClick={() => changeLanguage('en')}
+                                                className={`text-[10px] font-bold px-2 py-1 rounded transition-all ${locale === 'en' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-300 hover:text-white hover:bg-indigo-700'}`}
+                                                title={t('english')}
+                                            >
+                                                EN
+                                            </button>
+                                            <button 
+                                                onClick={() => changeLanguage('es')}
+                                                className={`text-[10px] font-bold px-2 py-1 rounded transition-all ${locale === 'es' ? 'bg-indigo-600 text-white shadow-sm' : 'text-indigo-300 hover:text-white hover:bg-indigo-700'}`}
+                                                title={t('spanish')}
+                                            >
+                                                ES
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                
+                                {/* Logout at bottom */}
+                                <div className="p-3 border-t border-indigo-700">
+                                    <button 
+                                        onClick={handleLogout}
+                                        className={`flex items-center w-full p-3 rounded-lg text-indigo-100 hover:bg-red-700 hover:text-white transition-colors group relative ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
+                                        title={!isSidebarOpen ? t('logout') : ''}
+                                    >
+                                        <ArrowLeftOnRectangleIcon className="h-6 w-6 flex-shrink-0 text-indigo-300 group-hover:text-white" />
+                                        <span className={`ml-3 font-medium transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>
+                                            {t('logout')}
+                                        </span>
+                                        {!isSidebarOpen && (
+                                            <div className="absolute left-16 bg-red-900 text-white px-2 py-1 rounded text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+                                                {t('logout')}
+                                            </div>
+                                        )}
+                                    </button>
+                                </div>            </div>
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
                 <header className="bg-white shadow-sm h-16 flex-shrink-0 px-8 flex justify-between items-center z-10">
-                    <h2 className="text-xl font-semibold text-gray-800">Clinic Management</h2>
+                    <h2 className="text-xl font-semibold text-gray-800">{t('clinic_management')}</h2>
                     <div className="text-sm text-gray-500 font-medium">
-                        Administrator
+                        {t('administrator')}
                     </div>
                 </header>
 

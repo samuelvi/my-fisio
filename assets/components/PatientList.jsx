@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { useTranslation } from './LanguageContext';
 
 export default function PatientList() {
+    const { t } = useTranslation();
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchInput, setSearchInput] = useState(sessionStorage.getItem('patientList_searchInput') || '');
@@ -77,7 +79,7 @@ export default function PatientList() {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading patients...</div>;
+    if (loading) return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
 
     const Pagination = () => (
         <div className="flex items-center justify-between py-3 border-t border-b border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
@@ -103,14 +105,14 @@ export default function PatientList() {
                     disabled={page === 1 || loading}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-tighter"
                 >
-                    Previous
+                    {t('previous') || 'Previous'}
                 </button>
                 <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={!hasNextPage || loading}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-tighter"
                 >
-                    Next
+                    {t('next') || 'Next'}
                 </button>
             </div>
         </div>
@@ -119,12 +121,12 @@ export default function PatientList() {
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">Patients</h1>
+                <h1 className="text-2xl font-bold text-gray-800">{t('patients')}</h1>
                 <Link 
                     to="/patients/new"
                     className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition"
                 >
-                    + New Patient
+                    + {t('new_patient')}
                 </Link>
             </div>
 
@@ -134,7 +136,7 @@ export default function PatientList() {
                     <div className="flex-1 relative">
                         <input
                             type="text"
-                            placeholder="Search by name, phone or email..."
+                            placeholder={t('search') + "..."}
                             className="w-full pl-4 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-sm"
                             value={searchInput}
                             onChange={(e) => setSearchInput(e.target.value)}
@@ -167,7 +169,7 @@ export default function PatientList() {
 
                     <div className="flex items-center space-x-2">
                         <label htmlFor="statusFilter" className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                            Status:
+                            {t('status')}:
                         </label>
                         <select
                             id="statusFilter"
@@ -203,13 +205,13 @@ export default function PatientList() {
                             onClick={handleClear}
                             className="text-gray-500 hover:text-gray-700 text-sm font-medium px-4 py-2"
                         >
-                            Clear Results
+                            {t('clear')}
                         </button>
                         <button 
                             type="submit"
                             className="bg-gray-800 hover:bg-gray-900 text-white px-8 py-2 rounded-md font-medium transition shadow-sm"
                         >
-                            Search Patients
+                            {t('search')}
                         </button>
                     </div>
                 </div>
@@ -222,13 +224,13 @@ export default function PatientList() {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('name') || 'Name'}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('phone') || 'Phone'}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('email') || 'Email'}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('status') || 'Status'}</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{t('created') || 'Created'}</th>
                             <th className="relative px-6 py-3">
-                                <span className="sr-only">Actions</span>
+                                <span className="sr-only">{t('actions') || 'Actions'}</span>
                             </th>
                         </tr>
                     </thead>
@@ -257,7 +259,7 @@ export default function PatientList() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${patient.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                        {patient.status}
+                                        {patient.status === 'active' ? (t('active') || 'Active') : (t('inactive') || 'Inactive')}
                                     </span>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -265,7 +267,7 @@ export default function PatientList() {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <Link to={`/patients/${patient.id}`} className="text-indigo-600 hover:text-indigo-900">
-                                        View
+                                        {t('view') || 'View'}
                                     </Link>
                                 </td>
                             </tr>
@@ -273,7 +275,7 @@ export default function PatientList() {
                         {patients.length === 0 && (
                             <tr>
                                 <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                                    No patients found matching your search.
+                                    {t('no_patients_found') || 'No patients found.'}
                                 </td>
                             </tr>
                         )}
