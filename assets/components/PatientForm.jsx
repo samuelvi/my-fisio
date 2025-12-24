@@ -412,7 +412,7 @@ export default function PatientForm() {
                 )}
 
                 {/* Form Footer Buttons */}
-                <div className="flex justify-between items-center bg-gray-50 px-6 py-4 sm:rounded-lg border border-gray-200 shadow-sm sticky bottom-4 z-10">
+                <div className="flex justify-between items-center bg-gray-50 px-6 py-4 sm:rounded-lg border border-gray-200 shadow-sm mt-8">
                     <button
                         type="button"
                         onClick={() => navigate(isEditing ? `/patients/${id}` : '/patients')}
