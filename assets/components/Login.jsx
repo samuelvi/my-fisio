@@ -13,6 +13,11 @@ export default function Login() {
     const location = useLocation();
 
     useEffect(() => {
+        // Diagnostic logs
+        console.log('Vite Mode:', import.meta.env.MODE);
+        console.log('Env Email:', import.meta.env.VITE_AUTH_EMAIL);
+        console.log('Env Password:', import.meta.env.VITE_AUTH_PASSWORD);
+
         // Check for expired session parameter
         const params = new URLSearchParams(location.search);
         if (params.get('expired')) {
