@@ -191,18 +191,18 @@ export default function RecordForm() {
 
                         </div>
 
-                        <div className="pt-5 border-t border-gray-200 flex justify-end space-x-3">
+                        <div className="pt-5 border-t border-gray-200 flex justify-between items-center">
                             <button
                                 type="button"
                                 onClick={() => navigate(`/patients/${patientId}`)}
-                                className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                className="px-6 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
+                                className="px-8 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none disabled:opacity-50"
                             >
                                 {loading ? 'Saving...' : (isEditing ? 'Update History' : 'Save History Entry')}
                             </button>

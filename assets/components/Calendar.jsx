@@ -22,9 +22,10 @@ export default function Calendar() {
     });
     const [validationError, setValidationError] = useState(null);
     const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || 10);
-    const DEFAULT_DURATION = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || 1);
+    const DEFAULT_DURATION_MINUTES = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || 60);
     const SLOT_DURATION_MINUTES = parseInt(import.meta.env.VITE_CALENDAR_SLOT_DURATION_MINUTES || 15);
     const slotDurationString = `00:${SLOT_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
+    const defaultDurationString = `00:${DEFAULT_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
 
     useEffect(() => {
         if (modalOpen) {
@@ -32,8 +33,17 @@ export default function Calendar() {
             setTimeout(() => {
                 titleInputRef.current?.focus();
             }, 50);
+
+            const handleEsc = (event) => {
+                if (event.key === 'Escape') {
+                    setModalOpen(false);
+                    calendarRef?.getApi()?.unselect();
+                }
+            };
+            window.addEventListener('keydown', handleEsc);
+            return () => window.removeEventListener('keydown', handleEsc);
         }
-    }, [modalOpen]);
+    }, [modalOpen, calendarRef]);
 
     useEffect(() => {
         if (!modalOpen) {
@@ -103,23 +113,25 @@ export default function Calendar() {
         }
     };
 
-    const handleDateSelect = (selectInfo) => {
-        const start = new Date(selectInfo.startStr);
-        let end = new Date(selectInfo.endStr);
+    const handleDateClick = (arg) => {
+        const calendarApi = arg.view.calendar;
+        const start = arg.date;
+        const end = new Date(start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
         
-        // If it's a simple click (usually 30 mins in timeGrid), 
-        // or if start and end are same, apply DEFAULT_DURATION
-        const diffMs = end - start;
-        if (diffMs <= 1800000) { // 30 mins or less
-            end = new Date(start.getTime() + (DEFAULT_DURATION * 3600000));
-        }
+        calendarApi.select({
+            start: start,
+            end: end,
+            allDay: arg.allDay
+        });
+    };
 
+    const handleDateSelect = (selectInfo) => {
         setFormData({
             title: '',
             notes: '',
             type: 'appointment',
-            startsAt: start.toISOString(),
-            endsAt: end.toISOString(),
+            startsAt: selectInfo.startStr,
+            endsAt: selectInfo.endStr,
             allDay: selectInfo.allDay
         });
         setCurrentEvent(null);
@@ -220,7 +232,7 @@ export default function Calendar() {
                         now.setHours(now.getHours() + 1);
                         handleDateSelect({ 
                             startStr: now.toISOString(), 
-                            endStr: new Date(now.getTime() + (DEFAULT_DURATION * 3600000)).toISOString(), 
+                            endStr: new Date(now.getTime() + (DEFAULT_DURATION_MINUTES * 60000)).toISOString(), 
                             allDay: false 
                         });
                     }}
@@ -239,7 +251,10 @@ export default function Calendar() {
                     editable={true} selectable={true} selectMirror={true} dayMaxEvents={true} weekends={true}
                     slotDuration={slotDurationString}
                     snapDuration={slotDurationString}
+                    defaultTimedEventDuration={defaultDurationString}
                     slotLabelInterval="01:00"
+                    selectMinDistance={5}
+                    dateClick={handleDateClick}
                     events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick} 
                     eventDrop={handleEventDrop} eventResize={handleEventResize}
                     height="700px"
@@ -335,7 +350,8 @@ export default function Calendar() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:px-6 flex flex-row-reverse items-center gap-2">
+                                <div className="bg-gray-50 px-4 py-3 sm:px-6 flex justify-between items-center gap-2">
+                                    <button type="button" onClick={() => { setModalOpen(false); calendarRef?.getApi()?.unselect(); }} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm">Cancel</button>
                                     <button 
                                         type="submit" 
                                         disabled={!!validationError}
@@ -343,7 +359,6 @@ export default function Calendar() {
                                     >
                                         {currentEvent ? 'Update' : 'Create'}
                                     </button>
-                                    <button type="button" onClick={() => setModalOpen(false)} className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
                                 </div>
                             </form>
                         </div>
@@ -359,6 +374,14 @@ export default function Calendar() {
                 .fc-event-title { font-weight: 600; font-size: 0.85rem; }
                 .fc-v-event { box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
                 .fc .fc-timegrid-slot { height: 1.5rem !important; }
+                .fc-timegrid-event-harness-shadow .fc-timegrid-event, 
+                .fc-timegrid-bg-harness .fc-highlight,
+                .fc-daygrid-bg-harness .fc-highlight,
+                .fc-event-mirror { 
+                    background-color: rgb(230, 220, 190) !important; 
+                    border-color: rgb(200, 190, 160) !important;
+                    opacity: 1;
+                }
             `}} />
         </div>
     );
