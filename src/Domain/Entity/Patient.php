@@ -148,6 +148,8 @@ class Patient
 
     private function updateFullName(): void
     {
-        $this->fullName = trim(sprintf('%s %s', $this->firstName, $this->lastName));
+        $firstName = isset($this->firstName) ? $this->firstName : '';
+        $lastName = isset($this->lastName) ? $this->lastName : '';
+        $this->fullName = trim(sprintf('%s %s', $firstName, $lastName));
     }
 }
