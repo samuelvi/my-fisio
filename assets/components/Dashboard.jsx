@@ -13,14 +13,20 @@ export default function Dashboard() {
         invoicesThisYear: 0
     });
     const [loading, setLoading] = useState(true);
+    const [health, setHealth] = useState({ status: 'loading', checks: {} });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const response = await axios.get('/api/dashboard/stats');
-                setStats(response.data);
+                const [statsResponse, healthResponse] = await Promise.all([
+                    axios.get('/api/dashboard/stats'),
+                    axios.get('/api/health')
+                ]);
+                setStats(statsResponse.data);
+                setHealth(healthResponse.data);
             } catch (error) {
                 console.error('Error fetching dashboard stats:', error);
+                setHealth({ status: 'degraded', checks: {} });
             } finally {
                 setLoading(false);
             }
@@ -107,12 +113,22 @@ export default function Dashboard() {
                     </div>
                     <div>
                         <h4 className="font-bold text-gray-700 mb-4 uppercase text-xs tracking-widest">{t('system_status')}</h4>
-                        <div className="flex items-center space-x-3 text-sm text-green-600 font-bold bg-green-50 px-4 py-3 rounded-md border border-green-100">
+                        <div className={`flex items-center space-x-3 text-sm font-bold px-4 py-3 rounded-md border ${
+                            health.status === 'ok'
+                                ? 'text-green-600 bg-green-50 border-green-100'
+                                : 'text-yellow-700 bg-yellow-50 border-yellow-100'
+                        }`}>
                             <span className="relative flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+                                <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${
+                                    health.status === 'ok' ? 'bg-green-400' : 'bg-yellow-300'
+                                } opacity-75`}></span>
+                                <span className={`relative inline-flex rounded-full h-3 w-3 ${
+                                    health.status === 'ok' ? 'bg-green-500' : 'bg-yellow-400'
+                                }`}></span>
                             </span>
-                            <span>{t('all_systems_operational')}</span>
+                            <span>
+                                {health.status === 'ok' ? t('all_systems_operational') : t('system_issues_detected')}
+                            </span>
                         </div>
                     </div>
                 </div>
