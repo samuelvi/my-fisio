@@ -20,10 +20,10 @@ export default function InvoiceList() {
         year: new Date().getFullYear().toString()
     });
 
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(parseInt(sessionStorage.getItem('invoiceList_page') || '1', 10));
     const [hasNextPage, setHasNextPage] = useState(false);
     
-    const ITEMS_PER_PAGE = 10;
+    const ITEMS_PER_PAGE = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10', 10);
 
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -32,6 +32,7 @@ export default function InvoiceList() {
     }
 
     useEffect(() => {
+        sessionStorage.setItem('invoiceList_page', page.toString());
         fetchInvoices();
     }, [page, filters]);
 
@@ -40,7 +41,7 @@ export default function InvoiceList() {
         try {
             const params = {
                 page: page,
-                itemsPerPage: ITEMS_PER_PAGE + 1, // To check for next page
+                itemsPerPage: ITEMS_PER_PAGE + 1, // Request N+1 to check for next page
                 'order[date]': 'desc',
             };
 
@@ -60,7 +61,14 @@ export default function InvoiceList() {
 
             const response = await axios.get('/api/invoices', { params });
             
-            let data = response.data['member'] || response.data['hydra:member'] || (Array.isArray(response.data) ? response.data : []);
+            let data = [];
+            if (Array.isArray(response.data)) {
+                data = response.data;
+            } else if (response.data && response.data['hydra:member']) {
+                data = response.data['hydra:member'];
+            } else if (response.data && response.data['member']) {
+                data = response.data['member'];
+            }
 
             if (data.length > ITEMS_PER_PAGE) {
                 setHasNextPage(true);
@@ -130,22 +138,35 @@ export default function InvoiceList() {
     };
 
     const Pagination = () => (
-        <div className="flex items-center justify-between py-3 border-t border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
+        <div className="flex items-center justify-between py-3 border-t border-b border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
             <div className="flex items-center space-x-4">
-                <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{t('page')} {page}</span>
+                <div className="flex items-center">
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-3">{t('page')}</span>
+                    <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-black shadow-lg">
+                        {page}
+                    </div>
+                </div>
+                {page > 1 && (
+                    <button
+                        onClick={() => setPage(1)}
+                        className="text-xs font-black text-primary hover:text-primary-dark uppercase tracking-tighter bg-white border border-primary/20 px-4 py-2 rounded-xl shadow-sm transition active:scale-95"
+                    >
+                        « {t('back_to_start')}
+                    </button>
+                )}
             </div>
             <div className="flex space-x-2">
                 <button
                     onClick={() => setPage(p => Math.max(1, p - 1))}
                     disabled={page === 1 || loading}
-                    className="px-3 py-1 border border-gray-300 text-xs font-bold rounded-md bg-white hover:bg-gray-50 disabled:opacity-50 transition"
+                    className="inline-flex items-center px-5 py-2 border border-gray-200 text-xs font-black rounded-xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-widest"
                 >
                     {t('previous')}
                 </button>
                 <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={!hasNextPage || loading}
-                    className="px-3 py-1 border border-gray-300 text-xs font-bold rounded-md bg-white hover:bg-gray-50 disabled:opacity-50 transition"
+                    className="inline-flex items-center px-5 py-2 border border-gray-200 text-xs font-black rounded-xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-sm uppercase tracking-widest"
                 >
                     {t('next')}
                 </button>
@@ -155,11 +176,11 @@ export default function InvoiceList() {
 
     return (
         <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold text-gray-800">{t('invoices')}</h1>
+            <div className="flex justify-between items-center mb-8">
+                <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('invoices')}</h1>
                 <Link 
                     to="/invoices/new"
-                    className="bg-primary hover:bg-primary-dark text-white px-4 py-2 rounded-md font-medium transition flex items-center shadow-sm"
+                    className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl font-black text-sm transition shadow-lg shadow-primary/20 active:scale-95 flex items-center shadow-sm"
                 >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                     {t('new_invoice')}
@@ -167,34 +188,34 @@ export default function InvoiceList() {
             </div>
 
             {/* Filters */}
-            <div className="bg-white p-4 rounded-lg shadow-sm mb-6 border border-gray-200">
-                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
                     <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('customer_name')}</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('customer_name')}</label>
                         <input
                             type="text"
                             value={nameInput}
                             onChange={(e) => setNameInput(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary outline-none"
+                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
                             placeholder={t('search_by_name')}
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('number')}</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('number')}</label>
                         <input
                             type="text"
                             value={numberInput}
                             onChange={(e) => setNumberInput(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary outline-none"
+                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
                             placeholder="e.g. 000454"
                         />
                     </div>
                     <div>
-                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">{t('year')}</label>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('year')}</label>
                         <select
                             value={yearInput}
                             onChange={(e) => setYearInput(e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-primary focus:border-primary outline-none"
+                            className="w-full h-[46px] bg-gray-50 pl-4 pr-10 text-sm border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold rounded-xl"
                         >
                             <option value="all">{t('all_years')}</option>
                             {years.map(y => (
@@ -202,54 +223,56 @@ export default function InvoiceList() {
                             ))}
                         </select>
                     </div>
-                    <div className="flex space-x-2">
-                        <button type="submit" className="flex-1 bg-gray-800 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-black transition">{t('search')}</button>
-                        <button type="button" onClick={handleClear} className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition">{t('clear')}</button>
+                    <div className="flex space-x-3">
+                        <button type="submit" className="flex-1 bg-gray-900 hover:bg-black text-white px-6 py-2.5 rounded-xl font-black text-sm transition shadow-lg active:scale-95">{t('search')}</button>
+                        <button type="button" onClick={handleClear} className="text-gray-400 hover:text-gray-600 text-[10px] font-black uppercase tracking-widest transition-colors px-2">{t('clear')}</button>
                     </div>
                 </form>
             </div>
 
+            <Pagination />
+
             {/* Table */}
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
+            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-100">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('number')}</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('date')}</th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('customer')}</th>
-                            <th className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('amount')}</th>
-                            <th className="relative px-6 py-3"><span className="sr-only">{t('actions')}</span></th>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('number')}</th>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('date')}</th>
+                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('customer')}</th>
+                            <th className="px-8 py-4 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('amount')}</th>
+                            <th className="relative px-8 py-4"><span className="sr-only">{t('actions')}</span></th>
                         </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-100">
                         {loading ? (
-                            <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">{t('loading')}...</td></tr>
+                            <tr><td colSpan="5" className="px-8 py-20 text-center text-gray-400 font-bold">{t('loading')}...</td></tr>
                         ) : invoices.length === 0 ? (
-                            <tr><td colSpan="5" className="px-6 py-12 text-center text-gray-500">{t('no_invoices_found')}</td></tr>
+                            <tr><td colSpan="5" className="px-8 py-20 text-center text-gray-400 font-bold">{t('no_invoices_found')}</td></tr>
                         ) : (
                             invoices.map((invoice) => (
-                                <tr key={invoice.id} className="hover:bg-gray-50 transition">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-primary-dark">
+                                <tr key={invoice.id} className="hover:bg-gray-50 transition-colors group">
+                                    <td className="px-8 py-5 whitespace-nowrap text-sm font-bold text-primary">
                                         {invoice.number}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
                                         {new Date(invoice.date).toLocaleDateString()}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm font-medium text-gray-900">{invoice.name}</div>
-                                        <div className="text-xs text-gray-400">{invoice.taxId}</div>
+                                    <td className="px-8 py-5 whitespace-nowrap">
+                                        <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">{invoice.name}</div>
+                                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{invoice.taxId}</div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-gray-900">
+                                    <td className="px-8 py-5 whitespace-nowrap text-sm text-right font-black text-gray-900">
                                         {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(invoice.amount)}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium flex items-center justify-end space-x-3">
-                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'html', 'view')} className="text-gray-400 hover:text-primary transition-colors" title={t('view_html')}>
+                                    <td className="px-8 py-5 whitespace-nowrap text-right text-sm font-bold flex items-center justify-end space-x-4">
+                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'html', 'view')} className="text-gray-400 hover:text-primary transition-colors p-1" title={t('view_html')}>
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
                                         </button>
-                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'view')} className="text-gray-400 hover:text-primary transition-colors" title={t('view_pdf')}>
+                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'view')} className="text-gray-400 hover:text-primary transition-colors p-1" title={t('view_pdf')}>
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                         </button>
-                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')} className="text-gray-400 hover:text-primary transition-colors" title={t('download')}>
+                                        <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')} className="text-gray-400 hover:text-primary transition-colors p-1" title={t('download')}>
                                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                         </button>
                                     </td>
@@ -259,6 +282,7 @@ export default function InvoiceList() {
                     </tbody>
                 </table>
             </div>
+
             <Pagination />
         </div>
     );

@@ -46,7 +46,7 @@ export default function PatientList() {
                     status: statusFilter,
                     order: sortOrder,
                     page: page,
-                    itemsPerPage: ITEMS_PER_PAGE,
+                    itemsPerPage: ITEMS_PER_PAGE + 1, // Request N+1 to check for next page
                     search: searchTerm,
                     fuzzy: useFuzzy
                 }

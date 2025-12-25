@@ -37,9 +37,10 @@ class PatientProvider implements ProviderInterface
         $limit = (int) ($filters['itemsPerPage'] ?? $this->itemsPerPage);
         $offset = ($page - 1) * $limit;
 
+        // 1. Get the IDs first to avoid join multiplication in pagination
+        // Using a simpler query for IDs to avoid PostgreSQL DISTINCT/ORDER BY issues
         $qb = $repository->createQueryBuilder('p')
-            ->select('p', 'r')
-            ->leftJoin('p.records', 'r');
+            ->select('p.id');
 
         if (isset($filters['status'])) {
             $statusEnum = PatientStatus::tryFrom($filters['status']);
@@ -57,19 +58,14 @@ class PatientProvider implements ProviderInterface
             $searchTermFull = '%' . $search . '%';
             $useFuzzy = isset($filters['fuzzy']) && ($filters['fuzzy'] === 'true' || $filters['fuzzy'] === true || $filters['fuzzy'] === '1');
             
-            // Search builder
             $searchOr = $qb->expr()->orX();
-
-            // 1. Direct match against fullName, phone or email
             $searchOr->add('p.fullName LIKE :searchFull');
             $searchOr->add('p.phone LIKE :searchFull');
             $searchOr->add('p.email LIKE :searchFull');
             $qb->setParameter('searchFull', $searchTermFull);
 
-            // 2. Intelligent Fuzzy Matching (PostgreSQL specific)
             if ($useFuzzy && strlen($search) >= 3) {
                 $conn = $this->entityManager->getConnection();
-                // We search for the full query string in the fuzzy index
                 $similarIds = $conn->fetchFirstColumn(
                     "SELECT id FROM patients 
                      WHERE similarity(full_name, :s::text) > 0.3 
@@ -82,21 +78,7 @@ class PatientProvider implements ProviderInterface
                     $qb->setParameter('similarIds', $similarIds);
                 }
             }
-
             $qb->andWhere($searchOr);
-
-            // 3. Tokenized search: Only apply if NOT using fuzzy or as an additional filter
-            // Actually, if we use fuzzy, we don't want the strict AND tokenized search to kill the results
-            if (!$useFuzzy) {
-                $words = preg_split('/\s+/', $search, -1, PREG_SPLIT_NO_EMPTY);
-                if (count($words) > 1) {
-                    foreach ($words as $index => $word) {
-                        $paramName = 'word_' . $index;
-                        $qb->andWhere('p.fullName LIKE :' . $paramName);
-                        $qb->setParameter($paramName, '%' . $word . '%');
-                    }
-                }
-            }
         }
 
         if (isset($filters['order']) && $filters['order'] === 'alpha') {
@@ -105,10 +87,29 @@ class PatientProvider implements ProviderInterface
             $qb->orderBy('p.id', 'DESC');
         }
 
-        $patients = $qb->setMaxResults($limit + 1)
-                       ->setFirstResult($offset)
-                       ->getQuery()
-                       ->getArrayResult();
+        $ids = $qb->setMaxResults($limit + 1)
+                  ->setFirstResult($offset)
+                  ->getQuery()
+                  ->getSingleColumnResult();
+
+        if (empty($ids)) {
+            return [];
+        }
+
+        // 2. Fetch full data for those IDs
+        $finalQb = $repository->createQueryBuilder('p')
+            ->select('p', 'r')
+            ->leftJoin('p.records', 'r')
+            ->where('p.id IN (:ids)')
+            ->setParameter('ids', $ids);
+
+        if (isset($filters['order']) && $filters['order'] === 'alpha') {
+            $finalQb->orderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
+        } else {
+            $finalQb->orderBy('p.id', 'DESC');
+        }
+
+        $patients = $finalQb->getQuery()->getArrayResult();
 
         return array_map([$this, 'mapToResource'], $patients);
     }
@@ -117,8 +118,6 @@ class PatientProvider implements ProviderInterface
     {
         $resource = new PatientResource();
         $resource->id = $data['id'];
-        
-        // Handle Enum (getArrayResult might return the object if enumType is used)
         $resource->status = $data['status'] instanceof PatientStatus 
             ? $data['status'] 
             : PatientStatus::from($data['status']);
