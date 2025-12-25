@@ -3,6 +3,22 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 
+const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange }) => (
+    <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
+        <label htmlFor={name} className="block text-sm font-bold text-gray-700 mb-1">{label} {required && "*"}</label>
+        <textarea
+            name={name}
+            id={name}
+            rows={rows}
+            required={required}
+            value={value}
+            onChange={onChange}
+            className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${error ? 'border-red-500' : ''}`}
+        />
+        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
+    </div>
+);
+
 export default function RecordForm() {
     const { t } = useLanguage();
     const { patientId, recordId } = useParams();
@@ -11,6 +27,7 @@ export default function RecordForm() {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [patientName, setPatientName] = useState('');
+    const [recordDate, setRecordDate] = useState(() => new Date().toISOString().slice(0, 10));
 
     const [formData, setFormData] = useState({
         physiotherapyTreatment: '',
@@ -48,6 +65,12 @@ export default function RecordForm() {
                         notes: data.notes || '',
                         sickLeave: data.sickLeave || false
                     });
+                    if (data.createdAt) {
+                        const normalizedDate = typeof data.createdAt === 'string'
+                            ? data.createdAt.slice(0, 10)
+                            : new Date(data.createdAt).toISOString().slice(0, 10);
+                        setRecordDate(normalizedDate);
+                    }
                 }
             } catch (err) {
                 console.error("Error loading initial data:", err);
@@ -59,7 +82,9 @@ export default function RecordForm() {
         };
 
         loadInitialData();
-    }, [patientId, recordId, isEditing, t]);
+    }, [patientId, recordId, isEditing]);
+
+    const formattedRecordDate = recordDate ? new Date(recordDate).toLocaleDateString() : '';
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
@@ -75,10 +100,9 @@ export default function RecordForm() {
         setErrors({});
 
         try {
-            const payload = { ...formData };
+            const payload = { ...formData, createdAt: recordDate || undefined };
             if (!isEditing) {
                 payload.patient = `/api/patients/${patientId}`;
-                payload.createdAt = new Date().toISOString();
             }
 
             if (isEditing) {
@@ -103,22 +127,6 @@ export default function RecordForm() {
         }
     };
 
-    const InputArea = ({ label, name, required = false, rows = 3 }) => (
-        <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
-            <label htmlFor={name} className="block text-sm font-bold text-gray-700 mb-1">{label} {required && "*"}</label>
-            <textarea
-                name={name}
-                id={name}
-                rows={rows}
-                required={required}
-                value={formData[name]}
-                onChange={handleChange}
-                className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${errors[name] ? 'border-red-500' : ''}`}
-            />
-            {errors[name] && <p className="mt-1 text-sm text-red-600">{errors[name]}</p>}
-        </div>
-    );
-
     if (loading && isEditing && !formData.physiotherapyTreatment) {
         return <div className="p-4 sm:p-8 text-center text-gray-500">{t('loading')}...</div>;
     }
@@ -139,6 +147,18 @@ export default function RecordForm() {
                             <p className="mt-1 text-sm text-gray-500">{t('patient')}: <span className="font-bold text-gray-900">{patientName}</span></p>
                         )}
                     </div>
+                    <div className="text-right">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('date')}</div>
+                        <input
+                            type="date"
+                            value={recordDate}
+                            onChange={(event) => setRecordDate(event.target.value)}
+                            className="text-sm font-bold text-gray-700 bg-white border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                        />
+                        {formattedRecordDate && (
+                            <div className="text-[10px] text-gray-400 mt-1">{formattedRecordDate}</div>
+                        )}
+                    </div>
                 </div>
 
                 <div className="p-6">
@@ -151,12 +171,48 @@ export default function RecordForm() {
                     <form id="record-form" onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-6 gap-6">
                             
-                            <InputArea label={t('main_physiotherapy_treatment')} name="physiotherapyTreatment" required rows={4} />
+                            <RecordFormInputArea
+                                label={t('main_physiotherapy_treatment')}
+                                name="physiotherapyTreatment"
+                                required
+                                rows={4}
+                                value={formData.physiotherapyTreatment}
+                                error={errors.physiotherapyTreatment}
+                                onChange={handleChange}
+                            />
                             
-                            <InputArea label={t('consultation_reason')} name="consultationReason" rows={2} />
-                            <InputArea label={t('onset_details')} name="onset" rows={2} />
-                            <InputArea label={t('current_situation')} name="currentSituation" rows={2} />
-                            <InputArea label={t('evolution_progress')} name="evolution" rows={2} />
+                            <RecordFormInputArea
+                                label={t('consultation_reason')}
+                                name="consultationReason"
+                                rows={2}
+                                value={formData.consultationReason}
+                                error={errors.consultationReason}
+                                onChange={handleChange}
+                            />
+                            <RecordFormInputArea
+                                label={t('onset_details')}
+                                name="onset"
+                                rows={2}
+                                value={formData.onset}
+                                error={errors.onset}
+                                onChange={handleChange}
+                            />
+                            <RecordFormInputArea
+                                label={t('current_situation')}
+                                name="currentSituation"
+                                rows={2}
+                                value={formData.currentSituation}
+                                error={errors.currentSituation}
+                                onChange={handleChange}
+                            />
+                            <RecordFormInputArea
+                                label={t('evolution_progress')}
+                                name="evolution"
+                                rows={2}
+                                value={formData.evolution}
+                                error={errors.evolution}
+                                onChange={handleChange}
+                            />
 
                             <div className="col-span-6 sm:col-span-3">
                                 <label className="block text-sm font-bold text-gray-700 mb-1">{t('tests_radiology')}</label>
@@ -167,7 +223,14 @@ export default function RecordForm() {
                                 <input type="text" name="medicalTreatment" value={formData.medicalTreatment} onChange={handleChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
                             </div>
 
-                            <InputArea label={t('home_tasks_treatment')} name="homeTreatment" rows={3} />
+                            <RecordFormInputArea
+                                label={t('home_tasks_treatment')}
+                                name="homeTreatment"
+                                rows={3}
+                                value={formData.homeTreatment}
+                                error={errors.homeTreatment}
+                                onChange={handleChange}
+                            />
                             
                             <div className="col-span-6">
                                 <label className="block text-sm font-bold text-gray-700 mb-1">{t('confidential_notes')}</label>

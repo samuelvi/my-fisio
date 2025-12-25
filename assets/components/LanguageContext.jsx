@@ -15,8 +15,14 @@ export const LanguageProvider = ({ children }) => {
         localStorage.setItem('app_locale', locale);
     }, [locale, allTranslations]);
 
-    const t = (key) => {
-        return translations[key] || key;
+    const t = (key, params = null) => {
+        let value = translations[key] || key;
+        if (params && typeof value === 'string') {
+            Object.entries(params).forEach(([paramKey, paramValue]) => {
+                value = value.replace(new RegExp(`\\{${paramKey}\\}`, 'g'), String(paramValue));
+            });
+        }
+        return value;
     };
 
     const changeLanguage = (newLocale) => {

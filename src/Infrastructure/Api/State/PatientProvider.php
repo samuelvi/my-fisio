@@ -42,13 +42,13 @@ class PatientProvider implements ProviderInterface
         $qb = $repository->createQueryBuilder('p')
             ->select('p.id');
 
-        if (isset($filters['status'])) {
+        if (isset($filters['status']) && $filters['status'] !== 'all') {
             $statusEnum = PatientStatus::tryFrom($filters['status']);
             if ($statusEnum) {
                 $qb->andWhere('p.status = :status')
                    ->setParameter('status', $statusEnum->value);
             }
-        } else {
+        } elseif (!isset($filters['status'])) {
             $qb->andWhere('p.status = :status')
                ->setParameter('status', PatientStatus::ACTIVE->value);
         }

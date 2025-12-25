@@ -24,11 +24,16 @@ export default function PatientForm() {
         address: '',
         profession: '',
         sportsActivity: '',
+        rate: '',
         allergies: '',
         systemicDiseases: '',
         medication: '',
         surgeries: '',
         accidents: '',
+        injuries: '',
+        bruxism: '',
+        insoles: '',
+        others: '',
         notes: '',
         status: 'active'
     });
@@ -57,11 +62,16 @@ export default function PatientForm() {
                 address: data.address || '',
                 profession: data.profession || '',
                 sportsActivity: data.sportsActivity || '',
+                rate: data.rate || '',
                 allergies: data.allergies || '',
                 systemicDiseases: data.systemicDiseases || '',
                 medication: data.medication || '',
                 surgeries: data.surgeries || '',
                 accidents: data.accidents || '',
+                injuries: data.injuries || '',
+                bruxism: data.bruxism || '',
+                insoles: data.insoles || '',
+                others: data.others || '',
                 notes: data.notes || '',
                 status: data.status || 'active'
             });
@@ -217,6 +227,7 @@ export default function PatientForm() {
                                         className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
                                     />
                                 </div>
+
                             </div>
                         </div>
                     </div>
@@ -276,7 +287,35 @@ export default function PatientForm() {
                     </div>
                 </div>
 
-                {/* SECTION 3: Clinical Background */}
+                {/* SECTION 3: Administrative Details */}
+                <div className="bg-white shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-gray-200">
+                    <div className="md:grid md:grid-cols-3 md:gap-6">
+                        <div className="md:col-span-1">
+                            <h3 className="text-lg font-bold leading-6 text-gray-900">{t('administrative_details')}</h3>
+                            <p className="mt-1 text-sm text-gray-500">
+                                {t('administrative_details_subtitle')}
+                            </p>
+                        </div>
+                        <div className="mt-5 md:mt-0 md:col-span-2">
+                            <div className="grid grid-cols-6 gap-6">
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label htmlFor="rate" className="block text-sm font-semibold text-gray-700">{t('rate')}</label>
+                                    <input
+                                        type="text"
+                                        name="rate"
+                                        id="rate"
+                                        placeholder={t('rate_placeholder')}
+                                        value={formData.rate}
+                                        onChange={handleChange}
+                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* SECTION 4: Clinical Background */}
                 <div className="bg-white shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-gray-200">
                     <div className="md:grid md:grid-cols-3 md:gap-6">
                         <div className="md:col-span-1">
@@ -377,12 +416,77 @@ export default function PatientForm() {
                                         className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
                                     />
                                 </div>
+
+                                <div className="col-span-6">
+                                    <label htmlFor="injuries" className="block text-sm font-semibold text-gray-700">{t('injuries')}</label>
+                                    <textarea
+                                        name="injuries"
+                                        id="injuries"
+                                        rows={2}
+                                        placeholder={t('injuries_placeholder')}
+                                        value={formData.injuries}
+                                        onChange={handleChange}
+                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div>
+
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label htmlFor="bruxism" className="block text-sm font-semibold text-gray-700">{t('bruxism')}</label>
+                                    <input
+                                        type="text"
+                                        name="bruxism"
+                                        id="bruxism"
+                                        placeholder={t('bruxism_placeholder')}
+                                        value={formData.bruxism}
+                                        onChange={handleChange}
+                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div>
+
+                                <div className="col-span-6 sm:col-span-3">
+                                    <label htmlFor="insoles" className="block text-sm font-semibold text-gray-700">{t('insoles')}</label>
+                                    <input
+                                        type="text"
+                                        name="insoles"
+                                        id="insoles"
+                                        placeholder={t('insoles_placeholder')}
+                                        value={formData.insoles}
+                                        onChange={handleChange}
+                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div>
+
+                                <div className="col-span-6">
+                                    <label htmlFor="others" className="block text-sm font-semibold text-gray-700">{t('others')}</label>
+                                    <textarea
+                                        name="others"
+                                        id="others"
+                                        rows={3}
+                                        placeholder={t('others_placeholder')}
+                                        value={formData.others}
+                                        onChange={handleChange}
+                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div>
+
+                                <div className="col-span-6">
+                                    <label htmlFor="notes" className="block text-sm font-semibold text-gray-700">{t('notes')}</label>
+                                    <textarea
+                                        name="notes"
+                                        id="notes"
+                                        rows={4}
+                                        placeholder={t('notes_placeholder')}
+                                        value={formData.notes}
+                                        onChange={handleChange}
+                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* SECTION 4: Danger Zone (Status Toggle) */}
+                {/* SECTION 5: Danger Zone (Status Toggle) */}
                 {isEditing && (
                     <div className="bg-red-50 shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-red-200 mt-12 mb-12">
                         <div className="md:grid md:grid-cols-3 md:gap-6">

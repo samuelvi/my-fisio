@@ -54,7 +54,7 @@ export default function FullHistory() {
             </div>
 
             {/* Comprehensive Patient Info Card */}
-            <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 sm:p-8">
+            <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 sm:p-8 no-print">
                 <h2 className="text-xl font-black text-gray-800 mb-6 sm:mb-8 border-b border-gray-100 pb-4">{t('personal_information')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-y-8 gap-x-12 text-sm">
                     <div>
@@ -142,18 +142,19 @@ export default function FullHistory() {
             </div>
 
             {sortedRecords.length === 0 ? (
-                <div className="text-center py-16 sm:py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                <div className="text-center py-16 sm:py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200 print-only">
                     <p className="text-gray-400 font-bold">{t('no_records_available')}</p>
                 </div>
             ) : (
-                <div className="space-y-6 sm:space-y-10">
+                <div className="space-y-6 sm:space-y-10 print-only">
                     {sortedRecords.map((record, index) => (
-                        <div key={record.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden page-break-inside-avoid">
-                            <div className="bg-gray-50 px-4 sm:px-8 py-4 border-b border-gray-200 flex justify-between items-center">
-                                <span className="text-xs font-black text-primary uppercase tracking-widest">{t('entry')} # {sortedRecords.length - index}</span>
-                                <span className="text-xs text-gray-400 font-bold">{new Date(record.createdAt).toLocaleString()}</span>
+                        <div key={record.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden page-break-inside-avoid print-card">
+                            <div className="bg-gray-50 px-4 sm:px-8 py-4 border-b border-gray-200 flex justify-between items-center print-header">
+                                <span className="text-xs font-black text-primary uppercase tracking-widest">
+                                    {t('created_at')} {new Date(record.createdAt).toLocaleDateString()}
+                                </span>
                             </div>
-                            <div className="p-4 sm:p-8">
+                            <div className="p-4 sm:p-8 print-body">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                                     <div className="col-span-2">
                                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{t('main_physiotherapy_treatment')}</h4>
@@ -232,11 +233,22 @@ export default function FullHistory() {
             <style dangerouslySetInnerHTML={{ __html: `
                 @media print {
                     .no-print { display: none !important; }
-                    body { background: white !important; }
+                    .print-only { display: block !important; }
+                    body * { visibility: hidden !important; }
+                    .print-only, .print-only * { visibility: visible !important; }
+                    .print-only { position: absolute; left: 0; top: 0; width: 100%; }
+                    body { background: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                     .max-w-5xl { max-width: 100% !important; width: 100% !important; margin: 0 !important; padding: 0 !important; }
                     .page-break-inside-avoid { page-break-inside: avoid; }
                     .shadow-sm, .shadow-lg { shadow: none !important; box-shadow: none !important; }
-                    .border { border-color: #eee !important; }
+                    .border { border-color: #ddd !important; }
+                    .print-card { border-radius: 6px !important; box-shadow: none !important; }
+                    .print-card, .print-card * { background: white !important; }
+                    .print-header, .print-body { padding: 12px 16px !important; }
+                    .print-body { font-size: 11pt; line-height: 1.4; }
+                }
+                @media screen {
+                    .print-only { position: static; visibility: visible; }
                 }
             `}} />
         </div>

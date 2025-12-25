@@ -33,6 +33,7 @@ class PatientProcessor implements ProcessorInterface
 
         $patient->firstName = $data->firstName;
         $patient->lastName = $data->lastName;
+        $patient->syncFullName();
         $patient->status = $data->status;
         $patient->dateOfBirth = $data->dateOfBirth;
         $patient->identityDocument = $data->identityDocument;

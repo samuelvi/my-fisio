@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
+#[ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: 'patients')]
 class Patient
 {
@@ -29,21 +30,11 @@ class Patient
 
     #[ORM\Column(type: Types::STRING, length: 50, nullable: false)]
     #[Groups(['patient:read', 'patient:write', 'record:read'])]
-    public string $firstName {
-        set {
-            $this->firstName = $value;
-            $this->updateFullName();
-        }
-    }
+    public string $firstName;
 
     #[ORM\Column(type: Types::STRING, length: 100, nullable: false)]
     #[Groups(['patient:read', 'patient:write', 'record:read'])]
-    public string $lastName {
-        set {
-            $this->lastName = $value;
-            $this->updateFullName();
-        }
-    }
+    public string $lastName;
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE, nullable: true)]
     #[Groups(['patient:read', 'patient:write'])]
@@ -144,6 +135,13 @@ class Patient
     public static function create(string $firstName, string $lastName): self
     {
         return new self($firstName, $lastName);
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function syncFullName(): void
+    {
+        $this->updateFullName();
     }
 
     private function updateFullName(): void

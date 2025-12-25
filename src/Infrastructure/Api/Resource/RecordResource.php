@@ -31,7 +31,7 @@ class RecordResource
     public ?int $id = null;
 
     #[Groups(['record:read', 'record:write'])]
-    public string $patient; 
+    public ?string $patient = null; 
 
     #[Groups(['record:read', 'record:write'])]
     public string $physiotherapyTreatment;
@@ -63,7 +63,7 @@ class RecordResource
     #[Groups(['record:read', 'record:write'])]
     public ?bool $sickLeave = false;
 
-    #[Groups(['record:read'])]
+    #[Groups(['record:read', 'record:write'])]
     public ?\DateTimeImmutable $createdAt = null;
 
     public function __construct() {}

@@ -9,7 +9,7 @@ export default function PatientList() {
     const [loading, setLoading] = useState(true);
     const [searchInput, setSearchInput] = useState(sessionStorage.getItem('patientList_searchInput') || '');
     const [searchTerm, setSearchTerm] = useState(sessionStorage.getItem('patientList_searchTerm') || '');
-    const [statusFilter, setStatusFilter] = useState(sessionStorage.getItem('patientList_statusFilter') || 'active');
+    const [statusFilter, setStatusFilter] = useState(sessionStorage.getItem('patientList_statusFilter') || 'all');
     const [sortOrder, setSortOrder] = useState(sessionStorage.getItem('patientList_sortOrder') || 'latest');
     const [useFuzzy, setUseFuzzy] = useState(sessionStorage.getItem('patientList_useFuzzy') === 'true');
     const [page, setPage] = useState(parseInt(sessionStorage.getItem('patientList_page') || '1', 10));
@@ -88,6 +88,9 @@ export default function PatientList() {
                         {page}
                     </div>
                 </div>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    {t('listing_results', { count: patients.length })}
+                </span>
                 {page > 1 && (
                     <button
                         onClick={() => setPage(1)}
@@ -186,6 +189,7 @@ export default function PatientList() {
                                     onChange={(e) => setStatusFilter(e.target.value)}
                                     className="h-[46px] bg-gray-50 pl-4 pr-10 text-sm border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold rounded-xl"
                                 >
+                                    <option value="all">{t('any_status')}</option>
                                     <option value="active">{t('active')}</option>
                                     <option value="disabled">{t('inactive')}</option>
                                 </select>

@@ -53,6 +53,9 @@ class RecordProcessor implements ProcessorInterface
         $record->onset = $data->onset;
         $record->notes = $data->notes;
         $record->sickLeave = $data->sickLeave;
+        if ($data->createdAt instanceof \DateTimeImmutable) {
+            $record->createdAt = $data->createdAt;
+        }
 
         $this->entityManager->persist($record);
         $this->entityManager->flush();

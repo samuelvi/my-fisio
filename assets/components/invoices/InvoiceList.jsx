@@ -146,6 +146,9 @@ export default function InvoiceList() {
                         {page}
                     </div>
                 </div>
+                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    {t('listing_results', { count: invoices.length })}
+                </span>
                 {page > 1 && (
                     <button
                         onClick={() => setPage(1)}
