@@ -6,7 +6,8 @@
   input.border-gray-300,
   textarea.border-gray-300,
   select.border-gray-300 {
-    border-color: #d1d5db;
+    border-color: #cbd5e1 !important;
+    border-width: 1px;
     @apply focus:border-primary focus:ring-1 focus:ring-primary/40;
   }
 
@@ -14,7 +15,7 @@
   textarea:focus,
   select:focus {
     outline: none;
-    border-color: rgb(var(--color-primary) / 1);
+    border-color: rgb(var(--color-primary) / 1) !important;
     box-shadow: 0 0 0 2px rgb(var(--color-primary) / 0.3);
   }
 }
