@@ -130,7 +130,8 @@ Configuration is controlled via environment variables:
 
 The default values live in `docker/dev/docker-compose.yaml`. For macOS, we override them using
 `docker/dev/docker-compose.override.yaml` to enable polling by default. The Makefile already
-loads the override file in all dev commands.
+loads the override file in all dev commands. The dev server runs with `--mode dev`, so Vite
+will also read `.env.dev` and `.env.dev.local`.
 
 ### Container Access
 
@@ -324,7 +325,21 @@ APP_ENV=dev
 APP_DEBUG=1
 VITE_WATCH_STRATEGY=events
 VITE_WATCH_POLL_INTERVAL=300
+VITE_CALENDAR_FIRST_DAY=0
+VITE_CALENDAR_NARROW_SATURDAY=true
+VITE_CALENDAR_NARROW_SUNDAY=true
+VITE_CALENDAR_WEEKEND_WIDTH_PERCENT=50
 ```
+
+`VITE_CALENDAR_FIRST_DAY` sets the first day of the week for the appointments calendar:
+- `0` = Sunday
+- `1` = Monday
+
+`VITE_CALENDAR_NARROW_SATURDAY` and `VITE_CALENDAR_NARROW_SUNDAY` control whether the Saturday
+and Sunday columns render narrower in the calendar (`true` or `false`).
+
+`VITE_CALENDAR_WEEKEND_WIDTH_PERCENT` defines the weekend column width as a percentage of a
+normal day column (e.g., `50` means the weekend columns are half-width).
 
 ### PHP
 

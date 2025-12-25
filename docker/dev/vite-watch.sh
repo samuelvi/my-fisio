@@ -11,4 +11,4 @@ else
   export CHOKIDAR_USEPOLLING=false
 fi
 
-npm run dev -- --host
+npm run dev -- --host --mode dev

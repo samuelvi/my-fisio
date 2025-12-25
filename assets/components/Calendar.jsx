@@ -3,10 +3,16 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import esLocale from '@fullcalendar/core/locales/es';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import axios from 'axios';
+import { registerLocale } from 'react-datepicker';
+import { enUS, es } from 'date-fns/locale';
 import { useLanguage } from './LanguageContext';
+
+registerLocale('en', enUS);
+registerLocale('es', es);
 
 export default function Calendar() {
     const { t, language } = useLanguage();
@@ -26,8 +32,46 @@ export default function Calendar() {
     const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || 10);
     const DEFAULT_DURATION_MINUTES = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || 60);
     const SLOT_DURATION_MINUTES = parseInt(import.meta.env.VITE_CALENDAR_SLOT_DURATION_MINUTES || 15);
+    const calendarFirstDay = parseInt(import.meta.env.VITE_CALENDAR_FIRST_DAY || '0', 10);
+    const calendarScrollTime = import.meta.env.VITE_CALENDAR_SCROLL_TIME || '08:00:00';
+    const narrowSaturday = import.meta.env.VITE_CALENDAR_NARROW_SATURDAY === 'true';
+    const narrowSunday = import.meta.env.VITE_CALENDAR_NARROW_SUNDAY === 'true';
+    const weekendWidthPercent = parseFloat(import.meta.env.VITE_CALENDAR_WEEKEND_WIDTH_PERCENT || '50');
     const slotDurationString = `00:${SLOT_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
     const defaultDurationString = `00:${DEFAULT_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
+    const safeFirstDay = Number.isNaN(calendarFirstDay) || calendarFirstDay < 0 || calendarFirstDay > 6 ? 0 : calendarFirstDay;
+    const calendarLocale = language === 'es' ? 'es' : 'en';
+    const datePickerFormat = 'Pp';
+    const safeWeekendPercent = Number.isNaN(weekendWidthPercent) ? 50 : Math.min(Math.max(weekendWidthPercent, 30), 100);
+    const weekendColumnWidth = `${(100 / 7) * (safeWeekendPercent / 100)}%`;
+    const weekendColumnStyles = (narrowSaturday || narrowSunday)
+        ? `
+                .fc .fc-scrollgrid,
+                .fc .fc-scrollgrid table,
+                .fc .fc-timegrid-cols table,
+                .fc .fc-daygrid-body table {
+                    table-layout: fixed;
+                }
+                ${narrowSaturday ? `
+                .fc .fc-col-header-cell.fc-day-sat,
+                .fc .fc-daygrid-day.fc-day-sat,
+                .fc .fc-timegrid-col.fc-day-sat,
+                .fc .fc-daygrid-body col.fc-day-sat,
+                .fc .fc-timegrid-cols col.fc-day-sat {
+                    width: ${weekendColumnWidth} !important;
+                    min-width: 90px;
+                }` : ''}
+                ${narrowSunday ? `
+                .fc .fc-col-header-cell.fc-day-sun,
+                .fc .fc-daygrid-day.fc-day-sun,
+                .fc .fc-timegrid-col.fc-day-sun,
+                .fc .fc-daygrid-body col.fc-day-sun,
+                .fc .fc-timegrid-cols col.fc-day-sun {
+                    width: ${weekendColumnWidth} !important;
+                    min-width: 90px;
+                }` : ''}
+            `
+        : '';
 
     useEffect(() => {
         if (modalOpen) {
@@ -250,7 +294,10 @@ export default function Calendar() {
                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                     headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
                     initialView="timeGridWeek"
-                    locale={language}
+                    locales={[esLocale]}
+                    locale={calendarLocale}
+                    firstDay={safeFirstDay}
+                    scrollTime={calendarScrollTime}
                     editable={true} selectable={true} selectMirror={true} dayMaxEvents={true} weekends={true}
                     slotDuration={slotDurationString}
                     snapDuration={slotDurationString}
@@ -323,7 +370,8 @@ export default function Calendar() {
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}
-                                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                                    dateFormat={datePickerFormat}
+                                                    locale={calendarLocale}
                                                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                                     wrapperClassName="w-full"
                                                 />
@@ -336,7 +384,8 @@ export default function Calendar() {
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}
-                                                    dateFormat="MMMM d, yyyy h:mm aa"
+                                                    dateFormat={datePickerFormat}
+                                                    locale={calendarLocale}
                                                     className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
                                                     wrapperClassName="w-full"
                                                 />
@@ -373,6 +422,8 @@ export default function Calendar() {
                 .fc .fc-button-primary { background-color: var(--color-primary, #4f46e5); border-color: var(--color-primary, #4f46e5); text-transform: uppercase; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem 1rem; }
                 .fc .fc-button-primary:hover { background-color: var(--color-primary-dark, #4338ca); border-color: var(--color-primary-dark, #4338ca); }
                 .fc .fc-button-primary:disabled { background-color: #d1d5db; border-color: #d1d5db; color: #9ca3af; }
+                .fc .fc-button-group > .fc-prev-button { margin-right: 0.35rem; }
+                .fc .fc-button-group > .fc-next-button { margin-left: 0.35rem; }
                 .fc .fc-toolbar-title { font-size: 1.25rem; font-weight: 800; color: #1f2937; }
                 .fc-event { cursor: pointer; padding: 2px 4px; border-radius: 4px; border: none !important; }
                 .fc-event-title { font-weight: 700; font-size: 0.8rem; }
@@ -388,6 +439,7 @@ export default function Calendar() {
                     opacity: 1;
                 }
                 .fc .fc-day-today { background-color: #f8faff !important; }
+                ${weekendColumnStyles}
             `}} />
         </div>
     );
