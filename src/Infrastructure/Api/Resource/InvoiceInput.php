@@ -18,6 +18,9 @@ final class InvoiceInput
     public ?string $name = null;
 
     #[Groups(['invoice:write'])]
+    public ?string $number = null;
+
+    #[Groups(['invoice:write'])]
     public ?string $phone = null;
 
     #[Groups(['invoice:write'])]

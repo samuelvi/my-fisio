@@ -329,6 +329,7 @@ VITE_CALENDAR_FIRST_DAY=0
 VITE_CALENDAR_NARROW_SATURDAY=true
 VITE_CALENDAR_NARROW_SUNDAY=true
 VITE_CALENDAR_WEEKEND_WIDTH_PERCENT=50
+VITE_INVOICE_EDIT_ENABLED=true
 ```
 
 `VITE_CALENDAR_FIRST_DAY` sets the first day of the week for the appointments calendar:
@@ -340,6 +341,8 @@ and Sunday columns render narrower in the calendar (`true` or `false`).
 
 `VITE_CALENDAR_WEEKEND_WIDTH_PERCENT` defines the weekend column width as a percentage of a
 normal day column (e.g., `50` means the weekend columns are half-width).
+
+`VITE_INVOICE_EDIT_ENABLED` controls whether invoice editing is enabled (`true` or `false`).
 
 ### PHP
 

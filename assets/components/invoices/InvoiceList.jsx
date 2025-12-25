@@ -7,6 +7,7 @@ export default function InvoiceList() {
     const { t, language } = useLanguage();
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
+    const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
     
     // Input States
     const [nameInput, setNameInput] = useState('');
@@ -35,6 +36,7 @@ export default function InvoiceList() {
         sessionStorage.setItem('invoiceList_page', page.toString());
         fetchInvoices();
     }, [page, filters]);
+
 
     const fetchInvoices = async () => {
         setLoading(true);
@@ -184,13 +186,22 @@ export default function InvoiceList() {
         <div className="p-4 sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
                 <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{t('invoices')}</h1>
-                <Link 
-                    to="/invoices/new"
-                    className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl font-black text-sm transition shadow-lg shadow-primary/20 active:scale-95 inline-flex items-center justify-center shadow-sm"
-                >
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
-                    {t('new_invoice')}
-                </Link>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <Link
+                        to="/invoices/gaps"
+                        className="bg-white border border-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-black text-sm transition shadow-sm hover:bg-gray-50 inline-flex items-center justify-center"
+                    >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6m-9 0h12"></path></svg>
+                        {t('invoice_number_gaps')}
+                    </Link>
+                    <Link 
+                        to="/invoices/new"
+                        className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl font-black text-sm transition shadow-lg shadow-primary/20 active:scale-95 inline-flex items-center justify-center shadow-sm"
+                    >
+                        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
+                        {t('new_invoice')}
+                    </Link>
+                </div>
             </div>
 
             {/* Filters */}
@@ -282,6 +293,11 @@ export default function InvoiceList() {
                                             <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')} className="text-gray-400 hover:text-primary transition-colors p-1" title={t('download')}>
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                             </button>
+                                            {editEnabled && (
+                                                <Link to={`/invoices/${invoice.id}/edit`} className="text-gray-400 hover:text-primary transition-colors p-1" title={t('edit')}>
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                                </Link>
+                                            )}
                                         </td>
                                     </tr>
                                 ))
@@ -312,6 +328,11 @@ export default function InvoiceList() {
                                     <button onClick={() => handleExport(invoice.id, invoice.number, 'html', 'view')} className="text-gray-400 hover:text-primary transition-colors">{t('view_html')}</button>
                                     <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'view')} className="text-gray-400 hover:text-primary transition-colors">{t('view_pdf')}</button>
                                     <button onClick={() => handleExport(invoice.id, invoice.number, 'pdf', 'download')} className="text-gray-400 hover:text-primary transition-colors">{t('download')}</button>
+                                    {editEnabled && (
+                                        <Link to={`/invoices/${invoice.id}/edit`} className="text-gray-400 hover:text-primary transition-colors">
+                                            {t('edit')}
+                                        </Link>
+                                    )}
                                 </div>
                             </div>
                         </div>

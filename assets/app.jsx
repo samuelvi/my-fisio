@@ -16,6 +16,7 @@ import FullHistory from './components/FullHistory';
 import Calendar from './components/Calendar';
 import InvoiceList from './components/invoices/InvoiceList';
 import InvoiceForm from './components/invoices/InvoiceForm';
+import InvoiceGaps from './components/invoices/InvoiceGaps';
 
 // 1. Configure Basic Axios Defaults
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
@@ -170,6 +171,22 @@ function App() {
                     <ProtectedRoute>
                         <Layout>
                             <InvoiceForm />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/invoices/:id/edit" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <InvoiceForm />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/invoices/gaps" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <InvoiceGaps />
                         </Layout>
                     </ProtectedRoute>
                 } />

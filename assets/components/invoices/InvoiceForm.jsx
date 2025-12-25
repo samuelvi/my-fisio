@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 
 const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "" }) => (
@@ -20,8 +20,12 @@ const InvoiceInput = ({ label, value, setter, type = "text", required = false, p
 export default function InvoiceForm() {
     const { t } = useLanguage();
     const navigate = useNavigate();
+    const { id } = useParams();
+    const isEditing = !!id;
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [numberError, setNumberError] = useState('');
+    const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
 
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [customerName, setCustomerName] = useState('');
@@ -29,10 +33,49 @@ export default function InvoiceForm() {
     const [customerAddress, setCustomerAddress] = useState('');
     const [customerPhone, setCustomerPhone] = useState('');
     const [customerEmail, setCustomerEmail] = useState('');
+    const [invoiceNumber, setInvoiceNumber] = useState('');
 
     const [lines, setLines] = useState([
         { concept: '', description: '', quantity: 1, price: 0, amount: 0 }
     ]);
+
+    useEffect(() => {
+        if (isEditing && !editEnabled) {
+            navigate('/invoices');
+        }
+    }, [isEditing, editEnabled, navigate]);
+
+    useEffect(() => {
+        if (!isEditing) return;
+        const fetchInvoice = async () => {
+            setLoading(true);
+            try {
+                const response = await axios.get(`/api/invoices/${id}`);
+                const data = response.data;
+                setDate(data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
+                setCustomerName(data.name || '');
+                setCustomerTaxId(data.taxId || '');
+                setCustomerAddress(data.address || '');
+                setCustomerPhone(data.phone || '');
+                setCustomerEmail(data.email || '');
+                setInvoiceNumber(data.number || '');
+                const mappedLines = (data.lines || []).map((line) => ({
+                    concept: line.concept || '',
+                    description: line.description || '',
+                    quantity: line.quantity || 1,
+                    price: line.price || 0,
+                    amount: line.amount || (line.quantity || 1) * (line.price || 0)
+                }));
+                setLines(mappedLines.length ? mappedLines : [{ concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
+            } catch (err) {
+                console.error('Error loading invoice:', err);
+                setError(t('error_could_not_load_invoice'));
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchInvoice();
+    }, [isEditing, id, t]);
 
     const handleAddLine = () => {
         setLines([...lines, { concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
@@ -62,6 +105,7 @@ export default function InvoiceForm() {
         e.preventDefault();
         setLoading(true);
         setError(null);
+        setNumberError('');
 
         if (!customerName || !customerTaxId) {
             setError(t('error_required_fields_missing'));
@@ -76,8 +120,8 @@ export default function InvoiceForm() {
             address: customerAddress,
             phone: customerPhone,
             email: customerEmail,
+            number: invoiceNumber,
             amount: calculateTotal(),
-            number: 'DRAFT',
             lines: lines.map(line => ({
                 concept: line.concept,
                 description: line.description,
@@ -88,11 +132,21 @@ export default function InvoiceForm() {
         };
 
         try {
-            await axios.post('/api/invoices', payload);
+            if (isEditing) {
+                await axios.put(`/api/invoices/${id}`, payload);
+            } else {
+                delete payload.number;
+                await axios.post('/api/invoices', payload);
+            }
             navigate('/invoices');
         } catch (err) {
             console.error('Error creating invoice:', err);
-            setError(t('error_failed_to_create_invoice'));
+            const detail = err.response?.data?.detail;
+            if (detail && detail.startsWith('invoice_number_')) {
+                setNumberError(t(detail));
+            } else {
+                setError(t('error_failed_to_create_invoice'));
+            }
         } finally {
             setLoading(false);
         }
@@ -101,8 +155,8 @@ export default function InvoiceForm() {
     return (
         <div className="max-w-5xl mx-auto p-4 sm:p-6">
             <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">{t('new_invoice')}</h1>
-                <p className="text-sm text-gray-500">{t('new_invoice_subtitle')}</p>
+                <h1 className="text-2xl font-bold text-gray-900">{isEditing ? t('edit_invoice') : t('new_invoice')}</h1>
+                <p className="text-sm text-gray-500">{isEditing ? t('edit_invoice_subtitle') : t('new_invoice_subtitle')}</p>
             </div>
 
             {error && (
@@ -120,6 +174,19 @@ export default function InvoiceForm() {
                     <div className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <InvoiceInput label={t('invoice_date')} value={date} setter={setDate} type="date" required />
+                            {isEditing && (
+                                <InvoiceInput
+                                    label={t('number')}
+                                    value={invoiceNumber}
+                                    setter={setInvoiceNumber}
+                                    required
+                                    placeholder="YYYY000001"
+                                    type="text"
+                                />
+                            )}
+                            {isEditing && numberError && (
+                                <p className="text-sm text-red-600 font-bold -mt-3">{numberError}</p>
+                            )}
                             <InvoiceInput label={t('customer_name')} value={customerName} setter={setCustomerName} required placeholder={t('customer_name_placeholder')} />
                             <InvoiceInput label={t('tax_id')} value={customerTaxId} setter={setCustomerTaxId} required placeholder="Ex: 12345678A" />
                             <InvoiceInput label={t('email')} value={customerEmail} setter={setCustomerEmail} type="email" />

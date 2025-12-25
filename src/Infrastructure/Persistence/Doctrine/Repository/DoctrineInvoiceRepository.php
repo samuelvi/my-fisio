@@ -78,4 +78,40 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
 
         return (int) ($result[0]['total'] ?? 0);
     }
+
+    public function getNumbersByYear(int $year): array
+    {
+        $prefix = sprintf('%d', $year);
+        $qb = $this->createQueryBuilder('i')
+            ->select('i.number')
+            ->where('i.number LIKE :prefix')
+            ->orderBy('i.number', 'ASC')
+            ->setParameter('prefix', $prefix . '%');
+
+        $result = $qb->getQuery()->getArrayResult();
+
+        return array_values(array_filter(array_map(
+            static fn (array $row) => $row['number'] ?? null,
+            $result
+        )));
+    }
+
+    public function getNumbersByYearExcluding(int $year, int $excludeId): array
+    {
+        $prefix = sprintf('%d', $year);
+        $qb = $this->createQueryBuilder('i')
+            ->select('i.number')
+            ->where('i.number LIKE :prefix')
+            ->andWhere('i.id != :excludeId')
+            ->orderBy('i.number', 'ASC')
+            ->setParameter('prefix', $prefix . '%')
+            ->setParameter('excludeId', $excludeId);
+
+        $result = $qb->getQuery()->getArrayResult();
+
+        return array_values(array_filter(array_map(
+            static fn (array $row) => $row['number'] ?? null,
+            $result
+        )));
+    }
 }

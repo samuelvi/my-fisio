@@ -107,6 +107,23 @@ src/
 - Centralized API services
 - Responsive design (mobile-first)
 
+## Form Validation Best Practices
+
+### React (Frontend)
+- **Validate early**: apply basic checks (required fields, format, min/max) in the UI before submitting.
+- **Keep errors close to fields**: show error messages next to the relevant input, not only globally.
+- **Do not re-mount inputs**: define input components outside the render scope to avoid losing focus.
+- **Reuse validators**: extract validation helpers to keep form logic consistent across screens.
+- **Normalize data**: trim strings, coerce numeric fields, and normalize dates before sending.
+- **Prefer backend as source of truth**: frontend validation is for UX; always validate again on the backend.
+
+### Symfony (Backend)
+- **Validate all writes**: enforce constraints on create/update even if the client validates.
+- **Return explicit reasons**: use clear, machine-readable error codes for field-level errors.
+- **Avoid silent coercion**: reject invalid formats (e.g., malformed invoice numbers) rather than guessing.
+- **Consistency rules**: validate sequence constraints (e.g., invoice numbers) against persisted data.
+- **Use named constructors**: keep entities encapsulated and instantiate via factories.
+
 ## Git Workflow
 - **Commit Messages**: Must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
     - Format: `type(scope): subject`
