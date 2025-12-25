@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Infrastructure\Api\Resource;
+
+use ApiPlatform\Metadata\ApiProperty;
+use ApiPlatform\Metadata\ApiResource;
+use Symfony\Component\Serializer\Attribute\Groups;
+
+#[ApiResource(operations: [])]
+final class InvoiceInput
+{
+    #[Groups(['invoice:write'])]
+    public ?\DateTimeImmutable $date = null;
+
+    #[Groups(['invoice:write'])]
+    public ?string $name = null;
+
+    #[Groups(['invoice:write'])]
+    public ?string $phone = null;
+
+    #[Groups(['invoice:write'])]
+    public ?string $address = null;
+
+    #[Groups(['invoice:write'])]
+    public ?string $email = null;
+
+    #[Groups(['invoice:write'])]
+    public ?string $taxId = null;
+
+    /**
+     * @var array<int, array<string, mixed>|InvoiceLineInput>
+     */
+    #[ApiProperty]
+    #[Groups(['invoice:write'])]
+    public array $lines = [];
+
+    public function __construct() {}
+}

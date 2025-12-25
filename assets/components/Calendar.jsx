@@ -18,6 +18,7 @@ export default function Calendar() {
     const { t, language } = useLanguage();
     const [isMobile, setIsMobile] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(null);
     const [calendarRef, setCalendarRef] = useState(null);
     const titleInputRef = useRef(null);
@@ -226,11 +227,12 @@ export default function Calendar() {
         }
     };
 
-    const handleDelete = async () => {
-        if (!currentEvent || !window.confirm(t('confirm_delete_appointment'))) return;
+    const handleDeleteConfirmed = async () => {
+        if (!currentEvent) return;
         try {
             await axios.delete(`/api/appointments/${currentEvent.id}`);
             setModalOpen(false);
+            setIsDeleteConfirmOpen(false);
             if (calendarRef) calendarRef.getApi().refetchEvents();
         } catch (error) {
             console.error('Error deleting appointment:', error);
@@ -342,7 +344,7 @@ export default function Calendar() {
                                         {currentEvent && (
                                             <button 
                                                 type="button" 
-                                                onClick={handleDelete} 
+                                                onClick={() => setIsDeleteConfirmOpen(true)} 
                                                 className="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50"
                                                 title={t('delete')}
                                             >
@@ -429,6 +431,47 @@ export default function Calendar() {
                                     </button>
                                 </div>
                             </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {isDeleteConfirmOpen && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                    <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                        <div className="fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity" onClick={() => setIsDeleteConfirmOpen(false)}></div>
+                        <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
+                        <div className="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-gray-200">
+                            <div className="bg-white px-6 pt-6 pb-4 sm:p-8 sm:pb-6">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-12 w-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center">
+                                        <svg className="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01M5.07 19h13.86c1.54 0 2.5-1.67 1.73-3L13.73 4c-.77-1.33-2.69-1.33-3.46 0L3.34 16c-.77 1.33.19 3 1.73 3z"/></svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-black text-gray-900">{t('delete')}</h3>
+                                        <p className="text-sm text-gray-500 mt-1">{t('confirm_delete_appointment')}</p>
+                                        {currentEvent?.title && (
+                                            <p className="text-sm font-bold text-gray-800 mt-2">{currentEvent.title}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-gray-50 px-6 py-4 flex flex-col sm:flex-row sm:justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsDeleteConfirmOpen(false)}
+                                    className="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-bold text-gray-700 hover:bg-gray-50 transition"
+                                >
+                                    {t('cancel')}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleDeleteConfirmed}
+                                    className="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-sm font-bold text-white hover:bg-red-500 transition"
+                                >
+                                    {t('delete')}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -15,6 +15,7 @@ use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\Infrastructure\Api\State\Processor\InvoiceCreateProcessor;
+use App\Infrastructure\Api\Resource\InvoiceInput;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -27,7 +28,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(),
         new Get(),
-        new Post(processor: InvoiceCreateProcessor::class)
+        new Post(processor: InvoiceCreateProcessor::class, input: InvoiceInput::class)
     ],
     normalizationContext: ['groups' => ['invoice:read']],
     denormalizationContext: ['groups' => ['invoice:write']],
@@ -97,18 +98,20 @@ class Invoice
     #[Groups(['invoice:read'])]
     public DateTimeInterface $createdAt;
 
-    private function __construct(string $number, float $amount, string $name)
+    private function __construct()
     {
-        $this->number = $number;
-        $this->amount = $amount;
-        $this->name = $name;
+        $this->number = '';
+        $this->amount = 0.0;
+        $this->name = '';
         $this->date = new DateTimeImmutable();
         $this->createdAt = new DateTimeImmutable();
         $this->lines = new ArrayCollection();
     }
 
-    public static function create(string $number, float $amount, string $name): self
+    public static function create(string $name): self
     {
-        return new self($number, $amount, $name);
+        $invoice = new self();
+        $invoice->name = $name;
+        return $invoice;
     }
 }
