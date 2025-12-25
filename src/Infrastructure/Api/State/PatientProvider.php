@@ -53,32 +53,60 @@ class PatientProvider implements ProviderInterface
                ->setParameter('status', PatientStatus::ACTIVE->value);
         }
 
-        if (!empty($filters['search'])) {
-            $search = trim($filters['search']);
-            $searchTermFull = '%' . $search . '%';
-            $useFuzzy = isset($filters['fuzzy']) && ($filters['fuzzy'] === 'true' || $filters['fuzzy'] === true || $filters['fuzzy'] === '1');
-            
-            $searchOr = $qb->expr()->orX();
-            $searchOr->add('p.fullName LIKE :searchFull');
-            $searchOr->add('p.phone LIKE :searchFull');
-            $searchOr->add('p.email LIKE :searchFull');
-            $qb->setParameter('searchFull', $searchTermFull);
+        if (isset($filters['search'])) {
+            $search = $this->normalizeSearch((string) $filters['search']);
+            if ($search !== '') {
+                $searchTermFull = '%' . $search . '%';
+                $useFuzzy = isset($filters['fuzzy']) && ($filters['fuzzy'] === 'true' || $filters['fuzzy'] === true || $filters['fuzzy'] === '1');
+                
+                $searchOr = $qb->expr()->orX();
+                $searchOr->add('p.fullName LIKE :searchFull');
+                $searchOr->add('p.phone LIKE :searchFull');
+                $searchOr->add('p.email LIKE :searchFull');
+                $qb->setParameter('searchFull', $searchTermFull);
 
-            if ($useFuzzy && strlen($search) >= 3) {
-                $conn = $this->entityManager->getConnection();
-                $similarIds = $conn->fetchFirstColumn(
-                    "SELECT id FROM patients 
-                     WHERE similarity(full_name, :s::text) > 0.3 
-                        OR levenshtein(full_name::text, :s::text) <= 3",
-                    ['s' => $search]
-                );
-
-                if (!empty($similarIds)) {
-                    $searchOr->add('p.id IN (:similarIds)');
-                    $qb->setParameter('similarIds', $similarIds);
+                $tokens = $this->extractSearchTokens($search);
+                if (count($tokens) > 1) {
+                    $tokenAnd = $qb->expr()->andX();
+                    foreach ($tokens as $index => $token) {
+                        $param = 'searchToken' . $index;
+                        $tokenAnd->add(sprintf('p.fullName LIKE :%s', $param));
+                        $qb->setParameter($param, '%' . $token . '%');
+                    }
+                    $searchOr->add($tokenAnd);
                 }
+
+                if ($useFuzzy && strlen($search) >= 3) {
+                    $conn = $this->entityManager->getConnection();
+                    $maxDistance = $this->getMaxLevenshteinDistance($search);
+                    $maxLength = $this->getMaxLevenshteinLength($search);
+                    $similarIds = $conn->fetchFirstColumn(
+                        "SELECT id FROM patients 
+                         WHERE full_name % :s
+                            OR first_name % :s
+                            OR last_name % :s
+                            OR email % :s
+                            OR (
+                                char_length(:s) <= :maxLength
+                                AND (
+                                    levenshtein_less_equal(first_name::text, :s::text, :maxDistance) <= :maxDistance
+                                    OR levenshtein_less_equal(last_name::text, :s::text, :maxDistance) <= :maxDistance
+                                )
+                            )",
+                        [
+                            's' => $search,
+                            'maxLength' => $maxLength,
+                            'maxDistance' => $maxDistance,
+                        ]
+                    );
+
+                    if (!empty($similarIds)) {
+                        $searchOr->add('p.id IN (:similarIds)');
+                        $qb->setParameter('similarIds', array_values(array_unique($similarIds)));
+                    }
+                }
+                $qb->andWhere($searchOr);
             }
-            $qb->andWhere($searchOr);
         }
 
         if (isset($filters['order']) && $filters['order'] === 'alpha') {
@@ -169,5 +197,45 @@ class PatientProvider implements ProviderInterface
         }, $data['records'] ?? []);
         
         return $resource;
+    }
+
+    private function normalizeSearch(string $search): string
+    {
+        $search = trim($search);
+        return preg_replace('/\s+/', ' ', $search) ?? '';
+    }
+
+    /**
+     * @return string[]
+     */
+    private function extractSearchTokens(string $search): array
+    {
+        $tokens = preg_split('/\s+/', $search) ?: [];
+        $tokens = array_filter(array_map('trim', $tokens), static fn (string $token) => $token !== '');
+        return array_values(array_unique($tokens));
+    }
+
+    private function getMaxLevenshteinDistance(string $search): int
+    {
+        $length = strlen($search);
+        if ($length <= 4) {
+            return 1;
+        }
+        if ($length <= 6) {
+            return 2;
+        }
+        return 3;
+    }
+
+    private function getMaxLevenshteinLength(string $search): int
+    {
+        $length = strlen($search);
+        if ($length <= 6) {
+            return 6;
+        }
+        if ($length <= 10) {
+            return 8;
+        }
+        return 0;
     }
 }
