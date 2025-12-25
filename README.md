@@ -78,6 +78,7 @@ Once the containers are started, you will have access to:
 | Service | URL/Port | Description |
 |---------|----------|-------------|
 | Application | http://localhost | Main web application |
+| Vite Dev Server | http://localhost:5173 | Frontend dev server (HMR) |
 | MailPit UI | http://localhost:8025 | Web interface for development emails |
 | Adminer | http://localhost:8080 | Visual database management |
 | PostgreSQL | localhost:5432 | Main database |
@@ -115,6 +116,22 @@ The `.env` file must be properly configured for production. Never use developmen
 
 ## Container Management
 
+### Frontend Watch (Vite)
+
+The Vite dev server runs in a dedicated Docker container (`node_watch`) and supports two watch strategies:
+
+- **events** (default): File system events trigger rebuilds and HMR.
+- **polling**: Vite polls the filesystem every N milliseconds.
+
+Configuration is controlled via environment variables:
+
+- `VITE_WATCH_STRATEGY` (`events` or `polling`)
+- `VITE_WATCH_POLL_INTERVAL` (milliseconds)
+
+The default values live in `docker/dev/docker-compose.yaml`. For macOS, we override them using
+`docker/dev/docker-compose.override.yaml` to enable polling by default. The Makefile already
+loads the override file in all dev commands.
+
 ### Container Access
 
 ```bash
@@ -126,6 +143,9 @@ make dev-shell-db
 
 # Access Redis CLI
 make dev-shell-redis
+
+# Access Node watch container
+make dev-shell-node
 ```
 
 ### View Container Status
@@ -136,6 +156,9 @@ make dev-ps
 
 # View logs in real-time
 make dev-logs
+
+# View Vite watch logs
+make dev-watch-logs
 ```
 
 ## Symfony Development
@@ -299,6 +322,8 @@ DATABASE_URL=postgresql://physiotherapy_user:physiotherapy_pass@postgres:5432/ph
 REDIS_URL=redis://redis:6379
 APP_ENV=dev
 APP_DEBUG=1
+VITE_WATCH_STRATEGY=events
+VITE_WATCH_POLL_INTERVAL=300
 ```
 
 ### PHP

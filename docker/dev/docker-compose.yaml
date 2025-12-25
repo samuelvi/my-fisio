@@ -96,10 +96,10 @@ services:
     networks:
       - physiotherapy_network
 
-  # Node.js for Vite
-  node:
+  # Node.js for Vite watch (HMR)
+  node_watch:
     image: node:20-alpine
-    container_name: dev_physiotherapy_node
+    container_name: dev_physiotherapy_node_watch
     working_dir: /var/www/html
     volumes:
       - ../../:/var/www/html
@@ -107,7 +107,10 @@ services:
       - "5173:5173"
     networks:
       - physiotherapy_network
-    command: sh -c "npm install && npm run dev -- --host"
+    environment:
+      - VITE_WATCH_STRATEGY=events
+      - VITE_WATCH_POLL_INTERVAL=300
+    command: sh -c "npm install && sh ./docker/dev/vite-watch.sh"
 
 networks:
   physiotherapy_network:

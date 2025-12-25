@@ -1,0 +1,5 @@
+services:
+  node_watch:
+    environment:
+      - VITE_WATCH_STRATEGY=polling
+      - VITE_WATCH_POLL_INTERVAL=300
