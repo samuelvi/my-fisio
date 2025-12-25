@@ -46,8 +46,8 @@ export default function Dashboard() {
     );
 
     return (
-        <div className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="space-y-6 p-4 sm:p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                 <StatCard 
                     title={t('total_patients')} 
                     value={stats.totalPatients} 
@@ -74,20 +74,20 @@ export default function Dashboard() {
                 />
             </div>
 
-            <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-                <div className="flex items-center space-x-6 mb-8">
-                    <div className="bg-primary/10 p-4 rounded-full">
+            <div className="bg-white p-5 sm:p-8 rounded-lg shadow-sm border border-gray-200">
+                <div className="flex items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
+                    <div className="bg-primary/10 p-3 sm:p-4 rounded-full">
                         <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
                     </div>
                     <div>
-                        <h3 className="text-2xl font-bold text-gray-800">{t('welcome_back')}, {t('administrator')}</h3>
-                        <p className="text-gray-500">{t('dashboard_subtitle')}</p>
+                        <h3 className="text-xl sm:text-2xl font-bold text-gray-800">{t('welcome_back')}, {t('administrator')}</h3>
+                        <p className="text-sm sm:text-base text-gray-500">{t('dashboard_subtitle')}</p>
                     </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-8 border-t border-gray-100 pt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12 mt-6 sm:mt-8 border-t border-gray-100 pt-6 sm:pt-8">
                     <div>
                         <h4 className="font-bold text-gray-700 mb-4 uppercase text-xs tracking-widest">{t('quick_actions')}</h4>
                         <div className="flex flex-wrap gap-4">

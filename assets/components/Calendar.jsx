@@ -267,9 +267,9 @@ export default function Calendar() {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-sm h-full overflow-hidden relative border border-gray-200">
-            <div className="mb-6 flex justify-between items-center">
-                <h2 className="text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm h-full overflow-hidden relative border border-gray-200">
+            <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>
                 <button 
                     onClick={() => {
                         const now = new Date();

@@ -24,19 +24,19 @@ export default function FullHistory() {
         fetchHistory();
     }, [id]);
 
-    if (loading) return <div className="p-8 text-center font-bold text-gray-500">{t('loading')}...</div>;
-    if (!patient) return <div className="p-8 text-center text-red-600 font-bold">{t('error_could_not_load_patient')}</div>;
+    if (loading) return <div className="p-4 sm:p-8 text-center font-bold text-gray-500">{t('loading')}...</div>;
+    if (!patient) return <div className="p-4 sm:p-8 text-center text-red-600 font-bold">{t('error_could_not_load_patient')}</div>;
 
     const sortedRecords = [...(patient.records || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return (
-        <div className="max-w-5xl mx-auto space-y-8 pb-12 p-6">
-            <div className="flex justify-between items-center border-b border-gray-200 pb-6 no-print">
+        <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-12 p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center border-b border-gray-200 pb-4 sm:pb-6 no-print">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('clinical_history')}</h1>
-                    <p className="text-gray-500 mt-1">{t('patient')}: <span className="font-bold text-primary">{patient.firstName} {patient.lastName}</span></p>
+                    <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{t('clinical_history')}</h1>
+                    <p className="text-sm sm:text-base text-gray-500 mt-1">{t('patient')}: <span className="font-bold text-primary">{patient.firstName} {patient.lastName}</span></p>
                 </div>
-                <div className="flex space-x-4">
+                <div className="flex flex-wrap gap-3">
                     <button 
                         onClick={() => window.print()}
                         className="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-xl hover:bg-gray-50 transition shadow-sm font-bold text-sm flex items-center"
@@ -54,8 +54,8 @@ export default function FullHistory() {
             </div>
 
             {/* Comprehensive Patient Info Card */}
-            <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-8">
-                <h2 className="text-xl font-black text-gray-800 mb-8 border-b border-gray-100 pb-4">{t('personal_information')}</h2>
+            <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 sm:p-8">
+                <h2 className="text-xl font-black text-gray-800 mb-6 sm:mb-8 border-b border-gray-100 pb-4">{t('personal_information')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-y-8 gap-x-12 text-sm">
                     <div>
                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('full_name')}</h4>
@@ -99,7 +99,7 @@ export default function FullHistory() {
                     </div>
 
                     {/* Medical Info Section */}
-                    <div className="md:col-span-3 mt-6 pt-8 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="md:col-span-3 mt-6 pt-6 sm:pt-8 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                         <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100">
                             <h4 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-4">{t('allergies_diseases')}</h4>
                             <div className="space-y-2 text-xs">
@@ -142,18 +142,18 @@ export default function FullHistory() {
             </div>
 
             {sortedRecords.length === 0 ? (
-                <div className="text-center py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                <div className="text-center py-16 sm:py-24 bg-white rounded-2xl border-2 border-dashed border-gray-200">
                     <p className="text-gray-400 font-bold">{t('no_records_available')}</p>
                 </div>
             ) : (
-                <div className="space-y-10">
+                <div className="space-y-6 sm:space-y-10">
                     {sortedRecords.map((record, index) => (
                         <div key={record.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden page-break-inside-avoid">
-                            <div className="bg-gray-50 px-8 py-4 border-b border-gray-200 flex justify-between items-center">
+                            <div className="bg-gray-50 px-4 sm:px-8 py-4 border-b border-gray-200 flex justify-between items-center">
                                 <span className="text-xs font-black text-primary uppercase tracking-widest">{t('entry')} # {sortedRecords.length - index}</span>
                                 <span className="text-xs text-gray-400 font-bold">{new Date(record.createdAt).toLocaleString()}</span>
                             </div>
-                            <div className="p-8">
+                            <div className="p-4 sm:p-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
                                     <div className="col-span-2">
                                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{t('main_physiotherapy_treatment')}</h4>

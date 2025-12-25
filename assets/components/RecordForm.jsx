@@ -120,11 +120,11 @@ export default function RecordForm() {
     );
 
     if (loading && isEditing && !formData.physiotherapyTreatment) {
-        return <div className="p-8 text-center text-gray-500">{t('loading')}...</div>;
+        return <div className="p-4 sm:p-8 text-center text-gray-500">{t('loading')}...</div>;
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-4xl mx-auto p-4 sm:p-6">
             <button onClick={() => navigate(`/patients/${patientId}`)} className="text-primary font-bold hover:text-primary-dark mb-6 inline-flex items-center transition">
                 ← {t('back_to_patient')}
             </button>

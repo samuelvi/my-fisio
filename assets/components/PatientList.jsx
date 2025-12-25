@@ -80,8 +80,8 @@ export default function PatientList() {
     if (loading) return <div className="p-8 text-center text-gray-500 font-bold">{t('loading')}...</div>;
 
     const Pagination = () => (
-        <div className="flex items-center justify-between py-3 border-t border-b border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
-            <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-3 border-t border-b border-gray-100 bg-gray-50/50 px-4 rounded-lg my-4">
+            <div className="flex items-center flex-wrap gap-3">
                 <div className="flex items-center">
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-3">{t('page')}</span>
                     <div className="h-10 w-10 rounded-xl bg-primary text-white flex items-center justify-center font-black shadow-lg">
@@ -117,12 +117,12 @@ export default function PatientList() {
     );
 
     return (
-        <div className="p-6">
-            <div className="flex justify-between items-center mb-8">
-                <h1 className="text-3xl font-black text-gray-900 tracking-tight">{t('patients')}</h1>
+        <div className="p-4 sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
+                <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">{t('patients')}</h1>
                 <Link 
                     to="/patients/new"
-                    className="bg-primary hover:bg-primary-dark text-white px-6 py-2.5 rounded-xl font-black text-sm transition shadow-lg shadow-primary/20 active:scale-95 flex items-center"
+                    className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-xl font-black text-sm transition shadow-lg shadow-primary/20 active:scale-95 inline-flex items-center justify-center"
                 >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path></svg>
                     {t('new_patient')}
@@ -130,7 +130,7 @@ export default function PatientList() {
             </div>
 
             {/* Search Bar & Status Filter */}
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 mb-8">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <form onSubmit={handleSearch} className="space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-4 md:space-y-0">
                         <div className="flex-1 relative">
@@ -160,7 +160,7 @@ export default function PatientList() {
                             </div>
                         </div>
                         
-                        <div className="flex items-center space-x-6">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6">
                             <div className="flex flex-col">
                                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('fuzzy_search') || 'Fuzzy'}</label>
                                 <div className="flex items-center h-[46px] bg-gray-50 px-4 border border-gray-200 rounded-xl">
@@ -193,8 +193,8 @@ export default function PatientList() {
                         </div>
                     </div>
 
-                    <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0 pt-4 border-t border-gray-100">
-                        <div className="flex items-center space-x-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pt-4 border-t border-gray-100">
+                        <div className="flex flex-wrap items-center gap-3">
                             <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('sort_by')}</span>
                             <div className="flex space-x-2">
                                 <button 
@@ -214,7 +214,7 @@ export default function PatientList() {
                             </div>
                         </div>
                         
-                        <div className="flex items-center justify-end space-x-4">
+                        <div className="flex items-center justify-end flex-wrap gap-3">
                             <button 
                                 type="button"
                                 onClick={handleClear}
@@ -236,75 +236,113 @@ export default function PatientList() {
             <Pagination />
 
             {/* Patients Table */}
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-200">
-                <table className="min-w-full divide-y divide-gray-100">
-                    <thead className="bg-gray-50">
-                        <tr>
-                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('name')}</th>
-                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('phone')}</th>
-                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('email')}</th>
-                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('status')}</th>
-                            <th className="px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('created')}</th>
-                            <th className="relative px-8 py-4">
-                                <span className="sr-only">{t('actions')}</span>
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-100">
-                        {patients.map((patient) => (
-                            <tr key={patient.id} className="hover:bg-gray-50 transition-colors group">
-                                <td className="px-8 py-5 whitespace-nowrap">
-                                    <Link to={`/patients/${patient.id}`} className="flex items-center">
-                                        <div className="h-11 w-11 flex-shrink-0">
-                                            <span className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm border border-primary/10 group-hover:bg-primary group-hover:text-white transition-all duration-300">
-                                                {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
-                                            </span>
-                                        </div>
-                                        <div className="ml-4">
-                                            <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">
-                                                {patient.firstName} {patient.lastName}
-                                            </div>
-                                        </div>
-                                    </Link>
-                                </td>
-                                <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
-                                    {patient.phone || '-'}
-                                </td>
-                                <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
-                                    {patient.email || '-'}
-                                </td>
-                                <td className="px-8 py-5 whitespace-nowrap">
-                                    <span className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${patient.status === 'active' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
-                                        {t(patient.status)}
-                                    </span>
-                                </td>
-                                <td className="px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
-                                    {new Date(patient.createdAt).toLocaleDateString()}
-                                </td>
-                                <td className="px-8 py-5 whitespace-nowrap text-right text-sm font-bold">
-                                    <Link to={`/patients/${patient.id}`} className="text-primary hover:text-primary-dark transition-colors inline-flex items-center">
-                                        {t('view')}
-                                        <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                                    </Link>
-                                </td>
-                            </tr>
-                        ))}
-                        {patients.length === 0 && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
+                <div className="hidden md:block overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-100">
+                        <thead className="bg-gray-50">
                             <tr>
-                                <td colSpan="6" className="px-8 py-20 text-center">
-                                    <div className="flex flex-col items-center">
-                                        <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
-                                            <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                                        </div>
-                                        <p className="text-gray-400 font-bold max-w-xs mx-auto">
-                                            {t('no_patients_found')}
-                                        </p>
-                                    </div>
-                                </td>
+                                <th className="px-4 lg:px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('name')}</th>
+                                <th className="px-4 lg:px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('phone')}</th>
+                                <th className="px-4 lg:px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('email')}</th>
+                                <th className="px-4 lg:px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('status')}</th>
+                                <th className="px-4 lg:px-8 py-4 text-left text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('created')}</th>
+                                <th className="relative px-4 lg:px-8 py-4">
+                                    <span className="sr-only">{t('actions')}</span>
+                                </th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-100">
+                            {patients.map((patient) => (
+                                <tr key={patient.id} className="hover:bg-gray-50 transition-colors group">
+                                    <td className="px-4 lg:px-8 py-5 whitespace-nowrap">
+                                        <Link to={`/patients/${patient.id}`} className="flex items-center">
+                                            <div className="h-10 w-10 flex-shrink-0">
+                                                <span className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm border border-primary/10 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                                                    {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
+                                                </span>
+                                            </div>
+                                            <div className="ml-3">
+                                                <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">
+                                                    {patient.firstName} {patient.lastName}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    </td>
+                                    <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
+                                        {patient.phone || '-'}
+                                    </td>
+                                    <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
+                                        {patient.email || '-'}
+                                    </td>
+                                    <td className="px-4 lg:px-8 py-5 whitespace-nowrap">
+                                        <span className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${patient.status === 'active' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                                            {t(patient.status)}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
+                                        {new Date(patient.createdAt).toLocaleDateString()}
+                                    </td>
+                                    <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-right text-sm font-bold">
+                                        <Link to={`/patients/${patient.id}`} className="text-primary hover:text-primary-dark transition-colors inline-flex items-center">
+                                            {t('view')}
+                                            <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                                        </Link>
+                                    </td>
+                                </tr>
+                            ))}
+                            {patients.length === 0 && (
+                                <tr>
+                                    <td colSpan="6" className="px-4 lg:px-8 py-20 text-center">
+                                        <div className="flex flex-col items-center">
+                                            <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
+                                                <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                            </div>
+                                            <p className="text-gray-400 font-bold max-w-xs mx-auto">
+                                                {t('no_patients_found')}
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+                <div className="md:hidden divide-y divide-gray-100">
+                    {patients.map((patient) => (
+                        <Link
+                            key={patient.id}
+                            to={`/patients/${patient.id}`}
+                            className="flex items-center justify-between gap-3 p-4 hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3 min-w-0">
+                                <span className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm border border-primary/10">
+                                    {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
+                                </span>
+                                <div className="min-w-0">
+                                    <div className="text-sm font-bold text-gray-900 truncate">
+                                        {patient.firstName} {patient.lastName}
+                                    </div>
+                                    <div className="text-xs text-gray-500 truncate">
+                                        {patient.phone || patient.email || '-'}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <span className={`px-2.5 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${patient.status === 'active' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
+                                    {t(patient.status)}
+                                </span>
+                                <div className="text-[10px] text-gray-400 mt-2">
+                                    {new Date(patient.createdAt).toLocaleDateString()}
+                                </div>
+                            </div>
+                        </Link>
+                    ))}
+                    {patients.length === 0 && (
+                        <div className="px-4 py-16 text-center">
+                            <p className="text-gray-400 font-bold">{t('no_patients_found')}</p>
+                        </div>
+                    )}
+                </div>
             </div>
 
             <Pagination />

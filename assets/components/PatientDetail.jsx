@@ -40,22 +40,22 @@ export default function PatientDetail() {
         navigate(`/patients/${id}/edit`);
     };
 
-    if (loading) return <div className="p-8 text-center font-bold text-gray-500">{t('loading')}...</div>;
-    if (!patient) return <div className="p-8 text-center text-red-600 font-bold">{t('error_could_not_load_patient')}</div>;
+    if (loading) return <div className="p-4 sm:p-8 text-center font-bold text-gray-500">{t('loading')}...</div>;
+    if (!patient) return <div className="p-4 sm:p-8 text-center text-red-600 font-bold">{t('error_could_not_load_patient')}</div>;
 
     return (
-        <div className="space-y-8 p-6">
+        <div className="space-y-6 sm:space-y-8 p-4 sm:p-6">
             <button onClick={() => navigate('/patients')} className="text-primary font-bold hover:text-primary-dark mb-4 inline-flex items-center transition">
                 ← {t('back_to_list')}
             </button>
 
             {/* Top Section: Patient 360 Card */}
             <div className="bg-white shadow-sm rounded-2xl overflow-hidden border border-gray-200">
-                <div className="px-8 py-6 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+                <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <h3 className="text-xl font-black text-gray-900 tracking-tight">
                         {t('patient_information')}
                     </h3>
-                    <div className="flex items-center space-x-6">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                         <span className={`px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-wider ${patient.status === 'active' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-red-100 text-red-700 border border-red-200'}`}>
                             {t(patient.status)}
                         </span>
@@ -65,11 +65,11 @@ export default function PatientDetail() {
                         </button>
                     </div>
                 </div>
-                <div className="px-8 py-8">
-                    <div className="flex items-start space-x-10">
+                <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-8 space-y-6 sm:space-y-0">
                         {/* Avatar */}
                         <div className="flex-shrink-0">
-                            <span className="h-28 w-28 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-4xl font-black border border-primary/10 shadow-inner">
+                            <span className="h-20 w-20 sm:h-28 sm:w-28 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-3xl sm:text-4xl font-black border border-primary/10 shadow-inner">
                                 {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
                             </span>
                         </div>
@@ -120,7 +120,7 @@ export default function PatientDetail() {
             </div>
 
             {/* Medical Info Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
                 {/* Main Content (Records) - Takes up 2/3 space on large screens */}
                 <div className="lg:col-span-2">
                     <RecordTimeline 
@@ -132,8 +132,8 @@ export default function PatientDetail() {
                 </div>
 
                 {/* Side Panel (Medical Alerts & Appointments) - Takes up 1/3 space */}
-                <div className="space-y-8">
-                    <div className="bg-white shadow-sm rounded-2xl p-6 border-l-4 border-primary border border-gray-200">
+                <div className="space-y-6 sm:space-y-8">
+                    <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-6 border-l-4 border-primary border border-gray-200">
                         <h4 className="text-sm font-black text-gray-900 mb-4 flex justify-between items-center uppercase tracking-widest">
                             {t('next_appointments')}
                             <button onClick={() => navigate('/appointments')} className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-lg hover:bg-primary hover:text-white transition-all uppercase">{t('schedule')}</button>
@@ -152,7 +152,7 @@ export default function PatientDetail() {
                         </div>
                     </div>
 
-                    <div className="bg-white shadow-sm rounded-2xl p-6 border-l-4 border-red-500 border border-gray-200">
+                    <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-6 border-l-4 border-red-500 border border-gray-200">
                         <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-widest">{t('medical_alerts')}</h4>
                         <div className="space-y-4 text-xs font-bold">
                             <div>
@@ -170,7 +170,7 @@ export default function PatientDetail() {
                         </div>
                     </div>
 
-                    <div className="bg-white shadow-sm rounded-2xl p-6 border-l-4 border-yellow-500 border border-gray-200">
+                    <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-6 border-l-4 border-yellow-500 border border-gray-200">
                         <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-widest">{t('history_details')}</h4>
                          <div className="space-y-4 text-xs font-bold">
                             <div className="grid grid-cols-2 gap-4">

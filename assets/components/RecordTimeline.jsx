@@ -12,7 +12,7 @@ export default function RecordTimeline({ records, patient, patientId, onAddRecor
 
     if (!records || records.length === 0) {
         return (
-            <div className="text-center py-16 bg-white rounded-2xl border border-gray-200 border-dashed">
+            <div className="text-center py-12 sm:py-16 bg-white rounded-2xl border border-gray-200 border-dashed">
                 <p className="text-gray-400 font-bold mb-6">{t('no_records_available')}</p>
                 <button
                     onClick={onAddRecord}
@@ -33,7 +33,7 @@ export default function RecordTimeline({ records, patient, patientId, onAddRecor
     const sortedRecords = [...(records || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     return (
-        <div className="bg-white shadow-sm rounded-2xl p-8 border border-gray-200">
+        <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-8 border border-gray-200">
             <div className="flex justify-between items-center mb-8 pb-4 border-b border-gray-50">
                 <h3 className="text-xl font-black text-gray-900 tracking-tight">{t('clinical_history')}</h3>
                 <div className="flex space-x-3">
@@ -156,7 +156,7 @@ export default function RecordTimeline({ records, patient, patientId, onAddRecor
                                         {selectedRecord && patient && (
                                             <div className="mt-6 border-t border-gray-100 pt-8">
                                                 {/* Patient Info Header in Modal */}
-                                                <div className="bg-gray-50/80 border border-gray-100 p-6 rounded-2xl mb-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+                                                <div className="bg-gray-50/80 border border-gray-100 p-4 sm:p-6 rounded-2xl mb-6 sm:mb-8 grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
                                                     <div>
                                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">{t('patient')}</span>
                                                         <p className="text-gray-900 font-bold">{patient.firstName} {patient.lastName}</p>

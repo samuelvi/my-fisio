@@ -9,7 +9,9 @@ import {
     UsersIcon, 
     CalendarIcon, 
     DocumentTextIcon,
-    ArrowLeftOnRectangleIcon
+    ArrowLeftOnRectangleIcon,
+    Bars3Icon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 
 export default function Layout({ children }) {
@@ -39,15 +41,22 @@ export default function Layout({ children }) {
     return (
         <div className="min-h-screen bg-gray-50 flex overflow-hidden font-sans">
             {/* Sidebar */}
+            {isSidebarOpen && (
+                <button
+                    onClick={() => setIsSidebarOpen(false)}
+                    className="fixed inset-0 bg-black/30 z-10 md:hidden"
+                    aria-label={t('close')}
+                />
+            )}
             <div
                 className={`${
-                    isSidebarOpen ? 'w-64' : 'w-20'
-                } bg-primary-darker text-white flex-shrink-0 transition-all duration-300 ease-in-out relative flex flex-col shadow-xl z-20`}
+                    isSidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full md:translate-x-0 md:w-20'
+                } fixed md:relative top-0 left-0 h-full bg-primary-darker text-white flex-shrink-0 transition-all duration-300 ease-in-out flex-col shadow-xl z-20 md:flex`}
             >
                 {/* Toggle Button */}
                 <button
                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className="absolute -right-3 top-10 bg-primary rounded-full p-1 border-2 border-white text-white hover:bg-primary-light transition-colors z-30 shadow-md"
+                    className="hidden md:flex absolute -right-3 top-10 bg-primary rounded-full p-1 border-2 border-white text-white hover:bg-primary-light transition-colors z-30 shadow-md"
                 >
                     {isSidebarOpen ? (
                         <ChevronLeftIcon className="h-4 w-4 stroke-[3px]" />
@@ -57,7 +66,7 @@ export default function Layout({ children }) {
                 </button>
 
                 {/* Logo Area */}
-                <div className={`p-6 border-b border-white/10 h-20 flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}>
+                <div className={`p-6 border-b border-white/10 h-20 flex items-center ${isSidebarOpen ? 'justify-start' : 'justify-center'} relative`}>
                     <span className={`font-black text-xl tracking-tighter truncate transition-all duration-300 ${isSidebarOpen ? 'opacity-100' : 'opacity-0 w-0 hidden'}`}>
                         {appTitle}
                     </span>
@@ -65,6 +74,15 @@ export default function Layout({ children }) {
                         <div className="h-10 w-10 bg-white/10 rounded-xl flex items-center justify-center font-black text-lg shadow-inner border border-white/20">
                             {appTitle.charAt(0)}
                         </div>
+                    )}
+                    {isSidebarOpen && (
+                        <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="md:hidden absolute right-4 top-4 text-white/70 hover:text-white transition-colors"
+                            aria-label={t('close')}
+                        >
+                            <XMarkIcon className="h-6 w-6" />
+                        </button>
                     )}
                 </div>
 
@@ -148,8 +166,17 @@ export default function Layout({ children }) {
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col h-screen overflow-hidden">
-                <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 h-20 flex-shrink-0 px-8 flex justify-between items-center z-10">
-                    <h2 className="text-xl font-black text-gray-800 tracking-tight">{t('clinic_management')}</h2>
+                <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 h-16 md:h-20 flex-shrink-0 px-4 sm:px-6 lg:px-8 flex justify-between items-center z-10">
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setIsSidebarOpen(true)}
+                            className="md:hidden inline-flex items-center justify-center h-10 w-10 rounded-lg border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition"
+                            aria-label={t('menu')}
+                        >
+                            <Bars3Icon className="h-6 w-6" />
+                        </button>
+                        <h2 className="text-base sm:text-lg md:text-xl font-black text-gray-800 tracking-tight">{t('clinic_management')}</h2>
+                    </div>
                     <div className="flex items-center space-x-3">
                         <div className="text-right">
                             <div className="text-sm font-black text-gray-900 leading-none">{t('administrator')}</div>
@@ -161,8 +188,8 @@ export default function Layout({ children }) {
                     </div>
                 </header>
 
-                <main className="flex-1 overflow-y-auto p-8 bg-gray-50/50">
-                    <div className="max-w-7xl mx-auto">
+                <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gray-50/50">
+                    <div className="max-w-7xl mx-auto w-full">
                         {children}
                     </div>
                 </main>
