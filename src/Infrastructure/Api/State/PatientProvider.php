@@ -53,6 +53,7 @@ class PatientProvider implements ProviderInterface
                ->setParameter('status', PatientStatus::ACTIVE->value);
         }
 
+        $hasSearch = false;
         if (isset($filters['search'])) {
             $search = $this->normalizeSearch((string) $filters['search']);
             if ($search !== '') {
@@ -60,10 +61,14 @@ class PatientProvider implements ProviderInterface
                 $useFuzzy = isset($filters['fuzzy']) && ($filters['fuzzy'] === 'true' || $filters['fuzzy'] === true || $filters['fuzzy'] === '1');
                 
                 $searchOr = $qb->expr()->orX();
+                $searchOr->add('p.fullName = :searchExact');
+                $searchOr->add('p.email = :searchExact');
+                $searchOr->add('p.phone = :searchExact');
                 $searchOr->add('p.fullName LIKE :searchFull');
                 $searchOr->add('p.phone LIKE :searchFull');
                 $searchOr->add('p.email LIKE :searchFull');
                 $qb->setParameter('searchFull', $searchTermFull);
+                $qb->setParameter('searchExact', $search);
 
                 $tokens = $this->extractSearchTokens($search);
                 if (count($tokens) > 1) {
@@ -106,13 +111,23 @@ class PatientProvider implements ProviderInterface
                     }
                 }
                 $qb->andWhere($searchOr);
+                $qb->addOrderBy('CASE WHEN p.fullName = :searchExact OR p.email = :searchExact OR p.phone = :searchExact THEN 0 WHEN (p.fullName LIKE :searchFull OR p.email LIKE :searchFull OR p.phone LIKE :searchFull) THEN 1 ELSE 2 END', 'ASC');
+                $hasSearch = true;
             }
         }
 
         if (isset($filters['order']) && $filters['order'] === 'alpha') {
-            $qb->orderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
+            if ($hasSearch) {
+                $qb->addOrderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
+            } else {
+                $qb->orderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
+            }
         } else {
-            $qb->orderBy('p.id', 'DESC');
+            if ($hasSearch) {
+                $qb->addOrderBy('p.id', 'DESC');
+            } else {
+                $qb->orderBy('p.id', 'DESC');
+            }
         }
 
         $ids = $qb->setMaxResults($limit + 1)
@@ -131,10 +146,24 @@ class PatientProvider implements ProviderInterface
             ->where('p.id IN (:ids)')
             ->setParameter('ids', $ids);
 
+        if ($hasSearch) {
+            $finalQb->addOrderBy('CASE WHEN p.fullName = :searchExact OR p.email = :searchExact OR p.phone = :searchExact THEN 0 WHEN (p.fullName LIKE :searchFull OR p.email LIKE :searchFull OR p.phone LIKE :searchFull) THEN 1 ELSE 2 END', 'ASC')
+                ->setParameter('searchExact', $search)
+                ->setParameter('searchFull', $searchTermFull);
+        }
+
         if (isset($filters['order']) && $filters['order'] === 'alpha') {
-            $finalQb->orderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
+            if ($hasSearch) {
+                $finalQb->addOrderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
+            } else {
+                $finalQb->orderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
+            }
         } else {
-            $finalQb->orderBy('p.id', 'DESC');
+            if ($hasSearch) {
+                $finalQb->addOrderBy('p.id', 'DESC');
+            } else {
+                $finalQb->orderBy('p.id', 'DESC');
+            }
         }
 
         $patients = $finalQb->getQuery()->getArrayResult();
