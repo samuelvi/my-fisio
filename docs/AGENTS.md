@@ -136,6 +136,10 @@ src/
     - **Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`.
     - **Length**: Maximum 200 characters per line.
     - **Example**: `feat(patient): add patient registration form`
+- **Automation Restrictions**:
+    - **NO Automatic Commits**: You MUST NOT perform `git commit` without explicit user approval for each specific change set.
+    - **NO Automatic Pushes**: You MUST NOT perform `git push` under any circumstances unless explicitly requested by the user.
+    - **Workflow**: Propose the commit message and show the `git diff`, then wait for the user to authorize the execution.
 
 ## Naming Conventions
 
