@@ -299,6 +299,7 @@ export default function Calendar() {
                     firstDay={safeFirstDay}
                     scrollTime={calendarScrollTime}
                     editable={true} selectable={true} selectMirror={true} dayMaxEvents={true} weekends={true}
+                    allDaySlot={false}
                     slotDuration={slotDurationString}
                     snapDuration={slotDurationString}
                     defaultTimedEventDuration={defaultDurationString}
