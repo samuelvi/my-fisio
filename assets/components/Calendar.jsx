@@ -16,6 +16,7 @@ registerLocale('es', es);
 
 export default function Calendar() {
     const { t, language } = useLanguage();
+    const [isMobile, setIsMobile] = useState(false);
     const [modalOpen, setModalOpen] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(null);
     const [calendarRef, setCalendarRef] = useState(null);
@@ -90,6 +91,14 @@ export default function Calendar() {
             return () => window.removeEventListener('keydown', handleEsc);
         }
     }, [modalOpen, calendarRef]);
+
+    useEffect(() => {
+        const media = window.matchMedia('(max-width: 768px)');
+        const handleChange = () => setIsMobile(media.matches);
+        handleChange();
+        media.addEventListener('change', handleChange);
+        return () => media.removeEventListener('change', handleChange);
+    }, []);
 
     useEffect(() => {
         if (!modalOpen) {
@@ -292,14 +301,20 @@ export default function Calendar() {
                 <FullCalendar
                     ref={ref => setCalendarRef(ref)}
                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                    headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
-                    initialView="timeGridWeek"
+                    headerToolbar={
+                        isMobile
+                            ? { left: 'prev,next', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }
+                            : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }
+                    }
+                    initialView={isMobile ? 'timeGridDay' : 'timeGridWeek'}
                     locales={[esLocale]}
                     locale={calendarLocale}
                     firstDay={safeFirstDay}
                     scrollTime={calendarScrollTime}
                     editable={true} selectable={true} selectMirror={true} dayMaxEvents={true} weekends={true}
                     allDaySlot={false}
+                    stickyHeaderDates={!isMobile}
+                    height={isMobile ? 'auto' : '700px'}
                     slotDuration={slotDurationString}
                     snapDuration={slotDurationString}
                     defaultTimedEventDuration={defaultDurationString}
@@ -420,8 +435,8 @@ export default function Calendar() {
             )}
 
             <style dangerouslySetInnerHTML={{ __html: `
-                .fc .fc-button-primary { background-color: var(--color-primary, #4f46e5); border-color: var(--color-primary, #4f46e5); text-transform: uppercase; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem 1rem; }
-                .fc .fc-button-primary:hover { background-color: var(--color-primary-dark, #4338ca); border-color: var(--color-primary-dark, #4338ca); }
+                .fc .fc-button-primary { background-color: rgb(var(--color-primary)); border-color: rgb(var(--color-primary)); text-transform: uppercase; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; padding: 0.5rem 1rem; }
+                .fc .fc-button-primary:hover { background-color: rgb(var(--color-primary-dark)); border-color: rgb(var(--color-primary-dark)); }
                 .fc .fc-button-primary:disabled { background-color: #d1d5db; border-color: #d1d5db; color: #9ca3af; }
                 .fc .fc-button-group > .fc-prev-button { margin-right: 0.35rem; }
                 .fc .fc-button-group > .fc-next-button { margin-left: 0.35rem; }
@@ -435,11 +450,11 @@ export default function Calendar() {
                 .fc-timegrid-bg-harness .fc-highlight,
                 .fc-daygrid-bg-harness .fc-highlight,
                 .fc-event-mirror { 
-                    background-color: rgba(79, 70, 229, 0.1) !important; 
-                    border: 2px dashed #4f46e5 !important;
+                    background-color: rgba(var(--color-primary), 0.1) !important; 
+                    border: 2px dashed rgb(var(--color-primary)) !important;
                     opacity: 1;
                 }
-                .fc .fc-day-today { background-color: #f8faff !important; }
+                .fc .fc-day-today { background-color: rgba(var(--color-primary), 0.05) !important; }
                 ${weekendColumnStyles}
             `}} />
         </div>

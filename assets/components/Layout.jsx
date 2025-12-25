@@ -17,9 +17,20 @@ import {
 export default function Layout({ children }) {
     const navigate = useNavigate();
     const location = useLocation();
-    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+        const stored = localStorage.getItem('layout_sidebar_open');
+        if (stored !== null) {
+            return stored === 'true';
+        }
+        const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+        return !isMobile;
+    });
     const { language, t, changeLanguage } = useLanguage();
     const appTitle = import.meta.env.VITE_APP_TITLE || 'PhysioApp';    
+
+    React.useEffect(() => {
+        localStorage.setItem('layout_sidebar_open', String(isSidebarOpen));
+    }, [isSidebarOpen]);
     
     React.useEffect(() => {
         document.title = appTitle;
@@ -28,7 +39,13 @@ export default function Layout({ children }) {
     const handleLogout = () => {
         localStorage.removeItem('token');
         delete axios.defaults.headers.common['Authorization'];
-        navigate('/login');
+        navigate('/');
+    };
+
+    const handleNavClick = () => {
+        if (window.matchMedia('(max-width: 768px)').matches) {
+            setIsSidebarOpen(false);
+        }
     };
 
     const navItems = [
@@ -51,7 +68,7 @@ export default function Layout({ children }) {
             <div
                 className={`${
                     isSidebarOpen ? 'w-64 translate-x-0' : 'w-64 -translate-x-full md:translate-x-0 md:w-20'
-                } fixed md:relative top-0 left-0 h-full bg-primary-darker text-white flex-shrink-0 transition-all duration-300 ease-in-out flex-col shadow-xl z-20 md:flex`}
+                } fixed md:relative top-0 left-0 h-full bg-primary text-white flex-shrink-0 transition-all duration-300 ease-in-out flex-col shadow-xl z-20 md:flex`}
             >
                 {/* Toggle Button */}
                 <button
@@ -94,6 +111,7 @@ export default function Layout({ children }) {
                             <Link
                                 key={item.name}
                                 to={item.path}
+                                onClick={handleNavClick}
                                 className={`flex items-center p-3 rounded-xl transition-all group relative ${
                                     isActive
                                         ? 'bg-white/15 text-white shadow-sm ring-1 ring-white/20'
@@ -148,7 +166,7 @@ export default function Layout({ children }) {
                 <div className="p-4 border-t border-white/10">
                     <button 
                         onClick={handleLogout}
-                        className={`flex items-center w-full p-3 rounded-xl text-white/50 hover:bg-red-500/20 hover:text-red-400 transition-all group relative border border-transparent hover:border-red-500/30 ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
+                        className={`flex items-center w-full p-3 rounded-xl text-white/70 hover:bg-white/10 hover:text-white transition-all group relative border border-transparent ${isSidebarOpen ? 'justify-start' : 'justify-center'}`}
                         title={!isSidebarOpen ? t('logout') : ''}
                     >
                         <ArrowLeftOnRectangleIcon className="h-6 w-6 flex-shrink-0 transition-transform group-hover:scale-110" />

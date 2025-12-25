@@ -108,12 +108,12 @@ export default function FullHistory() {
                                 <p><span className="font-bold text-red-800">{t('current_medication')}:</span> <span className="text-gray-700">{patient.medication || '-'}</span></p>
                             </div>
                         </div>
-                        <div className="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
-                            <h4 className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-4">{t('observations')}</h4>
+                        <div className="bg-primary/5 p-5 rounded-2xl border border-primary/20">
+                            <h4 className="text-[10px] font-black text-primary/60 uppercase tracking-widest mb-4">{t('observations')}</h4>
                             <div className="space-y-2 text-xs">
-                                <p><span className="font-bold text-blue-800">{t('surgeries')}:</span> <span className="text-gray-700">{patient.surgeries || '-'}</span></p>
-                                <p><span className="font-bold text-blue-800">{t('accidents')}:</span> <span className="text-gray-700">{patient.accidents || '-'}</span></p>
-                                <p><span className="font-bold text-blue-800">{t('injuries')}:</span> <span className="text-gray-700">{patient.injuries || '-'}</span></p>
+                                <p><span className="font-bold text-primary-dark">{t('surgeries')}:</span> <span className="text-gray-700">{patient.surgeries || '-'}</span></p>
+                                <p><span className="font-bold text-primary-dark">{t('accidents')}:</span> <span className="text-gray-700">{patient.accidents || '-'}</span></p>
+                                <p><span className="font-bold text-primary-dark">{t('injuries')}:</span> <span className="text-gray-700">{patient.injuries || '-'}</span></p>
                             </div>
                         </div>
                         <div className="bg-gray-100/50 p-5 rounded-2xl border border-gray-200 md:col-span-2">

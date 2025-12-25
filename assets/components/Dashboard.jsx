@@ -51,7 +51,7 @@ export default function Dashboard() {
                 <StatCard 
                     title={t('total_patients')} 
                     value={stats.totalPatients} 
-                    colorClass="border-blue-500"
+                    colorClass="border-primary"
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>}
                 />
                 <StatCard 
@@ -93,13 +93,13 @@ export default function Dashboard() {
                         <div className="flex flex-wrap gap-4">
                             <button 
                                 onClick={() => navigate('/patients/new')}
-                                className="px-5 py-2.5 bg-primary text-white rounded-md text-sm font-bold hover:bg-primary-dark transition shadow-sm"
+                                className="px-5 py-2.5 bg-[rgb(var(--color-btn-info))] text-primary-dark rounded-md text-sm font-bold hover:bg-[rgb(var(--color-btn-secondary))] transition shadow-sm border border-primary/10"
                             >
                                 {t('new_patient')}
                             </button>
                             <button 
                                 onClick={() => navigate('/appointments')}
-                                className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-md text-sm font-bold hover:bg-gray-50 transition"
+                                className="px-5 py-2.5 bg-primary text-white rounded-md text-sm font-bold hover:bg-primary-dark transition shadow-sm"
                             >
                                 {t('schedule_appointment')}
                             </button>

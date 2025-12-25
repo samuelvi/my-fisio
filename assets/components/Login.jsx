@@ -29,7 +29,7 @@ export default function Login() {
 
     useEffect(() => {
         if (localStorage.getItem('token')) {
-            navigate('/');
+            navigate('/dashboard');
         }
     }, [navigate]);
 
@@ -38,15 +38,24 @@ export default function Login() {
         setError(null);
 
         try {
-            const response = await axios.post('/api/login_check', {
-                username: email,
-                password: password
-            });
+            const response = await axios.post(
+                '/api/login_check',
+                {
+                    username: email,
+                    password: password
+                },
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                }
+            );
 
             const jwt = response.data.token;
             localStorage.setItem('token', jwt);
             axios.defaults.headers.common['Authorization'] = `Bearer ${jwt}`;
-            navigate('/');
+            navigate('/dashboard');
             
         } catch (err) {
             setError(t('invalid_credentials'));

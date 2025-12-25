@@ -4,6 +4,22 @@
         <meta charset="UTF-8">
         <title>{% block title %}{{ app_title }}{% endblock %}</title>
         <link rel="icon" href="{{ asset('favicon.ico') }}">
+        <style>
+            :root {
+                --color-primary: {{ color_primary }};
+                --color-primary-light: {{ color_primary_light }};
+                --color-primary-dark: {{ color_primary_dark }};
+                --color-primary-darker: {{ color_primary_darker }};
+                --color-btn-success: {{ color_btn_success }};
+                --color-btn-danger: {{ color_btn_danger }};
+                --color-btn-secondary: {{ color_btn_secondary }};
+                --color-btn-info: {{ color_btn_info }};
+                --color-calendar-appointment: {{ color_calendar_appointment }};
+                --color-calendar-other: {{ color_calendar_other }};
+                --color-calendar-text-other: {{ color_calendar_text_other }};
+                --color-calendar-event-default: {{ color_calendar_event_default }};
+            }
+        </style>
         
         {% block stylesheets %}
             {{ vite_entry_link_tags('app') }}

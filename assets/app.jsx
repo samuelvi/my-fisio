@@ -21,6 +21,27 @@ import InvoiceForm from './components/invoices/InvoiceForm';
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
 axios.defaults.headers.common['Content-Type'] = 'application/ld+json';
 
+const colorVars = {
+    '--color-primary': import.meta.env.VITE_COLOR_PRIMARY,
+    '--color-primary-light': import.meta.env.VITE_COLOR_PRIMARY_LIGHT,
+    '--color-primary-dark': import.meta.env.VITE_COLOR_PRIMARY_DARK,
+    '--color-primary-darker': import.meta.env.VITE_COLOR_PRIMARY_DARKER,
+    '--color-btn-success': import.meta.env.VITE_COLOR_BTN_SUCCESS,
+    '--color-btn-danger': import.meta.env.VITE_COLOR_BTN_DANGER,
+    '--color-btn-secondary': import.meta.env.VITE_COLOR_BTN_SECONDARY,
+    '--color-btn-info': import.meta.env.VITE_COLOR_BTN_INFO,
+    '--color-calendar-appointment': import.meta.env.VITE_COLOR_CALENDAR_APPOINTMENT,
+    '--color-calendar-other': import.meta.env.VITE_COLOR_CALENDAR_OTHER,
+    '--color-calendar-text-other': import.meta.env.VITE_COLOR_CALENDAR_TEXT_OTHER,
+    '--color-calendar-event-default': import.meta.env.VITE_COLOR_CALENDAR_EVENT_DEFAULT,
+};
+
+Object.entries(colorVars).forEach(([key, value]) => {
+    if (value) {
+        document.documentElement.style.setProperty(key, value);
+    }
+});
+
 const token = localStorage.getItem('token');
 if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
