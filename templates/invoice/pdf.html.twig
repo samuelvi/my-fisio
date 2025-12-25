@@ -250,7 +250,7 @@
                                 -<br>
                             {% endif %}
                             {% if invoice.phone %}
-                                Tel: {{ invoice.phone }}<br>
+                                {{ 'phone'|trans }}: {{ invoice.phone }}<br>
                             {% endif %}
                             {% if invoice.email %}
                                 {{ invoice.email }}
@@ -268,7 +268,7 @@
                         <th width="45%">{{ 'concept'|trans }}</th>
                         <th width="15%" class="text-right">{{ 'taxes'|trans }}</th>
                         <th width="15%" class="text-right">{{ 'price'|trans }}</th>
-                        <th width="15%" class="text-right">TOTAL</th>
+                        <th width="15%" class="text-right">{{ 'total'|trans }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -276,7 +276,7 @@
                         <tr>
                             <td>{{ line.quantity }}</td>
                             <td>
-                                <strong>{{ line.concept ? line.concept : 'Session' }}</strong>
+                                <strong>{{ line.concept ? line.concept : ('session'|trans) }}</strong>
                                 {% if line.description %}
                                     <div style="font-size: 8pt; color: #666; margin-top: 4px;">{{ line.description }}</div>
                                 {% endif %}
@@ -288,7 +288,7 @@
                     {% else %}
                         <tr>
                             <td>1</td>
-                            <td><strong>Session</strong></td>
+                            <td><strong>{{ 'session'|trans }}</strong></td>
                             <td class="text-right">0,00 €</td>
                             <td class="text-right">{{ invoice.amount|number_format(2, ',', '.') }} €</td>
                             <td class="text-right">{{ invoice.amount|number_format(2, ',', '.') }} €</td>
@@ -309,7 +309,7 @@
                         <td class="totals-value">0,00 €</td>
                     </tr>
                     <tr class="total-row">
-                        <td class="totals-label">Total</td>
+                        <td class="totals-label">{{ 'total'|trans }}</td>
                         <td class="totals-value">{{ invoice.amount|number_format(2, ',', '.') }} €</td>
                     </tr>
                 </table>
@@ -318,7 +318,7 @@
 
         <!-- Footer -->
         <div class="footer">
-            {{ 'mobile'|trans }}: {{ company.phone }} | {{ 'web'|trans }}: {{ company.web }} | e-mail: {{ company.email }}
+            {{ 'mobile'|trans }}: {{ company.phone }} | {{ 'web'|trans }}: {{ company.web }} | {{ 'email'|trans|lower }}: {{ company.email }}
             <span style="float: right;">{{ 'page'|trans }} <span class="page-number"></span></span>
         </div>
 

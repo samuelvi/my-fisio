@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 
 export default function InvoiceList() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     
@@ -110,7 +110,10 @@ export default function InvoiceList() {
 
     const handleExport = async (id, number, format, mode = 'view') => {
         try {
-            const params = mode === 'download' ? { download: 1 } : {};
+            const params = {
+                ...(mode === 'download' ? { download: 1 } : {}),
+                locale: language
+            };
             const response = await axios.get(`/api/invoices/${id}/export/${format}`, {
                 params,
                 responseType: 'blob'

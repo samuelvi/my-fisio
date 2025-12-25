@@ -15,6 +15,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\HandleTrait;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class InvoiceExportController extends AbstractController
 {
@@ -31,6 +32,7 @@ class InvoiceExportController extends AbstractController
         int $id,
         string $format,
         Request $request,
+        TranslatorInterface $translator,
         #[Autowire('%kernel.project_dir%')] string $projectDir,
         #[Autowire('%company_name%')] string $companyName,
         #[Autowire('%company_tax_id%')] string $companyTaxId,
@@ -47,6 +49,12 @@ class InvoiceExportController extends AbstractController
 
         if (!$invoice) {
             throw new NotFoundHttpException('Invoice not found');
+        }
+
+        $locale = $request->query->getString('locale', '');
+        if (in_array($locale, ['en', 'es'], true)) {
+            $request->setLocale($locale);
+            $translator->setLocale($locale);
         }
 
         // Prepare Logo
