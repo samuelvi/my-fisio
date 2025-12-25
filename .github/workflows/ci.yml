@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main", "master", "develop" ]
+  pull_request:
+    branches: [ "main", "master", "develop" ]
+
+jobs:
+  tests:
+    name: Run Tests (PHPUnit & E2E)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Start Services (Test Environment)
+        run: |
+          docker compose -f docker/test/docker-compose.yaml up -d --build
+        env:
+          CI: true
+
+      - name: Wait for Services
+        run: |
+          echo "Waiting for PostgreSQL to be ready..."
+          timeout 60s bash -c 'until docker compose -f docker/test/docker-compose.yaml exec -T postgres_test pg_isready -U physiotherapy_user -d physiotherapy_test_db; do sleep 2; done'
+          
+          echo "Waiting for Redis..."
+          timeout 30s bash -c 'until docker compose -f docker/test/docker-compose.yaml exec -T redis_test redis-cli ping; do sleep 2; done'
+          
+          echo "Waiting for PHP-FPM..."
+          # Simple check if php container is running
+          docker compose -f docker/test/docker-compose.yaml ps php_test
+
+      - name: Install Composer Dependencies
+        run: |
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Setup Database (Reset & Fixtures)
+        run: |
+          echo "Resetting Database..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
+
+      - name: Run Quality Checks
+        continue-on-error: true
+        run: |
+          echo "Running PHP CS Fixer..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test vendor/bin/php-cs-fixer fix --dry-run --diff
+          
+          echo "Running PHPStan..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test vendor/bin/phpstan analyse src --level=8 || echo "PHPStan found issues"
+
+      - name: Run PHPUnit Tests
+        run: |
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/phpunit
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Node Dependencies
+        run: npm ci
+
+      - name: Build Assets (Vite)
+        run: npm run build
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright E2E Tests
+        run: npx playwright test
+        env:
+          CI: true
+
+      - name: Upload Playwright Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: var/log/playwright/report/
+          retention-days: 30
+
+      - name: Stop Containers
+        if: always()
+        run: docker compose -f docker/test/docker-compose.yaml down -v
