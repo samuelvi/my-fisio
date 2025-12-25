@@ -12,6 +12,7 @@ use App\Infrastructure\Api\State\PatientProvider;
 use App\Infrastructure\Api\State\PatientProcessor;
 use App\Domain\Enum\PatientStatus;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
@@ -39,9 +40,11 @@ class PatientResource
     public PatientStatus $status = PatientStatus::ACTIVE;
 
     #[Groups(['patient:read', 'patient:write'])]
+    #[Assert\NotBlank(normalizer: 'trim')]
     public string $firstName;
 
     #[Groups(['patient:read', 'patient:write'])]
+    #[Assert\NotBlank(normalizer: 'trim')]
     public string $lastName;
 
     #[Groups(['patient:read', 'patient:write'])]

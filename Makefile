@@ -270,23 +270,23 @@ test-reset-db: ## Reset Test Database
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:schema:create
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:fixtures:load --no-interaction
 
-test-e2e: ## Run Playwright E2E tests (Headless)
+test-e2e: ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests/e2e/login.spec.js")
 	@echo "$(GREEN)Running E2E Tests (Headless)...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
 		make test-up; \
 		sleep 5; \
 	fi
-	npx playwright test
+	npx playwright test $(file)
 
-test-e2e-ui: ## Run Playwright E2E tests (UI Mode)
+test-e2e-ui: ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="tests/e2e/login.spec.js")
 	@echo "$(GREEN)Running E2E Tests (UI Mode)...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
 		make test-up; \
 		sleep 5; \
 	fi
-	npx playwright test --ui
+	npx playwright test --ui $(file)
 
 ##@ Project Setup
 

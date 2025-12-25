@@ -4,14 +4,17 @@ namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use ApiPlatform\Validator\Exception\ValidationException;
 use App\Domain\Entity\Patient;
 use App\Infrastructure\Api\Resource\PatientResource;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class PatientProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private ValidatorInterface $validator
     ) {
     }
 
@@ -19,6 +22,11 @@ class PatientProcessor implements ProcessorInterface
     {
         if (!$data instanceof PatientResource) {
             return $data;
+        }
+
+        $violations = $this->validator->validate($data);
+        if (count($violations) > 0) {
+            throw new ValidationException($violations);
         }
 
         if (isset($uriVariables['id'])) {

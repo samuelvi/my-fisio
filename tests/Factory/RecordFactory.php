@@ -55,6 +55,20 @@ final class RecordFactory extends PersistentObjectFactory
             ->instantiateWith(function(): Record {
                 return Record::create();
             })
+            ->afterInstantiate(function(Record $record, array $attributes): void {
+                if (isset($attributes['patient'])) $record->patient = $attributes['patient'];
+                if (isset($attributes['physiotherapyTreatment'])) $record->physiotherapyTreatment = $attributes['physiotherapyTreatment'];
+                if (isset($attributes['consultationReason'])) $record->consultationReason = $attributes['consultationReason'];
+                if (isset($attributes['onset'])) $record->onset = $attributes['onset'];
+                if (isset($attributes['radiologyTests'])) $record->radiologyTests = $attributes['radiologyTests'];
+                if (isset($attributes['evolution'])) $record->evolution = $attributes['evolution'];
+                if (isset($attributes['currentSituation'])) $record->currentSituation = $attributes['currentSituation'];
+                if (isset($attributes['sickLeave'])) $record->sickLeave = $attributes['sickLeave'];
+                if (isset($attributes['medicalTreatment'])) $record->medicalTreatment = $attributes['medicalTreatment'];
+                if (isset($attributes['homeTreatment'])) $record->homeTreatment = $attributes['homeTreatment'];
+                if (isset($attributes['notes'])) $record->notes = $attributes['notes'];
+                if (isset($attributes['createdAt'])) $record->createdAt = $attributes['createdAt'];
+            })
         ;
     }
 }

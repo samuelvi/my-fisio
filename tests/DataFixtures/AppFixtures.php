@@ -28,14 +28,20 @@ class AppFixtures extends Fixture
         
         // First patient (will be at the end of the list if sorted by ID DESC)
         $firstPatient = PatientFactory::createOne(['firstName' => 'AFirst', 'lastName' => 'Patient']);
-        RecordFactory::createMany(2, ['patient' => $firstPatient]);
+        RecordFactory::createMany(2, [
+            'patient' => $firstPatient,
+            'physiotherapyTreatment' => 'Initial physiotherapy treatment notes.'
+        ]);
 
         // 13 middle patients
         PatientFactory::createMany(13);
 
         // Last patient (will be at the beginning of the list if sorted by ID DESC)
         $lastPatient = PatientFactory::createOne(['firstName' => 'ZLast', 'lastName' => 'Patient']);
-        RecordFactory::createMany(2, ['patient' => $lastPatient]);
+        RecordFactory::createMany(2, [
+            'patient' => $lastPatient,
+            'physiotherapyTreatment' => 'Initial physiotherapy treatment notes.'
+        ]);
 
         $manager->flush();
     }

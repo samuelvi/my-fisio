@@ -17,6 +17,9 @@ Upon completing any assigned task, you must strictly **review and validate** you
 ## Overview
 Responsive web application to manage a physiotherapy clinic with modern decoupled architecture.
 
+## Testing Agent
+See [AGENTS_TESTING.md](./AGENTS_TESTING.md) for testing conventions and UI validation rules.
+
 ## Technology Stack
 
 ### Frontend
@@ -123,6 +126,9 @@ src/
 - **Avoid silent coercion**: reject invalid formats (e.g., malformed invoice numbers) rather than guessing.
 - **Consistency rules**: validate sequence constraints (e.g., invoice numbers) against persisted data.
 - **Use named constructors**: keep entities encapsulated and instantiate via factories.
+
+## Testing Rules
+- **UI tests must click by accessible name**: use role/name selectors for buttons and links; never click by `id` or `class`.
 
 ## Git Workflow
 - **Commit Messages**: Must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.

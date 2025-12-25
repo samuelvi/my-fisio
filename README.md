@@ -247,11 +247,15 @@ We use a separate Docker environment for E2E tests to avoid polluting the develo
 # Start Test Environment
 make test-up
 
-# Run E2E Tests (Headless)
+# Run ALL E2E Tests (Headless)
 make test-e2e
+
+# Run a SPECIFIC E2E Test (Headless)
+make test-e2e file=tests/e2e/security-auth.spec.js
 
 # Run E2E Tests (UI Mode)
 make test-e2e-ui
+# Or for a specific file: make test-e2e-ui file=tests/e2e/login.spec.js
 
 # Stop Test Environment
 make test-down
@@ -360,6 +364,22 @@ make dev-clean
 
 # Clean Symfony cache and logs
 make clean-cache
+```
+
+## E2E Testing (Playwright)
+
+```bash
+# Start test environment
+make test-up
+
+# Reset test database
+make test-reset-db
+
+# Run all E2E tests
+npx playwright test
+
+# Run a single E2E test
+npx playwright test tests/e2e/patients-create.spec.js
 ```
 
 ## Help and Available Commands
