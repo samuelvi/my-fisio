@@ -9,6 +9,7 @@ export default function Dashboard() {
     const [stats, setStats] = useState({
         totalPatients: 0,
         appointmentsToday: 0,
+        othersToday: 0,
         invoicesThisYear: 0
     });
     const [loading, setLoading] = useState(true);
@@ -46,7 +47,7 @@ export default function Dashboard() {
 
     return (
         <div className="space-y-6 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 <StatCard 
                     title={t('total_patients')} 
                     value={stats.totalPatients} 
@@ -58,6 +59,12 @@ export default function Dashboard() {
                     value={stats.appointmentsToday} 
                     colorClass="border-green-500" 
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
+                />
+                <StatCard 
+                    title={t('others_today')} 
+                    value={stats.othersToday} 
+                    colorClass="border-yellow-500" 
+                    icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
                 />
                 <StatCard 
                     title={t('invoices_this_year')} 
@@ -91,7 +98,7 @@ export default function Dashboard() {
                                 {t('new_patient')}
                             </button>
                             <button 
-                                onClick={() => navigate('/calendar')}
+                                onClick={() => navigate('/appointments')}
                                 className="px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-md text-sm font-bold hover:bg-gray-50 transition"
                             >
                                 {t('schedule_appointment')}

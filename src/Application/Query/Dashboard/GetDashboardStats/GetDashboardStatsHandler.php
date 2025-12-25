@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Query\Dashboard\GetDashboardStats;
 
 use App\Application\Dto\Dashboard\DashboardStatsView;
+use App\Domain\Enum\AppointmentType;
 use App\Domain\Repository\AppointmentRepositoryInterface;
 use App\Domain\Repository\InvoiceRepositoryInterface;
 use App\Domain\Repository\PatientRepositoryInterface;
@@ -27,7 +28,8 @@ final readonly class GetDashboardStatsHandler
 
         return DashboardStatsView::create(
             totalPatients: $this->patientRepository->countAll(),
-            appointmentsToday: $this->appointmentRepository->countByDate($today),
+            appointmentsToday: $this->appointmentRepository->countByDateAndType($today, AppointmentType::APPOINTMENT),
+            othersToday: $this->appointmentRepository->countByDateAndType($today, AppointmentType::OTHER),
             invoicesThisYear: $this->invoiceRepository->countByYear($currentYear)
         );
     }

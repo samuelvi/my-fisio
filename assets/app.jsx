@@ -56,12 +56,16 @@ const ProtectedRoute = ({ children }) => {
 };
 
 function App() {
+    const isAuthenticated = !!localStorage.getItem('token');
+
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/login" element={<Login />} />
+                <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
                 
-                <Route path="/" element={
+                <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
+
+                <Route path="/dashboard" element={
                     <ProtectedRoute>
                         <Layout>
                             <Dashboard />
@@ -150,7 +154,7 @@ function App() {
                 } />
 
                 {/* Catch-all for undefined routes */}
-                <Route path="*" element={<Navigate to="/" />} />
+                <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
         </BrowserRouter>
     );

@@ -9,14 +9,16 @@ final readonly class DashboardStatsView
     private function __construct(
         public int $totalPatients,
         public int $appointmentsToday,
+        public int $othersToday,
         public int $invoicesThisYear
     ) {}
 
     public static function create(
         int $totalPatients,
         int $appointmentsToday,
+        int $othersToday,
         int $invoicesThisYear
     ): self {
-        return new self($totalPatients, $appointmentsToday, $invoicesThisYear);
+        return new self($totalPatients, $appointmentsToday, $othersToday, $invoicesThisYear);
     }
 }

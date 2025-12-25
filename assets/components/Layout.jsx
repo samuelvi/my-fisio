@@ -30,7 +30,7 @@ export default function Layout({ children }) {
     };
 
     const navItems = [
-        { name: t('dashboard'), path: '/', icon: HomeIcon },
+        { name: t('dashboard'), path: '/dashboard', icon: HomeIcon },
         { name: t('patients'), path: '/patients', icon: UsersIcon },
         { name: t('appointments'), path: '/appointments', icon: CalendarIcon },
         { name: t('invoices'), path: '/invoices', icon: DocumentTextIcon },
