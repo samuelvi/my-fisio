@@ -106,6 +106,12 @@ jobs:
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
 
+      - name: Reset Test Database (E2E)
+        run: |
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
+
       - name: Run Playwright E2E Tests
         run: npx playwright test
         env:
