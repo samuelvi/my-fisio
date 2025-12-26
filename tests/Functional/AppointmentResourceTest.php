@@ -13,11 +13,11 @@ class AppointmentResourceTest extends ApiTestCase
 {
     use ResetDatabase, Factories;
 
-    private function authenticate(): string
+    private function authenticate(): array
     {
         $client = self::createClient();
         
-        UserFactory::createOne([
+        $user = UserFactory::createOne([
             'email' => 'admin@example.com',
             'password' => 'password',
             'roles' => ['ROLE_ADMIN']
@@ -30,24 +30,27 @@ class AppointmentResourceTest extends ApiTestCase
             ],
         ]);
 
-        return $response->toArray()['token'];
+        return [
+            'token' => $response->toArray()['token'],
+            'userId' => $user->id
+        ];
     }
 
     public function testCreateAppointment(): void
     {
-        $token = $this->authenticate();
+        $auth = $this->authenticate();
         $patient = PatientFactory::createOne();
         
         $client = self::createClient();
         $client->request('POST', '/api/appointments', [
-            'auth_bearer' => $token,
+            'auth_bearer' => $auth['token'],
             'headers' => [
                 'Content-Type' => 'application/ld+json',
                 'Accept' => 'application/ld+json'
             ],
             'json' => [
                 'patientId' => $patient->id,
-                'userId' => 1,
+                'userId' => $auth['userId'],
                 'title' => 'Therapy Session',
                 'startsAt' => '2025-12-25T10:00:00+00:00',
                 'endsAt' => '2025-12-25T11:00:00+00:00',
@@ -65,17 +68,17 @@ class AppointmentResourceTest extends ApiTestCase
 
     public function testCreateAppointmentWithoutPatient(): void
     {
-        $token = $this->authenticate();
+        $auth = $this->authenticate();
         
         $client = self::createClient();
         $client->request('POST', '/api/appointments', [
-            'auth_bearer' => $token,
+            'auth_bearer' => $auth['token'],
             'headers' => [
                 'Content-Type' => 'application/ld+json',
                 'Accept' => 'application/ld+json'
             ],
             'json' => [
-                'userId' => 1,
+                'userId' => $auth['userId'],
                 'title' => 'General Clinic Prep',
                 'startsAt' => '2025-12-26T09:00:00+00:00',
                 'endsAt' => '2025-12-26T10:00:00+00:00',
@@ -91,13 +94,16 @@ class AppointmentResourceTest extends ApiTestCase
 
     public function testGetAppointments(): void
     {
-        $token = $this->authenticate();
+        $auth = $this->authenticate();
         $patient = PatientFactory::createOne();
-        AppointmentFactory::createMany(3, ['patient' => $patient]);
+        AppointmentFactory::createMany(3, [
+            'patient' => $patient,
+            'userId' => $auth['userId']
+        ]);
 
         $client = self::createClient();
         $client->request('GET', '/api/appointments', [
-            'auth_bearer' => $token,
+            'auth_bearer' => $auth['token'],
             'headers' => [
                 'Accept' => 'application/ld+json'
             ],
