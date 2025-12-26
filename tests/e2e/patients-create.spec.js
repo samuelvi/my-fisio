@@ -50,7 +50,15 @@ test('patient creation flow with server validation', async ({ page, request }) =
         page.getByRole('button', { name: 'Save Patient' }).click()
     ]);
 
-    expect(invalidResponse.status()).toBe(422);
+    const invalidStatus = invalidResponse.status();
+    if (invalidStatus !== 422) {
+        const invalidBody = await invalidResponse.text();
+        console.log('Invalid patient create response:', {
+            status: invalidStatus,
+            body: invalidBody,
+        });
+    }
+    expect(invalidStatus).toBe(422);
     const invalidContentType = invalidResponse.headers()['content-type'] || '';
     if (invalidContentType.includes('json')) {
         const invalidData = await invalidResponse.json();
