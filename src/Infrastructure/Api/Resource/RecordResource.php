@@ -11,6 +11,7 @@ use ApiPlatform\Metadata\Put;
 use App\Infrastructure\Api\State\RecordProvider;
 use App\Infrastructure\Api\State\RecordProcessor;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     shortName: 'Record',
@@ -34,6 +35,7 @@ class RecordResource
     public ?string $patient = null; 
 
     #[Groups(['record:read', 'record:write'])]
+    #[Assert\NotBlank(normalizer: 'trim')]
     public string $physiotherapyTreatment;
 
     #[Groups(['record:read', 'record:write'])]

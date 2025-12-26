@@ -40,6 +40,11 @@ jobs:
         run: |
           docker compose -f docker/test/docker-compose.yaml exec -T php_test composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Generate JWT Keys (Test)
+        run: |
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test mkdir -p config/jwt
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
       - name: Setup Database (Reset & Fixtures)
         run: |
           echo "Resetting Database..."
