@@ -24,3 +24,7 @@ This agent defines testing conventions and validation practices for the project.
 - **Validate server responses**: assert status codes and payload shape.
 - **Test error cases**: include negative cases for validation and authorization.
 - **Use test endpoints only in test env**: ensure they are gated by environment checks.
+- **Verification Strategy**: Use `GET /api/test/stats` to verify raw database counts after write operations. This ensures tests are independent of frontend pagination or filters.
+- **Test Data**: 
+    - `POST /api/test/reset-db-empty`: Clean database, only admin user created.
+    - `POST /api/test/reset-db`: Standard dataset (15 patients) for testing list/search features.

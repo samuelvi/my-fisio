@@ -47,7 +47,14 @@ See [AGENTS_TESTING.md](./AGENTS_TESTING.md) for testing conventions and UI vali
 - **Email Testing**: MailPit (SMTP + Web UI)
 - **Management**: Makefile with useful commands
 
-## DDD + Event Sourcing Architecture
+### Code Quality & Static Analysis
+- **PHPStan**: Level 8 analysis. Requires `tests/object-manager.php` and `tests/console-application.php` for Symfony/Doctrine context.
+- **PHP CS Fixer**: Enforces Symfony coding standards and `declare(strict_types=1)`.
+- **Initialization Pattern**: All API Resources (DTOs) MUST initialize mandatory string properties to avoid "uninitialized property" crashes during validation.
+
+### Testing Strategy
+- **E2E Verification**: Combined UI assertions with raw database counts via `GET /api/test/stats` to bypass frontend filters/pagination during verification.
+- **Database Reset**: Use `/api/test/reset-db-empty` for a clean slate (0 patients) or `/api/test/reset-db` for a standard dataset (15 patients).
 
 ### Backend Layers
 ```
