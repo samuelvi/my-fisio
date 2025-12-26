@@ -1,12 +1,12 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-// test.beforeEach(async ({ request }) => {
-//   const response = await request.post('/api/test/reset-db');
-//   expect(response.ok()).toBeTruthy();
-// });
+test.beforeEach(async ({ request }) => {
+  const response = await request.post('/api/test/reset-db-empty');
+  expect(response.ok()).toBeTruthy();
+});
 
-test('clinical records lifecycle: validation, create full, edit verification', async ({ page }) => {
+test('clinical records lifecycle: validation, create full, edit verification', async ({ page, request }) => {
   await page.addInitScript(() => {
     localStorage.setItem('app_locale', 'en');
   });
@@ -31,6 +31,21 @@ test('clinical records lifecycle: validation, create full, edit verification', a
 
   // 3. Open patient detail before adding first record
   await expect(page).toHaveURL('/patients');
+
+  // VERIFY EXACTLY 1 PATIENT IN LIST (Desktop & Mobile)
+  const desktopRows = page.locator('tbody tr:not(:has-text("No patients found"))');
+  const mobileLinks = page.locator('.md\\:hidden a[href^="/patients/"]');
+  
+  await expect(desktopRows).toHaveCount(1);
+  if (await mobileLinks.count() > 0) {
+      await expect(mobileLinks).toHaveCount(1);
+  }
+
+  // DIRECT API VERIFICATION (Patient count)
+  const statsResponse = await request.get('/api/test/stats');
+  const stats = await statsResponse.json();
+  expect(stats.patients).toBe(1);
+
   await page.getByPlaceholder('Search by name, phone or email...').fill(`${patientFirstName} ${patientLastName}`);
   await page.getByRole('button', { name: 'Search' }).click();
   await page.getByRole('link', { name: `${patientFirstName} ${patientLastName}` }).first().click();
@@ -109,11 +124,52 @@ test('clinical records lifecycle: validation, create full, edit verification', a
   // Expect redirect back to patient profile
   await expect(page).toHaveURL(/\/patients\/\d+$/);
   
+  // DIRECT API VERIFICATION (1 Record)
+  const stats1 = await (await request.get('/api/test/stats')).json();
+  expect(stats1.records).toBe(1);
+
   // Verify record appears in timeline
   await expect(page.locator('text=Full treatment session')).toBeVisible();
 
-  // 7. Click Edit to verify persistence
-  // Find the edit link relative to the record text or just the first edit link if it's the only record
+  // VERIFY EXACTLY 1 RECORD
+  const timelineItemsBefore = page.locator('ul[role="list"] li');
+  await expect(timelineItemsBefore).toHaveCount(1);
+
+  // 7. Add SECOND Record
+  await page.getByRole('button', { name: '+ Add Item' }).click();
+  await expect(page).toHaveURL(/\/patients\/\d+\/records\/new/);
+
+  const secondRecordData = {
+      physiotherapyTreatment: 'Second treatment session',
+      notes: 'Second record notes'
+  };
+
+  await page.fill('textarea[name="physiotherapyTreatment"]', secondRecordData.physiotherapyTreatment);
+  await page.fill('input[name="notes"]', secondRecordData.notes);
+
+  const [secondSuccessResponse] = await Promise.all([
+      page.waitForResponse(response =>
+          response.url().includes('/api/records') &&
+          response.request().method() === 'POST' &&
+          response.status() === 201
+      ),
+      page.click('button:has-text("Save History Entry")')
+  ]);
+
+  // Expect redirect back to patient profile
+  await expect(page).toHaveURL(/\/patients\/\d+$/);
+
+  // DIRECT API VERIFICATION (2 Records)
+  const stats2 = await (await request.get('/api/test/stats')).json();
+  expect(stats2.records).toBe(2);
+
+  // VERIFY EXACTLY 2 RECORDS
+  const timelineItemsAfter = page.locator('ul[role="list"] li');
+  await expect(timelineItemsAfter).toHaveCount(2);
+  await expect(page.locator('text=Second treatment session')).toBeVisible();
+  await expect(page.locator('text=Full treatment session')).toBeVisible();
+
+  // 8. Click Edit on the first record to verify persistence (the first one in the UI is the newest)
   await page.getByRole('link', { name: 'Edit' }).first().click();
 
   // 8. Verify ALL fields in Edit Mode

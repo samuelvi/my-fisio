@@ -70,6 +70,22 @@ test('patient creation flow with server validation', async ({ page, request }) =
   await page.getByRole('button', { name: 'Save Patient' }).click();
   await successResponsePromise;
   await expect(page).toHaveURL('/patients');
+  
+  // VERIFY EXACTLY 1 PATIENT IN LIST (Desktop & Mobile)
+  const desktopRows = page.locator('tbody tr:not(:has-text("No patients found"))');
+  const mobileLinks = page.locator('.md\\:hidden a[href^="/patients/"]');
+  
+  await expect(desktopRows).toHaveCount(1);
+  // Also check mobile view locator if present in DOM
+  if (await mobileLinks.count() > 0) {
+      await expect(mobileLinks).toHaveCount(1);
+  }
+  
+  // DIRECT API VERIFICATION (Zero filters, raw DB count)
+  const statsResponse = await request.get('/api/test/stats');
+  const stats = await statsResponse.json();
+  expect(stats.patients).toBe(1);
+  
   await expect(page.getByRole('link', { name: /TestFirst TestLast/ }).first()).toBeVisible();
 
   // 6) Edit and verify values

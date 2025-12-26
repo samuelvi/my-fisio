@@ -11,12 +11,28 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
+use App\Domain\Entity\Patient;
+use App\Domain\Entity\Record;
+
 #[Route('/api/test')]
 class TestController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager
     ) {
+    }
+
+    #[Route('/stats', name: 'test_stats', methods: ['GET'])]
+    public function stats(): JsonResponse
+    {
+        if ($this->getParameter('kernel.environment') !== 'test') {
+            return new JsonResponse(['error' => 'Access denied'], 403);
+        }
+
+        return new JsonResponse([
+            'patients' => $this->entityManager->getRepository(Patient::class)->count([]),
+            'records' => $this->entityManager->getRepository(Record::class)->count([]),
+        ]);
     }
 
     #[Route('/reset-db', name: 'test_reset_db', methods: ['POST'])]
