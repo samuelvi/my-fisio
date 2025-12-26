@@ -7,6 +7,7 @@ namespace App\Command\Migration;
 use App\Domain\Entity\User;
 use App\Domain\Enum\PatientStatus;
 use DateTime;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 
@@ -237,7 +238,7 @@ final class MigrateLegacyDataCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function processRow($connection, string $legacyTable, array $row): void
+    private function processRow(Connection $connection, string $legacyTable, array $row): void
     {
         $config = self::MAPPINGS[$legacyTable];
         $targetTable = $config['target_table'];
@@ -358,14 +359,14 @@ final class MigrateLegacyDataCommand extends Command
         return $date;
     }
 
-    private function convertSerializedToJson(?string $value): ?string
+    private function convertSerializedToJson(?string $value): string
     {
         if (!$value || 'NULL' === $value) {
-            return json_encode([]);
+            return (string) json_encode([]);
         }
         $data = @unserialize($value);
 
-        return json_encode(false !== $data ? $data : []);
+        return (string) json_encode(false !== $data ? $data : []);
     }
 
     private function isValidJson(string $string): bool
@@ -375,7 +376,7 @@ final class MigrateLegacyDataCommand extends Command
         return JSON_ERROR_NONE === json_last_error();
     }
 
-    private function resetSequence($connection, string $table): void
+    private function resetSequence(Connection $connection, string $table): void
     {
         $sql = sprintf("SELECT setval(pg_get_serial_sequence('%s', 'id'), (SELECT MAX(id) FROM %s))", $table, $table);
 

@@ -37,7 +37,7 @@ class RecordProcessor implements ProcessorInterface
         }
 
         // Parse patient ID from IRI
-        if (preg_match('#/api/patients/(\d+)#', $data->patient, $matches)) {
+        if (null !== $data->patient && preg_match('#/api/patients/(\d+)#', $data->patient, $matches)) {
             $patientId = (int) $matches[1];
             $patient = $this->entityManager->getRepository(Patient::class)->find($patientId);
             if (!$patient) {
@@ -64,7 +64,9 @@ class RecordProcessor implements ProcessorInterface
         $this->entityManager->flush();
 
         $data->id = $record->id;
-        $data->createdAt = $record->createdAt;
+        if ($record->createdAt instanceof DateTimeImmutable) {
+            $data->createdAt = $record->createdAt;
+        }
 
         return $data;
     }

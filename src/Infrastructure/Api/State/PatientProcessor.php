@@ -9,7 +9,7 @@ use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
 use App\Domain\Entity\Patient;
 use App\Infrastructure\Api\Resource\PatientResource;
-
+use DateTimeImmutable;
 use function count;
 
 use Doctrine\ORM\EntityManagerInterface;
@@ -71,7 +71,9 @@ class PatientProcessor implements ProcessorInterface
         $this->entityManager->flush();
 
         $data->id = $patient->id;
-        $data->createdAt = $patient->createdAt;
+        if ($patient->createdAt instanceof DateTimeImmutable) {
+            $data->createdAt = $patient->createdAt;
+        }
 
         return $data;
     }

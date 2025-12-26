@@ -65,6 +65,8 @@ class PatientProvider implements ProviderInterface
         }
 
         $hasSearch = false;
+        $search = '';
+        $searchTermFull = '';
         if (isset($filters['search'])) {
             $search = $this->normalizeSearch((string) $filters['search']);
             if ('' !== $search) {

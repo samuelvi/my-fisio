@@ -19,7 +19,7 @@ final class InvoiceNumberGapsController extends AbstractController
     public function __construct(
         private MessageBusInterface $queryBus,
     ) {
-        $this->messageBus = $queryBus;
+        $this->messageBus = $this->queryBus;
     }
 
     #[Route('/api/invoice-gaps', name: 'invoice_number_gaps', methods: ['GET'])]

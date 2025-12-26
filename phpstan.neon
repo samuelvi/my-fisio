@@ -28,6 +28,7 @@ parameters:
     treatPhpDocTypesAsCertain: false
 
     ignoreErrors:
+        - '#Negated boolean expression is always true.#'
         - '#implements generic interface .* but does not specify its types#'
         - '#has parameter .* with generic interface .* but does not specify its types#'
         - '#no value type specified in iterable type array#'

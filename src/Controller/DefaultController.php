@@ -8,6 +8,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Translation\MessageCatalogueInterface;
+use Symfony\Component\Translation\TranslatorBagInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class DefaultController extends AbstractController
@@ -19,9 +20,12 @@ class DefaultController extends AbstractController
         $catalog = [];
 
         foreach ($locales as $locale) {
-            // @var MessageCatalogueInterface $catalogue
-            $catalogue = $translator->getCatalogue($locale);
-            $catalog[$locale] = $catalogue->all('messages');
+            if ($translator instanceof TranslatorBagInterface) {
+                $catalogue = $translator->getCatalogue($locale);
+                $catalog[$locale] = $catalogue->all('messages');
+            } else {
+                $catalog[$locale] = [];
+            }
 
             // Override app_name with env variable if present
             $appTitle = $_ENV['VITE_APP_TITLE'] ?? $_SERVER['VITE_APP_TITLE'] ?? 'PhysioApp';

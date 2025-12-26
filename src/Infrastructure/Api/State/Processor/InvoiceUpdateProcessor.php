@@ -65,7 +65,9 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
             throw new BadRequestHttpException($validationResult->reason ?? 'invoice_number_invalid');
         }
 
-        $invoice->number = $data->number;
+        if (null !== $data->number) {
+            $invoice->number = $data->number;
+        }
         $invoice->name = $data->name;
         $invoice->phone = $data->phone;
         $invoice->address = $data->address;

@@ -28,7 +28,7 @@ class InvoiceExportController extends AbstractController
     public function __construct(
         private MessageBusInterface $queryBus,
     ) {
-        $this->messageBus = $queryBus;
+        $this->messageBus = $this->queryBus;
     }
 
     #[Route('/api/invoices/{id}/export/{format}', name: 'invoice_export', requirements: ['format' => 'pdf|html'], methods: ['GET'])]
@@ -66,15 +66,20 @@ class InvoiceExportController extends AbstractController
         $locale = $request->query->getString('locale', '');
         if (in_array($locale, ['en', 'es'], true)) {
             $request->setLocale($locale);
-            $translator->setLocale($locale);
+            if (method_exists($translator, 'setLocale')) {
+                $translator->setLocale($locale);
+            }
         }
 
         // Prepare Logo
         $logoPath = $projectDir.'/'.$companyLogoPath;
         $logoSrc = '';
         if (file_exists($logoPath)) {
-            $logoData = base64_encode(file_get_contents($logoPath));
-            $logoSrc = 'data:image/png;base64,'.$logoData;
+            $logoContent = file_get_contents($logoPath);
+            if (false !== $logoContent) {
+                $logoData = base64_encode($logoContent);
+                $logoSrc = 'data:image/png;base64,'.$logoData;
+            }
         }
 
         $html = $this->renderView('invoice/pdf.html.twig', [

@@ -18,6 +18,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::INTEGER)]
     public ?int $id = null;
 
+    /** @var non-empty-string */
     #[ORM\Column(type: Types::STRING, length: 180, unique: true, nullable: false)]
     public string $email;
 
@@ -32,6 +33,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     private function __construct(string $email)
     {
+        if ('' === $email) {
+            throw new \InvalidArgumentException('Email cannot be empty');
+        }
         $this->email = $email;
     }
 
@@ -44,6 +48,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      * A visual identifier that represents this user.
      *
      * @see UserInterface
+     */
+    /**
+     * @return non-empty-string
      */
     public function getUserIdentifier(): string
     {
