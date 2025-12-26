@@ -38,7 +38,7 @@ class RecordResource
     public ?string $patient = null;
 
     #[Groups(['record:read', 'record:write'])]
-    #[Assert\NotBlank(normalizer: 'trim')]
+    #[Assert\NotBlank(normalizer: 'trim', message: 'record_physiotherapy_treatment_required')]
     public string $physiotherapyTreatment = '';
 
     #[Groups(['record:read', 'record:write'])]

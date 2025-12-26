@@ -6,6 +6,7 @@ namespace App\Infrastructure\Api\State\Processor;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use ApiPlatform\Validator\Exception\ValidationException;
 use App\Application\Service\InvoiceNumberValidator;
 use App\Domain\Entity\Invoice;
 use App\Domain\Entity\InvoiceLine;
@@ -15,16 +16,19 @@ use App\Infrastructure\Api\Resource\InvoiceLineInput;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 
+use function count;
 use function is_array;
 
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class InvoiceUpdateProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
         private InvoiceRepositoryInterface $invoiceRepository,
+        private ValidatorInterface $validator,
     ) {
     }
 
@@ -56,6 +60,27 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
             throw new BadRequestHttpException('Customer name is required.');
         }
 
+        $normalizedLines = [];
+        foreach ($data->lines as $lineData) {
+            $line = $lineData instanceof InvoiceLineInput ? $lineData : null;
+            if (!$line && is_array($lineData)) {
+                $line = new InvoiceLineInput();
+                $line->concept = $lineData['concept'] ?? null;
+                $line->description = $lineData['description'] ?? null;
+                $line->quantity = (int) ($lineData['quantity'] ?? 1);
+                $line->price = (float) ($lineData['price'] ?? 0.0);
+            }
+            if ($line) {
+                $normalizedLines[] = $line;
+            }
+        }
+        $data->lines = $normalizedLines;
+
+        $violations = $this->validator->validate($data);
+        if (count($violations) > 0) {
+            throw new ValidationException($violations);
+        }
+
         $numberYear = $data->number ? (int) substr($data->number, 0, 4) : 0;
         $existingNumbers = $numberYear > 0
             ? $this->invoiceRepository->getNumbersByYearExcluding($numberYear, $invoice->id ?? 0)
@@ -83,19 +108,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         $invoice->lines->clear();
 
         $totalAmount = 0.0;
-        foreach ($data->lines as $lineData) {
-            $line = $lineData instanceof InvoiceLineInput ? $lineData : null;
-            if (!$line && is_array($lineData)) {
-                $line = new InvoiceLineInput();
-                $line->concept = $lineData['concept'] ?? null;
-                $line->description = $lineData['description'] ?? null;
-                $line->quantity = (int) ($lineData['quantity'] ?? 1);
-                $line->price = (float) ($lineData['price'] ?? 0.0);
-            }
-            if (!$line) {
-                continue;
-            }
-
+        foreach ($data->lines as $line) {
             $lineAmount = $line->quantity * $line->price;
             $invoiceLine = InvoiceLine::create($line->quantity, $line->price, $lineAmount);
             $invoiceLine->concept = $line->concept;

@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
+import axios from 'axios';
 
 const LanguageContext = createContext();
 
@@ -13,6 +14,7 @@ export const LanguageProvider = ({ children }) => {
     useEffect(() => {
         setTranslations(allTranslations[locale] || {});
         localStorage.setItem('app_locale', locale);
+        axios.defaults.headers.common['X-App-Locale'] = locale;
     }, [locale, allTranslations]);
 
     const t = (key, params = null) => {

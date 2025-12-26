@@ -8,6 +8,7 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(operations: [])]
 final class InvoiceInput
@@ -38,6 +39,8 @@ final class InvoiceInput
      */
     #[ApiProperty]
     #[Groups(['invoice:write'])]
+    #[Assert\Count(min: 1, minMessage: 'invoice_lines_min')]
+    #[Assert\Valid]
     public array $lines = [];
 
     public function __construct()

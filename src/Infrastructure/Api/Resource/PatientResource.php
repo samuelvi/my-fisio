@@ -43,11 +43,11 @@ class PatientResource
     public PatientStatus $status = PatientStatus::ACTIVE;
 
     #[Groups(['patient:read', 'patient:write'])]
-    #[Assert\NotBlank(normalizer: 'trim')]
+    #[Assert\NotBlank(normalizer: 'trim', message: 'patient_first_name_required')]
     public string $firstName = '';
 
     #[Groups(['patient:read', 'patient:write'])]
-    #[Assert\NotBlank(normalizer: 'trim')]
+    #[Assert\NotBlank(normalizer: 'trim', message: 'patient_last_name_required')]
     public string $lastName = '';
 
     #[Groups(['patient:read', 'patient:write'])]

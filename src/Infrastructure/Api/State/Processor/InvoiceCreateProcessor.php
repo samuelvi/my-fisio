@@ -6,6 +6,7 @@ namespace App\Infrastructure\Api\State\Processor;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
+use ApiPlatform\Validator\Exception\ValidationException;
 use App\Domain\Entity\Invoice;
 use App\Domain\Entity\InvoiceLine;
 use App\Domain\Repository\CounterRepositoryInterface;
@@ -13,10 +14,12 @@ use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\Resource\InvoiceLineInput;
 use DateTimeImmutable;
 
+use function count;
 use function is_array;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
  * @implements ProcessorInterface<Invoice, Invoice>
@@ -27,6 +30,7 @@ final class InvoiceCreateProcessor implements ProcessorInterface
         #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
         private readonly ProcessorInterface $persistProcessor,
         private readonly CounterRepositoryInterface $counterRepository,
+        private readonly ValidatorInterface $validator,
     ) {
     }
 
@@ -38,6 +42,27 @@ final class InvoiceCreateProcessor implements ProcessorInterface
 
         if (!$data->name) {
             throw new BadRequestHttpException('Customer name is required.');
+        }
+
+        $normalizedLines = [];
+        foreach ($data->lines as $lineData) {
+            $line = $lineData instanceof InvoiceLineInput ? $lineData : null;
+            if (!$line && is_array($lineData)) {
+                $line = new InvoiceLineInput();
+                $line->concept = $lineData['concept'] ?? null;
+                $line->description = $lineData['description'] ?? null;
+                $line->quantity = (int) ($lineData['quantity'] ?? 1);
+                $line->price = (float) ($lineData['price'] ?? 0.0);
+            }
+            if ($line) {
+                $normalizedLines[] = $line;
+            }
+        }
+        $data->lines = $normalizedLines;
+
+        $violations = $this->validator->validate($data);
+        if (count($violations) > 0) {
+            throw new ValidationException($violations);
         }
 
         $invoice = Invoice::create($data->name);
@@ -59,19 +84,7 @@ final class InvoiceCreateProcessor implements ProcessorInterface
 
         // 2. Recalculate totals
         $totalAmount = 0.0;
-        foreach ($data->lines as $lineData) {
-            $line = $lineData instanceof InvoiceLineInput ? $lineData : null;
-            if (!$line && is_array($lineData)) {
-                $line = new InvoiceLineInput();
-                $line->concept = $lineData['concept'] ?? null;
-                $line->description = $lineData['description'] ?? null;
-                $line->quantity = (int) ($lineData['quantity'] ?? 1);
-                $line->price = (float) ($lineData['price'] ?? 0.0);
-            }
-            if (!$line) {
-                continue;
-            }
-
+        foreach ($data->lines as $line) {
             $lineAmount = $line->quantity * $line->price;
             $invoiceLine = InvoiceLine::create($line->quantity, $line->price, $lineAmount);
             $invoiceLine->concept = $line->concept;

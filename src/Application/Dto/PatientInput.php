@@ -8,12 +8,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 final class PatientInput
 {
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 50)]
+    #[Assert\NotBlank(message: 'patient_first_name_required')]
+    #[Assert\Length(max: 50, maxMessage: 'patient_first_name_max_length')]
     public string $firstName = '';
 
-    #[Assert\NotBlank]
-    #[Assert\Length(max: 100)]
+    #[Assert\NotBlank(message: 'patient_last_name_required')]
+    #[Assert\Length(max: 100, maxMessage: 'patient_last_name_max_length')]
     public string $lastName = '';
 
     public ?string $dateOfBirth = null;
