@@ -37,6 +37,7 @@ services:
 
   # PHP-FPM (Test)
   php_test:
+    image: test-php_test:latest
     build:
       context: ./php
       dockerfile: Dockerfile
@@ -80,6 +81,8 @@ services:
   node_test:
     image: node:20-alpine
     container_name: test_physiotherapy_node
+    profiles:
+      - node
     working_dir: /var/www/html
     environment:
       - VITE_ITEMS_PER_PAGE=4
