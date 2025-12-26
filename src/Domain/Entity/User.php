@@ -6,6 +6,7 @@ namespace App\Domain\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use InvalidArgumentException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -34,9 +35,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private function __construct(string $email)
     {
         if ('' === $email) {
-            throw new \InvalidArgumentException('Email cannot be empty');
+            throw new InvalidArgumentException('Email cannot be empty');
         }
         $this->email = $email;
+        $this->password = '';
     }
 
     public static function create(string $email): self

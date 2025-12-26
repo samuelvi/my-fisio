@@ -39,7 +39,7 @@ class RecordResource
 
     #[Groups(['record:read', 'record:write'])]
     #[Assert\NotBlank(normalizer: 'trim')]
-    public string $physiotherapyTreatment;
+    public string $physiotherapyTreatment = '';
 
     #[Groups(['record:read', 'record:write'])]
     public ?string $consultationReason = null;

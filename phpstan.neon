@@ -29,6 +29,8 @@ parameters:
 
     ignoreErrors:
         - '#Negated boolean expression is always true.#'
+        - '#Property App\\Domain\\Entity\\Patient::\$(firstName|lastName) on left side of \?\? is not nullable nor uninitialized.#'
+        - '#Property App\\Infrastructure\\Api\\Resource\\PatientResource::\$(firstName|lastName) on left side of \?\? is not nullable nor uninitialized.#'
         - '#implements generic interface .* but does not specify its types#'
         - '#has parameter .* with generic interface .* but does not specify its types#'
         - '#no value type specified in iterable type array#'

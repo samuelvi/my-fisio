@@ -72,6 +72,7 @@ class Record
     private function __construct()
     {
         $this->createdAt = new DateTimeImmutable();
+        $this->physiotherapyTreatment = '';
     }
 
     public static function create(): self

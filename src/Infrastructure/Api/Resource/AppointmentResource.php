@@ -46,7 +46,7 @@ class AppointmentResource
     public ?string $patientName = null;
 
     #[Groups(['appointment:read', 'appointment:write'])]
-    public int $userId;
+    public int $userId = 0;
 
     #[Groups(['appointment:read', 'appointment:write'])]
     public ?string $title = null;
@@ -71,5 +71,7 @@ class AppointmentResource
 
     public function __construct()
     {
+        $this->startsAt = new DateTimeImmutable();
+        $this->endsAt = new DateTimeImmutable();
     }
 }

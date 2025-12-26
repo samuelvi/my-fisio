@@ -9,9 +9,10 @@ use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
 use App\Domain\Entity\Patient;
 use App\Infrastructure\Api\Resource\PatientResource;
-use DateTimeImmutable;
+
 use function count;
 
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -37,7 +38,9 @@ class PatientProcessor implements ProcessorInterface
         if (isset($uriVariables['id'])) {
             $patient = $this->entityManager->getRepository(Patient::class)->find($uriVariables['id']);
         } else {
-            $patient = Patient::create($data->firstName, $data->lastName);
+            $firstName = $data->firstName ?? '';
+            $lastName = $data->lastName ?? '';
+            $patient = Patient::create($firstName, $lastName);
         }
 
         if (!$patient) {

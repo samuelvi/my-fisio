@@ -44,11 +44,11 @@ class PatientResource
 
     #[Groups(['patient:read', 'patient:write'])]
     #[Assert\NotBlank(normalizer: 'trim')]
-    public string $firstName;
+    public string $firstName = '';
 
     #[Groups(['patient:read', 'patient:write'])]
     #[Assert\NotBlank(normalizer: 'trim')]
-    public string $lastName;
+    public string $lastName = '';
 
     #[Groups(['patient:read', 'patient:write'])]
     public ?DateTimeInterface $dateOfBirth = null;

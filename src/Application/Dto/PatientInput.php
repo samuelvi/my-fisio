@@ -10,11 +10,11 @@ final class PatientInput
 {
     #[Assert\NotBlank]
     #[Assert\Length(max: 50)]
-    public string $firstName;
+    public string $firstName = '';
 
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
-    public string $lastName;
+    public string $lastName = '';
 
     public ?string $dateOfBirth = null;
 
