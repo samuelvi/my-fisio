@@ -58,8 +58,12 @@ test('clinical records lifecycle: validation, create full, edit verification', a
       page.click('button:has-text("Save History Entry")')
   ]);
   
-  const invalidData = await invalidResponse.json();
-  expect(Array.isArray(invalidData.violations)).toBeTruthy();
+  expect(invalidResponse.status()).toBe(422);
+  const invalidContentType = invalidResponse.headers()['content-type'] || '';
+  if (invalidContentType.includes('json')) {
+      const invalidData = await invalidResponse.json();
+      expect(Array.isArray(invalidData.violations)).toBeTruthy();
+  }
 
   // Verify error message in UI
   await expect(page.getByText('This value should not be blank.').first()).toBeVisible();

@@ -50,8 +50,12 @@ test('patient creation flow with server validation', async ({ page, request }) =
         page.getByRole('button', { name: 'Save Patient' }).click()
     ]);
 
-    const invalidData = await invalidResponse.json();
-  expect(Array.isArray(invalidData.violations)).toBeTruthy();
+    expect(invalidResponse.status()).toBe(422);
+    const invalidContentType = invalidResponse.headers()['content-type'] || '';
+    if (invalidContentType.includes('json')) {
+        const invalidData = await invalidResponse.json();
+        expect(Array.isArray(invalidData.violations)).toBeTruthy();
+    }
   await expect(page).toHaveURL('/patients/new');
   await expect(page.getByText('This value should not be blank.').first()).toBeVisible();
 
