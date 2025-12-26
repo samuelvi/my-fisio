@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
@@ -7,20 +9,28 @@ use ApiPlatform\State\ProviderInterface;
 use App\Domain\Entity\Patient;
 use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Api\Resource\PatientResource;
+
+use function count;
+
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
+
+use function sprintf;
+use function strlen;
 
 class PatientProvider implements ProviderInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private int $itemsPerPage
+        private int $itemsPerPage,
     ) {
     }
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
         $repository = $this->entityManager->getRepository(Patient::class);
-        
+
         if (isset($uriVariables['id'])) {
             $qb = $repository->createQueryBuilder('p')
                 ->select('p', 'r')
@@ -29,6 +39,7 @@ class PatientProvider implements ProviderInterface
                 ->setParameter('id', $uriVariables['id']);
 
             $result = $qb->getQuery()->getArrayResult();
+
             return !empty($result) ? $this->mapToResource($result[0]) : null;
         }
 
@@ -42,7 +53,7 @@ class PatientProvider implements ProviderInterface
         $qb = $repository->createQueryBuilder('p')
             ->select('p.id');
 
-        if (isset($filters['status']) && $filters['status'] !== 'all') {
+        if (isset($filters['status']) && 'all' !== $filters['status']) {
             $statusEnum = PatientStatus::tryFrom($filters['status']);
             if ($statusEnum) {
                 $qb->andWhere('p.status = :status')
@@ -56,10 +67,10 @@ class PatientProvider implements ProviderInterface
         $hasSearch = false;
         if (isset($filters['search'])) {
             $search = $this->normalizeSearch((string) $filters['search']);
-            if ($search !== '') {
-                $searchTermFull = '%' . $search . '%';
-                $useFuzzy = isset($filters['fuzzy']) && ($filters['fuzzy'] === 'true' || $filters['fuzzy'] === true || $filters['fuzzy'] === '1');
-                
+            if ('' !== $search) {
+                $searchTermFull = '%'.$search.'%';
+                $useFuzzy = isset($filters['fuzzy']) && ('true' === $filters['fuzzy'] || true === $filters['fuzzy'] || '1' === $filters['fuzzy']);
+
                 $searchOr = $qb->expr()->orX();
                 $searchOr->add('p.fullName = :searchExact');
                 $searchOr->add('p.email = :searchExact');
@@ -74,9 +85,9 @@ class PatientProvider implements ProviderInterface
                 if (count($tokens) > 1) {
                     $tokenAnd = $qb->expr()->andX();
                     foreach ($tokens as $index => $token) {
-                        $param = 'searchToken' . $index;
+                        $param = 'searchToken'.$index;
                         $tokenAnd->add(sprintf('p.fullName LIKE :%s', $param));
-                        $qb->setParameter($param, '%' . $token . '%');
+                        $qb->setParameter($param, '%'.$token.'%');
                     }
                     $searchOr->add($tokenAnd);
                 }
@@ -86,7 +97,7 @@ class PatientProvider implements ProviderInterface
                     $maxDistance = $this->getMaxLevenshteinDistance($search);
                     $maxLength = $this->getMaxLevenshteinLength($search);
                     $similarIds = $conn->fetchFirstColumn(
-                        "SELECT id FROM patients 
+                        'SELECT id FROM patients 
                          WHERE full_name % :s
                             OR first_name % :s
                             OR last_name % :s
@@ -97,12 +108,12 @@ class PatientProvider implements ProviderInterface
                                     levenshtein_less_equal(first_name::text, :s::text, :maxDistance) <= :maxDistance
                                     OR levenshtein_less_equal(last_name::text, :s::text, :maxDistance) <= :maxDistance
                                 )
-                            )",
+                            )',
                         [
                             's' => $search,
                             'maxLength' => $maxLength,
                             'maxDistance' => $maxDistance,
-                        ]
+                        ],
                     );
 
                     if (!empty($similarIds)) {
@@ -116,7 +127,7 @@ class PatientProvider implements ProviderInterface
             }
         }
 
-        if (isset($filters['order']) && $filters['order'] === 'alpha') {
+        if (isset($filters['order']) && 'alpha' === $filters['order']) {
             if ($hasSearch) {
                 $qb->addOrderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
             } else {
@@ -152,7 +163,7 @@ class PatientProvider implements ProviderInterface
                 ->setParameter('searchFull', $searchTermFull);
         }
 
-        if (isset($filters['order']) && $filters['order'] === 'alpha') {
+        if (isset($filters['order']) && 'alpha' === $filters['order']) {
             if ($hasSearch) {
                 $finalQb->addOrderBy('p.firstName', 'ASC')->addOrderBy('p.lastName', 'ASC');
             } else {
@@ -175,8 +186,8 @@ class PatientProvider implements ProviderInterface
     {
         $resource = new PatientResource();
         $resource->id = $data['id'];
-        $resource->status = $data['status'] instanceof PatientStatus 
-            ? $data['status'] 
+        $resource->status = $data['status'] instanceof PatientStatus
+            ? $data['status']
             : PatientStatus::from($data['status']);
 
         $resource->firstName = $data['firstName'];
@@ -199,19 +210,19 @@ class PatientProvider implements ProviderInterface
         $resource->bruxism = $data['bruxism'] ?? null;
         $resource->insoles = $data['insoles'] ?? null;
         $resource->others = $data['others'] ?? null;
-        
-        $resource->createdAt = $data['createdAt'] instanceof \DateTimeInterface 
-            ? \DateTimeImmutable::createFromInterface($data['createdAt']) 
-            : new \DateTimeImmutable($data['createdAt']);
-        
-        $resource->records = array_map(function($r) {
-            $recordCreatedAt = $r['createdAt'] instanceof \DateTimeInterface 
-                ? $r['createdAt'] 
-                : new \DateTimeImmutable($r['createdAt']);
+
+        $resource->createdAt = $data['createdAt'] instanceof DateTimeInterface
+            ? DateTimeImmutable::createFromInterface($data['createdAt'])
+            : new DateTimeImmutable($data['createdAt']);
+
+        $resource->records = array_map(function ($r) {
+            $recordCreatedAt = $r['createdAt'] instanceof DateTimeInterface
+                ? $r['createdAt']
+                : new DateTimeImmutable($r['createdAt']);
 
             return [
                 'id' => $r['id'],
-                'createdAt' => $recordCreatedAt->format(\DateTimeInterface::ATOM),
+                'createdAt' => $recordCreatedAt->format(DateTimeInterface::ATOM),
                 'physiotherapyTreatment' => $r['physiotherapyTreatment'],
                 'consultationReason' => $r['consultationReason'] ?? null,
                 'currentSituation' => $r['currentSituation'] ?? null,
@@ -224,13 +235,14 @@ class PatientProvider implements ProviderInterface
                 'onset' => $r['onset'] ?? null,
             ];
         }, $data['records'] ?? []);
-        
+
         return $resource;
     }
 
     private function normalizeSearch(string $search): string
     {
         $search = trim($search);
+
         return preg_replace('/\s+/', ' ', $search) ?? '';
     }
 
@@ -240,7 +252,8 @@ class PatientProvider implements ProviderInterface
     private function extractSearchTokens(string $search): array
     {
         $tokens = preg_split('/\s+/', $search) ?: [];
-        $tokens = array_filter(array_map('trim', $tokens), static fn (string $token) => $token !== '');
+        $tokens = array_filter(array_map('trim', $tokens), static fn (string $token) => '' !== $token);
+
         return array_values(array_unique($tokens));
     }
 
@@ -253,6 +266,7 @@ class PatientProvider implements ProviderInterface
         if ($length <= 6) {
             return 2;
         }
+
         return 3;
     }
 
@@ -265,6 +279,7 @@ class PatientProvider implements ProviderInterface
         if ($length <= 10) {
             return 8;
         }
+
         return 0;
     }
 }

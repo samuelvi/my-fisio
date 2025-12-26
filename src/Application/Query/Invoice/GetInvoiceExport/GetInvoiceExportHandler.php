@@ -12,8 +12,9 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 final readonly class GetInvoiceExportHandler
 {
     public function __construct(
-        private InvoiceRepositoryInterface $invoiceRepository
-    ) {}
+        private InvoiceRepositoryInterface $invoiceRepository,
+    ) {
+    }
 
     public function __invoke(GetInvoiceExportQuery $query): ?InvoiceExportView
     {

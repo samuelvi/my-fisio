@@ -18,8 +18,9 @@ final readonly class GetDashboardStatsHandler
     public function __construct(
         private PatientRepositoryInterface $patientRepository,
         private AppointmentRepositoryInterface $appointmentRepository,
-        private InvoiceRepositoryInterface $invoiceRepository
-    ) {}
+        private InvoiceRepositoryInterface $invoiceRepository,
+    ) {
+    }
 
     public function __invoke(GetDashboardStatsQuery $query): DashboardStatsView
     {
@@ -30,7 +31,7 @@ final readonly class GetDashboardStatsHandler
             totalPatients: $this->patientRepository->countAll(),
             appointmentsToday: $this->appointmentRepository->countByDateAndType($today, AppointmentType::APPOINTMENT),
             othersToday: $this->appointmentRepository->countByDateAndType($today, AppointmentType::OTHER),
-            invoicesThisYear: $this->invoiceRepository->countByYear($currentYear)
+            invoicesThisYear: $this->invoiceRepository->countByYear($currentYear),
         );
     }
 }

@@ -1,17 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\Domain\Entity\Record;
 use App\Infrastructure\Api\Resource\RecordResource;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
 class RecordProvider implements ProviderInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -27,6 +31,7 @@ class RecordProvider implements ProviderInterface
                 ->setParameter('id', $uriVariables['id']);
 
             $result = $qb->getQuery()->getArrayResult();
+
             return !empty($result) ? $this->mapToResource($result[0]) : null;
         }
 
@@ -51,7 +56,7 @@ class RecordProvider implements ProviderInterface
     {
         $resource = new RecordResource();
         $resource->id = $data['id'];
-        $resource->patient = '/api/patients/' . $data['patient']['id'];
+        $resource->patient = '/api/patients/'.$data['patient']['id'];
         $resource->physiotherapyTreatment = $data['physiotherapyTreatment'];
         $resource->consultationReason = $data['consultationReason'] ?? null;
         $resource->onset = $data['onset'] ?? null;
@@ -63,10 +68,10 @@ class RecordProvider implements ProviderInterface
         $resource->notes = $data['notes'] ?? null;
         $resource->sickLeave = $data['sickLeave'] ?? false;
 
-        $resource->createdAt = $data['createdAt'] instanceof \DateTimeInterface 
-            ? \DateTimeImmutable::createFromInterface($data['createdAt']) 
-            : new \DateTimeImmutable($data['createdAt']);
-        
+        $resource->createdAt = $data['createdAt'] instanceof DateTimeInterface
+            ? DateTimeImmutable::createFromInterface($data['createdAt'])
+            : new DateTimeImmutable($data['createdAt']);
+
         return $resource;
     }
 }

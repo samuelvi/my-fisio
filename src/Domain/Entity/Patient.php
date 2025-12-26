@@ -11,6 +11,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+
+use function sprintf;
+
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
@@ -146,8 +149,8 @@ class Patient
 
     private function updateFullName(): void
     {
-        $firstName = isset($this->firstName) ? $this->firstName : '';
-        $lastName = isset($this->lastName) ? $this->lastName : '';
+        $firstName = $this->firstName ?? '';
+        $lastName = $this->lastName ?? '';
         $this->fullName = trim(sprintf('%s %s', $firstName, $lastName));
     }
 }

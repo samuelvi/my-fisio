@@ -7,14 +7,18 @@ namespace App\Controller;
 use App\Application\Query\Invoice\GetInvoiceExport\GetInvoiceExportQuery;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+
+use function in_array;
+use function sprintf;
+
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\HandleTrait;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class InvoiceExportController extends AbstractController
@@ -22,7 +26,7 @@ class InvoiceExportController extends AbstractController
     use HandleTrait;
 
     public function __construct(
-        private MessageBusInterface $queryBus
+        private MessageBusInterface $queryBus,
     ) {
         $this->messageBus = $queryBus;
     }
@@ -33,17 +37,25 @@ class InvoiceExportController extends AbstractController
         string $format,
         Request $request,
         TranslatorInterface $translator,
-        #[Autowire('%kernel.project_dir%')] string $projectDir,
-        #[Autowire('%company_name%')] string $companyName,
-        #[Autowire('%company_tax_id%')] string $companyTaxId,
-        #[Autowire('%company_address_line1%')] string $companyAddressLine1,
-        #[Autowire('%company_address_line2%')] string $companyAddressLine2,
-        #[Autowire('%company_phone%')] string $companyPhone,
-        #[Autowire('%company_email%')] string $companyEmail,
-        #[Autowire('%company_web%')] string $companyWeb,
-        #[Autowire('%company_logo_path%')] string $companyLogoPath
-    ): Response
-    {
+        #[Autowire('%kernel.project_dir%')]
+        string $projectDir,
+        #[Autowire('%company_name%')]
+        string $companyName,
+        #[Autowire('%company_tax_id%')]
+        string $companyTaxId,
+        #[Autowire('%company_address_line1%')]
+        string $companyAddressLine1,
+        #[Autowire('%company_address_line2%')]
+        string $companyAddressLine2,
+        #[Autowire('%company_phone%')]
+        string $companyPhone,
+        #[Autowire('%company_email%')]
+        string $companyEmail,
+        #[Autowire('%company_web%')]
+        string $companyWeb,
+        #[Autowire('%company_logo_path%')]
+        string $companyLogoPath,
+    ): Response {
         // CQRS: Query for the View DTO
         $invoice = $this->handle(GetInvoiceExportQuery::create($id));
 
@@ -58,11 +70,11 @@ class InvoiceExportController extends AbstractController
         }
 
         // Prepare Logo
-        $logoPath = $projectDir . '/' . $companyLogoPath;
+        $logoPath = $projectDir.'/'.$companyLogoPath;
         $logoSrc = '';
         if (file_exists($logoPath)) {
-             $logoData = base64_encode(file_get_contents($logoPath));
-             $logoSrc = 'data:image/png;base64,' . $logoData;
+            $logoData = base64_encode(file_get_contents($logoPath));
+            $logoSrc = 'data:image/png;base64,'.$logoData;
         }
 
         $html = $this->renderView('invoice/pdf.html.twig', [
@@ -77,10 +89,10 @@ class InvoiceExportController extends AbstractController
                 'phone' => $companyPhone,
                 'email' => $companyEmail,
                 'web' => $companyWeb,
-            ]
+            ],
         ]);
 
-        if ($format === 'html') {
+        if ('html' === $format) {
             return new Response($html, 200, ['Content-Type' => 'text/html']);
         }
 
@@ -99,7 +111,7 @@ class InvoiceExportController extends AbstractController
 
         return new Response($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => ($isDownload ? 'attachment' : 'inline') . '; filename="' . $filename . '"',
+            'Content-Disposition' => ($isDownload ? 'attachment' : 'inline').'; filename="'.$filename.'"',
         ]);
     }
 }

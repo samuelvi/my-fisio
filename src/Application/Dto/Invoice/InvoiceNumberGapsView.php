@@ -11,8 +11,9 @@ final readonly class InvoiceNumberGapsView
         public int $totalInvoices,
         public int $totalGaps,
         /** @var array<int, string> */
-        public array $gaps
-    ) {}
+        public array $gaps,
+    ) {
+    }
 
     /**
      * @param array<int, string> $gaps

@@ -6,17 +6,23 @@ namespace App\Controller;
 
 use Doctrine\DBAL\Exception;
 use Doctrine\ORM\EntityManagerInterface;
+
+use function in_array;
+
+use Redis;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
 final class HealthController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
         #[Autowire(service: 'snc_redis.default')]
-        private \Redis $redis
-    ) {}
+        private Redis $redis,
+    ) {
+    }
 
     #[Route('/api/health', name: 'api_health', methods: ['GET'])]
     public function __invoke(): JsonResponse
@@ -38,6 +44,7 @@ final class HealthController
     {
         try {
             $this->entityManager->getConnection()->executeQuery('SELECT 1');
+
             return ['ok' => true];
         } catch (Exception) {
             return ['ok' => false];
@@ -48,8 +55,9 @@ final class HealthController
     {
         try {
             $pong = $this->redis->ping();
-            return ['ok' => $pong === true || $pong === '+PONG' || $pong === 'PONG'];
-        } catch (\Throwable) {
+
+            return ['ok' => true === $pong || '+PONG' === $pong || 'PONG' === $pong];
+        } catch (Throwable) {
             return ['ok' => false];
         }
     }

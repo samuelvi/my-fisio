@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
@@ -7,6 +9,9 @@ use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
 use App\Domain\Entity\Patient;
 use App\Infrastructure\Api\Resource\PatientResource;
+
+use function count;
+
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -14,7 +19,7 @@ class PatientProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private ValidatorInterface $validator
+        private ValidatorInterface $validator,
     ) {
     }
 

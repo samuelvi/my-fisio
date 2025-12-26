@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace App\Command\Migration;
 
-use App\Domain\Enum\PatientStatus;
 use App\Domain\Entity\User;
+use App\Domain\Enum\PatientStatus;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
+
+use function in_array;
+use function is_string;
+
+use const JSON_ERROR_NONE;
+
+use function sprintf;
+
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -39,7 +47,7 @@ final class MigrateLegacyDataCommand extends Command
                 1 => ['legacy' => 'email', 'target' => 'email', 'type' => self::TYPE_STRING],
                 2 => ['legacy' => 'roles', 'target' => 'roles', 'type' => self::TYPE_JSON],
                 3 => ['legacy' => 'password', 'target' => 'password', 'type' => self::TYPE_STRING],
-            ]
+            ],
         ],
         'paciente' => [
             'target_table' => 'patients',
@@ -66,7 +74,7 @@ final class MigrateLegacyDataCommand extends Command
                 19 => ['legacy' => 'bruxismo', 'target' => 'bruxism', 'type' => self::TYPE_STRING],
                 20 => ['legacy' => 'plantillas', 'target' => 'insoles', 'type' => self::TYPE_STRING],
                 21 => ['legacy' => 'otros', 'target' => 'others', 'type' => self::TYPE_STRING],
-            ]
+            ],
         ],
         'historial' => [
             'target_table' => 'records',
@@ -84,7 +92,7 @@ final class MigrateLegacyDataCommand extends Command
                 10 => ['legacy' => 'tratamiento_medico', 'target' => 'medical_treatment', 'type' => self::TYPE_STRING],
                 11 => ['legacy' => 'tratamiento_en casa', 'target' => 'home_treatment', 'type' => self::TYPE_STRING],
                 12 => ['legacy' => 'notas', 'target' => 'notes', 'type' => self::TYPE_STRING],
-            ]
+            ],
         ],
         'event' => [
             'target_table' => 'appointments',
@@ -97,7 +105,7 @@ final class MigrateLegacyDataCommand extends Command
                 5 => ['legacy' => 'event_end', 'target' => 'ends_at', 'type' => self::TYPE_DATETIME],
                 15 => ['legacy' => 'color', 'target' => 'type', 'type' => self::TYPE_STRING],
                 19 => ['legacy' => 'comentario', 'target' => 'notes', 'type' => self::TYPE_STRING],
-            ]
+            ],
         ],
         'factura' => [
             'target_table' => 'invoices',
@@ -112,7 +120,7 @@ final class MigrateLegacyDataCommand extends Command
                 7 => ['legacy' => 'email', 'target' => 'email', 'type' => self::TYPE_STRING],
                 8 => ['legacy' => 'nif', 'target' => 'tax_id', 'type' => self::TYPE_STRING],
                 9 => ['legacy' => 'fecha_de_creacion', 'target' => 'created_at', 'type' => self::TYPE_DATE],
-            ]
+            ],
         ],
         'factura_detalle' => [
             'target_table' => 'invoice_lines',
@@ -124,19 +132,21 @@ final class MigrateLegacyDataCommand extends Command
                 4 => ['legacy' => 'concepto', 'target' => 'concept', 'type' => self::TYPE_STRING],
                 5 => ['legacy' => 'cantidad', 'target' => 'quantity', 'type' => self::TYPE_INT],
                 6 => ['legacy' => 'descripcion', 'target' => 'description', 'type' => self::TYPE_STRING],
-            ]
+            ],
         ],
         'contador' => [
             'target_table' => 'counters',
             'columns' => [
                 0 => ['legacy' => 'nombre', 'target' => 'name', 'type' => self::TYPE_STRING],
                 1 => ['legacy' => 'valor', 'target' => 'value', 'type' => self::TYPE_STRING],
-            ]
+            ],
         ],
     ];
 
     private readonly LegacySqlParser $parser;
+
     private ?string $hashedDefaultPassword = null;
+
     private array $validPatientIds = [];
 
     public function __construct(
@@ -151,17 +161,18 @@ final class MigrateLegacyDataCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dumpFile = $this->projectDir . '/private/tinafisio-2025-12-22.sql';
+        $dumpFile = $this->projectDir.'/private/tinafisio-2025-12-22.sql';
 
         if (!file_exists($dumpFile)) {
             $io->error(sprintf('Dump file not found at "%s"', $dumpFile));
+
             return Command::FAILURE;
         }
 
         $io->title('Migrating Legacy Data');
 
         $connection = $this->entityManager->getConnection();
-        
+
         $io->text('Cleaning existing data...');
         $connection->executeStatement('TRUNCATE TABLE appointments, records, customers, patients, invoices, invoice_lines, counters RESTART IDENTITY CASCADE');
         $connection->executeStatement('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
@@ -195,13 +206,13 @@ final class MigrateLegacyDataCommand extends Command
             foreach ($dataByTable[$tableName] as $values) {
                 try {
                     $this->processRow($connection, $tableName, $values);
-                    
+
                     // Track valid patient IDs for referential integrity
-                    if ($tableName === 'paciente') {
+                    if ('paciente' === $tableName) {
                         $this->validPatientIds[] = (int) $values[0];
                     }
-                    
-                    $count++;
+
+                    ++$count;
                 } catch (Exception $e) {
                     // silent
                 }
@@ -220,7 +231,7 @@ final class MigrateLegacyDataCommand extends Command
         $io->success('Migration completed successfully.');
         $io->table(
             ['Table', 'Count'],
-            array_map(fn($k, $v) => [$k, $v], array_keys($stats), array_values($stats))
+            array_map(fn ($k, $v) => [$k, $v], array_keys($stats), array_values($stats)),
         );
 
         return Command::SUCCESS;
@@ -236,18 +247,18 @@ final class MigrateLegacyDataCommand extends Command
         $queryValues = [];
         $parameters = [];
 
-        if ($targetTable === 'appointments') {
+        if ('appointments' === $targetTable) {
             $targetColumns[] = 'created_at';
             $queryValues[] = ':created_at';
-            $parameters['created_at'] = $this->transformValue($row[4] ?? null, self::TYPE_DATETIME) ?? (new DateTime())->format('Y-m-d H:i:s');
-            
+            $parameters['created_at'] = $this->transformValue($row[4] ?? null, self::TYPE_DATETIME) ?? new DateTime()->format('Y-m-d H:i:s');
+
             // Legacy events don't have a patient_id, they will be NULL (deterministic)
             $targetColumns[] = 'patient_id';
             $queryValues[] = ':patient_id';
             $parameters['patient_id'] = null;
         }
 
-        if ($targetTable === 'records') {
+        if ('records' === $targetTable) {
             $patientId = (int) ($row[1] ?? 0);
             if (!in_array($patientId, $this->validPatientIds, true)) {
                 throw new Exception(sprintf('Inconsistency: Record refers to non-existing patient ID %d', $patientId));
@@ -256,36 +267,36 @@ final class MigrateLegacyDataCommand extends Command
 
         foreach ($columns as $index => $colConfig) {
             $rawValue = $row[$index] ?? null;
-            if ($targetTable === 'users' && $colConfig['target'] === 'password') {
+            if ('users' === $targetTable && 'password' === $colConfig['target']) {
                 $rawValue = $this->getDefaultHashedPassword($row[1] ?? null);
             }
 
             $targetColumns[] = $colConfig['target'];
             $paramName = $colConfig['target'];
-            $queryValues[] = ':' . $paramName;
-            
+            $queryValues[] = ':'.$paramName;
+
             $value = $this->transformValue($rawValue, $colConfig['type']);
-            
-            if ($targetTable === 'appointments' && $colConfig['target'] === 'type') {
-                if ($value === 'cita') {
+
+            if ('appointments' === $targetTable && 'type' === $colConfig['target']) {
+                if ('cita' === $value) {
                     $value = 'appointment';
-                } elseif ($value === 'otros') {
+                } elseif ('otros' === $value) {
                     $value = 'other';
                 }
             }
 
-            if ($targetTable === 'counters' && $colConfig['target'] === 'name') {
+            if ('counters' === $targetTable && 'name' === $colConfig['target']) {
                 if (is_string($value) && str_starts_with($value, 'invoice_')) {
-                    $value = 'invoices_' . substr($value, 8);
+                    $value = 'invoices_'.substr($value, 8);
                 }
             }
 
             $parameters[$paramName] = $value;
         }
 
-        if ($targetTable === 'patients') {
+        if ('patients' === $targetTable) {
             if (empty($parameters['created_at'])) {
-                $parameters['created_at'] = (new DateTime())->format('Y-m-d');
+                $parameters['created_at'] = new DateTime()->format('Y-m-d');
             }
             $targetColumns[] = 'status';
             $queryValues[] = ':status';
@@ -297,79 +308,86 @@ final class MigrateLegacyDataCommand extends Command
             $parameters['full_name'] = trim(sprintf('%s %s', $parameters['first_name'] ?? '', $parameters['last_name'] ?? ''));
         }
 
-        if ($targetTable === 'records' && empty($parameters['created_at'])) {
-            $parameters['created_at'] = (new DateTime())->format('Y-m-d');
+        if ('records' === $targetTable && empty($parameters['created_at'])) {
+            $parameters['created_at'] = new DateTime()->format('Y-m-d');
         }
 
         $sql = sprintf(
             'INSERT INTO %s (%s) VALUES (%s)',
             $targetTable,
             implode(', ', $targetColumns),
-            implode(', ', $queryValues)
+            implode(', ', $queryValues),
         );
 
         $connection->executeStatement('SAVEPOINT migration_row');
+
         try {
             $connection->executeStatement($sql, $parameters);
             $connection->executeStatement('RELEASE SAVEPOINT migration_row');
         } catch (Exception $e) {
             $connection->executeStatement('ROLLBACK TO SAVEPOINT migration_row');
+
             throw $e;
         }
     }
 
     private function transformValue(mixed $value, string $type): mixed
     {
-        if ($value === null || $value === 'NULL') {
+        if (null === $value || 'NULL' === $value) {
             return null;
         }
 
         return match ($type) {
             self::TYPE_INT => (int) $value,
             self::TYPE_FLOAT => (float) $value,
-            self::TYPE_BOOL => ($value === '' || $value === '0' || $value === 0 || $value === false) ? 0 : 1,
-            self::TYPE_DATE => $this->formatDate((string)$value),
-            self::TYPE_DATETIME => $this->formatDate((string)$value),
-            self::TYPE_JSON => $this->isValidJson((string)$value) ? $value : json_encode([]),
-            self::TYPE_SERIALIZED => $this->convertSerializedToJson((string)$value),
+            self::TYPE_BOOL => ('' === $value || '0' === $value || 0 === $value || false === $value) ? 0 : 1,
+            self::TYPE_DATE => $this->formatDate((string) $value),
+            self::TYPE_DATETIME => $this->formatDate((string) $value),
+            self::TYPE_JSON => $this->isValidJson((string) $value) ? $value : json_encode([]),
+            self::TYPE_SERIALIZED => $this->convertSerializedToJson((string) $value),
             default => (string) $value,
         };
     }
 
     private function formatDate(?string $date): ?string
     {
-        if (!$date || $date === '0000-00-00' || $date === '0000-00-00 00:00:00' || $date === 'NULL') {
+        if (!$date || '0000-00-00' === $date || '0000-00-00 00:00:00' === $date || 'NULL' === $date) {
             return null;
         }
+
         return $date;
     }
 
     private function convertSerializedToJson(?string $value): ?string
     {
-        if (!$value || $value === 'NULL') {
+        if (!$value || 'NULL' === $value) {
             return json_encode([]);
         }
         $data = @unserialize($value);
-        return json_encode($data !== false ? $data : []);
+
+        return json_encode(false !== $data ? $data : []);
     }
 
     private function isValidJson(string $string): bool
     {
         json_decode($string);
-        return json_last_error() === JSON_ERROR_NONE;
+
+        return JSON_ERROR_NONE === json_last_error();
     }
 
     private function resetSequence($connection, string $table): void
     {
         $sql = sprintf("SELECT setval(pg_get_serial_sequence('%s', 'id'), (SELECT MAX(id) FROM %s))", $table, $table);
+
         try {
             $connection->executeQuery($sql);
-        } catch (Exception $e) {}
+        } catch (Exception $e) {
+        }
     }
 
     private function getDefaultHashedPassword(?string $email): string
     {
-        if ($this->hashedDefaultPassword !== null) {
+        if (null !== $this->hashedDefaultPassword) {
             return $this->hashedDefaultPassword;
         }
 

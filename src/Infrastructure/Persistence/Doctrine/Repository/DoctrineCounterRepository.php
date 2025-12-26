@@ -37,7 +37,7 @@ final class DoctrineCounterRepository extends ServiceEntityRepository implements
 
         $counter = Counter::create(
             name: $data['name'],
-            value: $data['value']
+            value: $data['value'],
         );
 
         $reflection = new ReflectionClass($counter);
@@ -51,7 +51,7 @@ final class DoctrineCounterRepository extends ServiceEntityRepository implements
     {
         $em = $this->getEntityManager();
 
-        /**
+        /*
          * Cross-database compatible atomic increment using Pessimistic Locking.
          * Works on PostgreSQL, MySQL, Oracle, etc.
          */
@@ -69,6 +69,7 @@ final class DoctrineCounterRepository extends ServiceEntityRepository implements
                 $counter = Counter::create($name, $initialValue);
                 $em->persist($counter);
                 $em->flush();
+
                 return $initialValue;
             }
 

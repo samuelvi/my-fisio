@@ -8,8 +8,9 @@ final readonly class InvoiceNumberValidationResult
 {
     private function __construct(
         public bool $isValid,
-        public ?string $reason
-    ) {}
+        public ?string $reason,
+    ) {
+    }
 
     public static function valid(): self
     {

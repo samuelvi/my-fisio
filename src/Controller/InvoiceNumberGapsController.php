@@ -8,16 +8,16 @@ use App\Application\Query\Invoice\GetInvoiceNumberGaps\GetInvoiceNumberGapsQuery
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\HandleTrait;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Routing\Attribute\Route;
 
 final class InvoiceNumberGapsController extends AbstractController
 {
     use HandleTrait;
 
     public function __construct(
-        private MessageBusInterface $queryBus
+        private MessageBusInterface $queryBus,
     ) {
         $this->messageBus = $queryBus;
     }

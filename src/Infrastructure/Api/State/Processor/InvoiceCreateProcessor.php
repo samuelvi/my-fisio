@@ -11,6 +11,10 @@ use App\Domain\Entity\InvoiceLine;
 use App\Domain\Repository\CounterRepositoryInterface;
 use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\Resource\InvoiceLineInput;
+use DateTimeImmutable;
+
+use function is_array;
+
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
@@ -41,14 +45,14 @@ final class InvoiceCreateProcessor implements ProcessorInterface
         $invoice->address = $data->address;
         $invoice->email = $data->email;
         $invoice->taxId = $data->taxId;
-        if ($data->date instanceof \DateTimeImmutable) {
+        if ($data->date instanceof DateTimeImmutable) {
             $invoice->date = $data->date;
         }
 
         // 1. Atomic Number Generation
         $year = $invoice->date->format('Y');
-        $counterKey = 'invoices_' . $year;
-        $initialValue = $year . '000001';
+        $counterKey = 'invoices_'.$year;
+        $initialValue = $year.'000001';
 
         // Use the atomic DB update to prevent race conditions
         $invoice->number = $this->counterRepository->incrementAndGetNext($counterKey, $initialValue);
@@ -61,8 +65,8 @@ final class InvoiceCreateProcessor implements ProcessorInterface
                 $line = new InvoiceLineInput();
                 $line->concept = $lineData['concept'] ?? null;
                 $line->description = $lineData['description'] ?? null;
-                $line->quantity = (int)($lineData['quantity'] ?? 1);
-                $line->price = (float)($lineData['price'] ?? 0.0);
+                $line->quantity = (int) ($lineData['quantity'] ?? 1);
+                $line->price = (float) ($lineData['price'] ?? 0.0);
             }
             if (!$line) {
                 continue;

@@ -49,7 +49,7 @@ class Customer
     private function __construct(
         string $firstName,
         string $lastName,
-        string $taxId
+        string $taxId,
     ) {
         $this->firstName = $firstName;
         $this->lastName = $lastName;
@@ -60,7 +60,7 @@ class Customer
     public static function create(
         string $firstName,
         string $lastName,
-        string $taxId
+        string $taxId,
     ): self {
         return new self($firstName, $lastName, $taxId);
     }

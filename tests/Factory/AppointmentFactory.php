@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Factory;
 
 use App\Domain\Entity\Appointment;
+use DateTimeImmutable;
 use Zenstruck\Foundry\Persistence\PersistentProxyObjectFactory;
 
 /**
@@ -24,9 +27,9 @@ final class AppointmentFactory extends PersistentProxyObjectFactory
         return [
             'patient' => PatientFactory::new(),
             'userId' => 1,
-            'startsAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('now', '+1 month')),
-            'endsAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('+1 month', '+2 months')),
-            'createdAt' => \DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
+            'startsAt' => DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('now', '+1 month')),
+            'endsAt' => DateTimeImmutable::createFromMutable(self::faker()->dateTimeBetween('+1 month', '+2 months')),
+            'createdAt' => DateTimeImmutable::createFromMutable(self::faker()->dateTime()),
             'title' => self::faker()->sentence(),
             'type' => self::faker()->randomElement(['appointment', 'other']),
         ];
@@ -34,12 +37,12 @@ final class AppointmentFactory extends PersistentProxyObjectFactory
 
     protected function initialize(): static
     {
-        return $this->instantiateWith(function(array $attributes): Appointment {
+        return $this->instantiateWith(function (array $attributes): Appointment {
             return Appointment::create(
                 $attributes['patient'],
                 $attributes['userId'],
                 $attributes['startsAt'],
-                $attributes['endsAt']
+                $attributes['endsAt'],
             );
         });
     }

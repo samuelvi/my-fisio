@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
@@ -7,13 +9,14 @@ use ApiPlatform\State\ProcessorInterface;
 use App\Domain\Entity\Patient;
 use App\Domain\Entity\Record;
 use App\Infrastructure\Api\Resource\RecordResource;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class RecordProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -35,10 +38,10 @@ class RecordProcessor implements ProcessorInterface
 
         // Parse patient ID from IRI
         if (preg_match('#/api/patients/(\d+)#', $data->patient, $matches)) {
-            $patientId = (int)$matches[1];
+            $patientId = (int) $matches[1];
             $patient = $this->entityManager->getRepository(Patient::class)->find($patientId);
             if (!$patient) {
-                throw new BadRequestHttpException("Patient not found");
+                throw new BadRequestHttpException('Patient not found');
             }
             $record->patient = $patient;
         }
@@ -53,7 +56,7 @@ class RecordProcessor implements ProcessorInterface
         $record->onset = $data->onset;
         $record->notes = $data->notes;
         $record->sickLeave = $data->sickLeave;
-        if ($data->createdAt instanceof \DateTimeImmutable) {
+        if ($data->createdAt instanceof DateTimeImmutable) {
             $record->createdAt = $data->createdAt;
         }
 

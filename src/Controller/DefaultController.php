@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,14 +22,14 @@ class DefaultController extends AbstractController
             // @var MessageCatalogueInterface $catalogue
             $catalogue = $translator->getCatalogue($locale);
             $catalog[$locale] = $catalogue->all('messages');
-            
+
             // Override app_name with env variable if present
             $appTitle = $_ENV['VITE_APP_TITLE'] ?? $_SERVER['VITE_APP_TITLE'] ?? 'PhysioApp';
             $catalog[$locale]['app_name'] = $appTitle;
         }
 
         return $this->render('default/index.html.twig', [
-            'translations' => $catalog
+            'translations' => $catalog,
         ]);
     }
 }

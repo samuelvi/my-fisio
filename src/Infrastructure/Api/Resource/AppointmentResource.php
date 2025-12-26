@@ -1,20 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\Resource;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
-use App\Infrastructure\Api\State\AppointmentProvider;
 use App\Infrastructure\Api\State\AppointmentProcessor;
+use App\Infrastructure\Api\State\AppointmentProvider;
+use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
-
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 
 #[ApiResource(
     shortName: 'Appointment',
@@ -23,12 +25,12 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
         new GetCollection(),
         new Post(processor: AppointmentProcessor::class),
         new Put(processor: AppointmentProcessor::class),
-        new Delete(processor: AppointmentProcessor::class)
+        new Delete(processor: AppointmentProcessor::class),
     ],
     provider: AppointmentProvider::class,
     normalizationContext: ['groups' => ['appointment:read']],
     denormalizationContext: ['groups' => ['appointment:write']],
-    paginationEnabled: false
+    paginationEnabled: false,
 )]
 #[ApiFilter(SearchFilter::class, properties: ['patientId' => 'exact'])]
 class AppointmentResource
@@ -53,10 +55,10 @@ class AppointmentResource
     public ?bool $allDay = null;
 
     #[Groups(['appointment:read', 'appointment:write'])]
-    public \DateTimeImmutable $startsAt;
+    public DateTimeImmutable $startsAt;
 
     #[Groups(['appointment:read', 'appointment:write'])]
-    public \DateTimeImmutable $endsAt;
+    public DateTimeImmutable $endsAt;
 
     #[Groups(['appointment:read', 'appointment:write'])]
     public ?string $notes = null;
@@ -65,7 +67,9 @@ class AppointmentResource
     public ?string $type = null;
 
     #[Groups(['appointment:read'])]
-    public ?\DateTimeImmutable $createdAt = null;
+    public ?DateTimeImmutable $createdAt = null;
 
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 }

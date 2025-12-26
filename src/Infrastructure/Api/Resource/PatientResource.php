@@ -1,21 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\Resource;
 
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use App\Infrastructure\Api\State\PatientProvider;
-use App\Infrastructure\Api\State\PatientProcessor;
 use App\Domain\Enum\PatientStatus;
+use App\Infrastructure\Api\State\PatientProcessor;
+use App\Infrastructure\Api\State\PatientProvider;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
-
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 
 #[ApiResource(
     shortName: 'Patient',
@@ -23,11 +26,11 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
         new Get(),
         new GetCollection(),
         new Post(processor: PatientProcessor::class),
-        new Put(processor: PatientProcessor::class)
+        new Put(processor: PatientProcessor::class),
     ],
     provider: PatientProvider::class,
     normalizationContext: ['groups' => ['patient:read']],
-    denormalizationContext: ['groups' => ['patient:write']]
+    denormalizationContext: ['groups' => ['patient:write']],
 )]
 #[ApiFilter(SearchFilter::class, properties: ['status' => 'exact'])]
 class PatientResource
@@ -48,7 +51,7 @@ class PatientResource
     public string $lastName;
 
     #[Groups(['patient:read', 'patient:write'])]
-    public ?\DateTimeInterface $dateOfBirth = null;
+    public ?DateTimeInterface $dateOfBirth = null;
 
     #[Groups(['patient:read', 'patient:write'])]
     public ?string $identityDocument = null;
@@ -102,11 +105,13 @@ class PatientResource
     public ?string $others = null;
 
     #[Groups(['patient:read'])]
-    public ?\DateTimeImmutable $createdAt = null;
+    public ?DateTimeImmutable $createdAt = null;
 
     /** @var array<int, mixed> */
     #[Groups(['patient:read'])]
     public array $records = [];
 
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 }

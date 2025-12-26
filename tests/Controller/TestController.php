@@ -1,31 +1,32 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Controller;
 
-use App\Tests\Factory\UserFactory;
+use App\Domain\Entity\Patient;
+use App\Domain\Entity\Record;
 use App\Tests\Factory\PatientFactory;
 use App\Tests\Factory\RecordFactory;
+use App\Tests\Factory\UserFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
-use App\Domain\Entity\Patient;
-use App\Domain\Entity\Record;
-
 #[Route('/api/test')]
 class TestController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
     #[Route('/stats', name: 'test_stats', methods: ['GET'])]
     public function stats(): JsonResponse
     {
-        if ($this->getParameter('kernel.environment') !== 'test') {
+        if ('test' !== $this->getParameter('kernel.environment')) {
             return new JsonResponse(['error' => 'Access denied'], 403);
         }
 
@@ -39,7 +40,7 @@ class TestController extends AbstractController
     public function resetDb(): JsonResponse
     {
         // WARNING: ONLY FOR TEST ENVIRONMENT
-        if ($this->getParameter('kernel.environment') !== 'test') {
+        if ('test' !== $this->getParameter('kernel.environment')) {
             return new JsonResponse(['error' => 'Access denied'], 403);
         }
 
@@ -47,7 +48,7 @@ class TestController extends AbstractController
         $connection->executeStatement('DROP SCHEMA public CASCADE');
         $connection->executeStatement('CREATE SCHEMA public');
         $connection->executeStatement('GRANT ALL ON SCHEMA public TO public');
-        $connection->executeStatement('GRANT ALL ON SCHEMA public TO ' . $connection->getParams()['user']);
+        $connection->executeStatement('GRANT ALL ON SCHEMA public TO '.$connection->getParams()['user']);
 
         $metadatas = $this->entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($this->entityManager);
@@ -57,7 +58,7 @@ class TestController extends AbstractController
         UserFactory::createOne([
             'email' => 'tina@tinafisio.com',
             'password' => 'password',
-            'roles' => ['ROLE_ADMIN']
+            'roles' => ['ROLE_ADMIN'],
         ]);
 
         $firstPatient = PatientFactory::createOne(['firstName' => 'AFirst', 'lastName' => 'Patient']);
@@ -75,7 +76,7 @@ class TestController extends AbstractController
     public function resetDbEmpty(): JsonResponse
     {
         // WARNING: ONLY FOR TEST ENVIRONMENT
-        if ($this->getParameter('kernel.environment') !== 'test') {
+        if ('test' !== $this->getParameter('kernel.environment')) {
             return new JsonResponse(['error' => 'Access denied'], 403);
         }
 
@@ -83,7 +84,7 @@ class TestController extends AbstractController
         $connection->executeStatement('DROP SCHEMA public CASCADE');
         $connection->executeStatement('CREATE SCHEMA public');
         $connection->executeStatement('GRANT ALL ON SCHEMA public TO public');
-        $connection->executeStatement('GRANT ALL ON SCHEMA public TO ' . $connection->getParams()['user']);
+        $connection->executeStatement('GRANT ALL ON SCHEMA public TO '.$connection->getParams()['user']);
 
         $metadatas = $this->entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($this->entityManager);
@@ -92,7 +93,7 @@ class TestController extends AbstractController
         UserFactory::createOne([
             'email' => 'tina@tinafisio.com',
             'password' => 'password',
-            'roles' => ['ROLE_ADMIN']
+            'roles' => ['ROLE_ADMIN'],
         ]);
 
         return new JsonResponse(['status' => 'Database reset with user only']);

@@ -11,6 +11,8 @@ use App\Domain\Repository\InvoiceRepositoryInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
+use function sprintf;
+
 /**
  * @extends ServiceEntityRepository<Invoice>
  */
@@ -44,7 +46,7 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
                 description: $lineData['description'],
                 quantity: $lineData['quantity'],
                 price: (float) $lineData['price'],
-                amount: (float) $lineData['amount']
+                amount: (float) $lineData['amount'],
             );
         }, $data['lines']);
 
@@ -58,7 +60,7 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             address: $data['address'],
             phone: $data['phone'],
             email: $data['email'],
-            lines: $lines
+            lines: $lines,
         );
     }
 
@@ -86,13 +88,13 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             ->select('i.number')
             ->where('i.number LIKE :prefix')
             ->orderBy('i.number', 'ASC')
-            ->setParameter('prefix', $prefix . '%');
+            ->setParameter('prefix', $prefix.'%');
 
         $result = $qb->getQuery()->getArrayResult();
 
         return array_values(array_filter(array_map(
             static fn (array $row) => $row['number'] ?? null,
-            $result
+            $result,
         )));
     }
 
@@ -104,14 +106,14 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             ->where('i.number LIKE :prefix')
             ->andWhere('i.id != :excludeId')
             ->orderBy('i.number', 'ASC')
-            ->setParameter('prefix', $prefix . '%')
+            ->setParameter('prefix', $prefix.'%')
             ->setParameter('excludeId', $excludeId);
 
         $result = $qb->getQuery()->getArrayResult();
 
         return array_values(array_filter(array_map(
             static fn (array $row) => $row['number'] ?? null,
-            $result
+            $result,
         )));
     }
 }

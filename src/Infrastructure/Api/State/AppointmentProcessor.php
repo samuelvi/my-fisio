@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\State;
 
-use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\DeleteOperationInterface;
+use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Domain\Entity\Appointment;
 use App\Domain\Entity\Patient;
@@ -14,7 +16,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class AppointmentProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -29,6 +31,7 @@ class AppointmentProcessor implements ProcessorInterface
                 $this->entityManager->remove($appointment);
                 $this->entityManager->flush();
             }
+
             return null;
         }
 
@@ -50,12 +53,12 @@ class AppointmentProcessor implements ProcessorInterface
                 $patient,
                 $data->userId,
                 $data->startsAt,
-                $data->endsAt
+                $data->endsAt,
             );
         }
 
         // Update patient if provided (allows changing or setting patient on update)
-        if ($data->patientId !== null) {
+        if (null !== $data->patientId) {
             $patient = $this->entityManager->getRepository(Patient::class)->find($data->patientId);
             if ($patient) {
                 $appointment->patient = $patient;
@@ -77,9 +80,9 @@ class AppointmentProcessor implements ProcessorInterface
         $this->entityManager->flush();
 
         $data->id = $appointment->id;
-        $data->patientName = $appointment->patient ? $appointment->patient->firstName . ' ' . $appointment->patient->lastName : null;
+        $data->patientName = $appointment->patient ? $appointment->patient->firstName.' '.$appointment->patient->lastName : null;
         $data->createdAt = $appointment->createdAt;
-            
+
         return $data;
     }
 }

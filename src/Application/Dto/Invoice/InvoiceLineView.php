@@ -12,8 +12,9 @@ final readonly class InvoiceLineView
         public ?string $description,
         public int $quantity,
         public float $price,
-        public float $amount
-    ) {}
+        public float $amount,
+    ) {
+    }
 
     public static function create(
         int $id,
@@ -21,7 +22,7 @@ final readonly class InvoiceLineView
         ?string $description,
         int $quantity,
         float $price,
-        float $amount
+        float $amount,
     ): self {
         return new self($id, $concept, $description, $quantity, $price, $amount);
     }

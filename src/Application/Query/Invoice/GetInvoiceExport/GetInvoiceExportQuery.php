@@ -7,8 +7,9 @@ namespace App\Application\Query\Invoice\GetInvoiceExport;
 final readonly class GetInvoiceExportQuery
 {
     private function __construct(
-        public int $id
-    ) {}
+        public int $id,
+    ) {
+    }
 
     public static function create(int $id): self
     {

@@ -22,5 +22,7 @@ final class InvoiceLineInput
     #[Groups(['invoice:write'])]
     public float $price = 0.0;
 
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 }

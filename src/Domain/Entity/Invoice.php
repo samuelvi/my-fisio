@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace App\Domain\Entity;
 
-use DateTimeImmutable;
-use DateTimeInterface;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
-use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\State\Processor\InvoiceCreateProcessor;
 use App\Infrastructure\Api\State\Processor\InvoiceUpdateProcessor;
-use App\Infrastructure\Api\Resource\InvoiceInput;
+use DateTimeImmutable;
+use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -31,17 +31,17 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new GetCollection(),
         new Get(),
         new Post(processor: InvoiceCreateProcessor::class, input: InvoiceInput::class),
-        new Put(processor: InvoiceUpdateProcessor::class, input: InvoiceInput::class)
+        new Put(processor: InvoiceUpdateProcessor::class, input: InvoiceInput::class),
     ],
     normalizationContext: ['groups' => ['invoice:read']],
     denormalizationContext: ['groups' => ['invoice:write']],
-    order: ['date' => 'DESC', 'number' => 'DESC']
+    order: ['date' => 'DESC', 'number' => 'DESC'],
 )]
 #[ApiFilter(SearchFilter::class, properties: [
     'name' => 'partial',
     'taxId' => 'exact',
     'customer.firstName' => 'partial',
-    'customer.lastName' => 'partial'
+    'customer.lastName' => 'partial',
 ])]
 #[ApiFilter(DateFilter::class, properties: ['date'])]
 #[ApiFilter(OrderFilter::class, properties: ['date', 'createdAt', 'amount'], arguments: ['orderParameterName' => 'order'])]
@@ -115,6 +115,7 @@ class Invoice
     {
         $invoice = new self();
         $invoice->name = $name;
+
         return $invoice;
     }
 }

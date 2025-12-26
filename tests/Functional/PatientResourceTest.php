@@ -1,27 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Functional;
 
 use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
-use Zenstruck\Foundry\Test\ResetDatabase;
-use Zenstruck\Foundry\Test\Factories;
 use App\Tests\Factory\UserFactory;
+use Zenstruck\Foundry\Test\Factories;
+use Zenstruck\Foundry\Test\ResetDatabase;
 
 class PatientResourceTest extends ApiTestCase
 {
-    use ResetDatabase, Factories;
+    use Factories;
+    use ResetDatabase;
 
     private function authenticate(): string
     {
         $client = self::createClient();
-        
+
         // Ensure we have a user
         UserFactory::createOne([
             'email' => 'admin@example.com',
             'password' => 'password',
-            'roles' => ['ROLE_ADMIN']
+            'roles' => ['ROLE_ADMIN'],
         ]);
-        
+
         $response = $client->request('POST', '/api/login_check', [
             'headers' => ['Content-Type' => 'application/json'], // Login endpoint usually accepts standard JSON
             'json' => [
@@ -32,27 +35,27 @@ class PatientResourceTest extends ApiTestCase
 
         $this->assertResponseIsSuccessful();
         $data = $response->toArray();
-        
+
         return $data['token'];
     }
 
     public function testCreatePatient(): void
     {
         $token = $this->authenticate();
-        
+
         $client = self::createClient();
         $client->request('POST', '/api/patients', [
             'auth_bearer' => $token,
             'headers' => [
                 'Content-Type' => 'application/ld+json',
-                'Accept' => 'application/ld+json'
+                'Accept' => 'application/ld+json',
             ],
             'json' => [
                 'firstName' => 'John',
                 'lastName' => 'Doe',
                 'phone' => '123456789',
-                'email' => 'john.doe@example.com'
-            ]
+                'email' => 'john.doe@example.com',
+            ],
         ]);
 
         $this->assertResponseStatusCodeSame(201);
@@ -62,7 +65,7 @@ class PatientResourceTest extends ApiTestCase
             'firstName' => 'John',
             'lastName' => 'Doe',
             'phone' => '123456789',
-            'email' => 'john.doe@example.com'
+            'email' => 'john.doe@example.com',
         ]);
     }
 
@@ -72,12 +75,12 @@ class PatientResourceTest extends ApiTestCase
         $client->request('POST', '/api/patients', [
             'headers' => [
                 'Content-Type' => 'application/ld+json',
-                'Accept' => 'application/ld+json'
+                'Accept' => 'application/ld+json',
             ],
             'json' => [
                 'firstName' => 'Jane',
-                'lastName' => 'Doe'
-            ]
+                'lastName' => 'Doe',
+            ],
         ]);
 
         $this->assertResponseStatusCodeSame(401);

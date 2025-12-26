@@ -16,8 +16,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     operations: [
         new Get(),
-        new GetCollection()
-    ]
+        new GetCollection(),
+    ],
 )]
 class InvoiceLine
 {

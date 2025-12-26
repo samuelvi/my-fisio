@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Factory;
 
 use App\Domain\Entity\Patient;
@@ -37,15 +39,21 @@ final class PatientFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this
-            ->instantiateWith(function(array $attributes) {
+            ->instantiateWith(function (array $attributes) {
                 // Assuming Patient::create() exists or we can use constructor if we change it.
                 // Wait, let's check Patient.php again.
                 return Patient::create($attributes['firstName'], $attributes['lastName']);
             })
-            ->afterInstantiate(function(Patient $patient, array $attributes): void {
-                if (isset($attributes['email'])) $patient->email = $attributes['email'];
-                if (isset($attributes['phone'])) $patient->phone = $attributes['phone'];
-                if (isset($attributes['status'])) $patient->status = $attributes['status'];
+            ->afterInstantiate(function (Patient $patient, array $attributes): void {
+                if (isset($attributes['email'])) {
+                    $patient->email = $attributes['email'];
+                }
+                if (isset($attributes['phone'])) {
+                    $patient->phone = $attributes['phone'];
+                }
+                if (isset($attributes['status'])) {
+                    $patient->status = $attributes['status'];
+                }
             })
         ;
     }

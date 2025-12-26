@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
@@ -40,7 +42,9 @@ final class PatientInput
 
     public ?string $notes = null;
 
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     public static function create(): self
     {

@@ -21,8 +21,9 @@ final readonly class InvoiceExportView
         public ?string $address,
         public ?string $phone,
         public ?string $email,
-        public array $lines
-    ) {}
+        public array $lines,
+    ) {
+    }
 
     public static function create(
         int $id,
@@ -34,7 +35,7 @@ final readonly class InvoiceExportView
         ?string $address,
         ?string $phone,
         ?string $email,
-        array $lines
+        array $lines,
     ): self {
         return new self($id, $number, $date, $amount, $name, $taxId, $address, $phone, $email, $lines);
     }

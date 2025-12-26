@@ -10,25 +10,27 @@ use ApiPlatform\Metadata\Operation;
 use App\Domain\Entity\Invoice;
 use Doctrine\ORM\QueryBuilder;
 
+use function sprintf;
+
 final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
 {
-    public function applyToCollection(QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $resourceClass, Operation $operation = null, array $context = []): void
+    public function applyToCollection(QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $resourceClass, ?Operation $operation = null, array $context = []): void
     {
-        if ($resourceClass !== Invoice::class) {
+        if (Invoice::class !== $resourceClass) {
             return;
         }
 
         // 'filters' key contains query parameters
-        if (isset($context['filters']['number']) && $context['filters']['number'] !== '') {
+        if (isset($context['filters']['number']) && '' !== $context['filters']['number']) {
             $value = $context['filters']['number'];
             $rootAlias = $queryBuilder->getRootAliases()[0];
-            
+
             // Force parameter name to avoid conflicts
             $parameterName = 'invoice_number_ext';
-            
+
             $queryBuilder
                 ->andWhere(sprintf('%s.number LIKE :%s', $rootAlias, $parameterName))
-                ->setParameter($parameterName, $value . '%');
+                ->setParameter($parameterName, $value.'%');
         }
     }
 }

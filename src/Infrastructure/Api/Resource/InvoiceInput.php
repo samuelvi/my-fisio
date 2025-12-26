@@ -6,13 +6,14 @@ namespace App\Infrastructure\Api\Resource;
 
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
+use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ApiResource(operations: [])]
 final class InvoiceInput
 {
     #[Groups(['invoice:write'])]
-    public ?\DateTimeImmutable $date = null;
+    public ?DateTimeImmutable $date = null;
 
     #[Groups(['invoice:write'])]
     public ?string $name = null;
@@ -39,5 +40,7 @@ final class InvoiceInput
     #[Groups(['invoice:write'])]
     public array $lines = [];
 
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 }

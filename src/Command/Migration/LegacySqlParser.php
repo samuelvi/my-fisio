@@ -4,9 +4,20 @@ declare(strict_types=1);
 
 namespace App\Command\Migration;
 
+use Generator;
+
+use function is_resource;
+
+use RuntimeException;
+
+use function sprintf;
+use function strlen;
+
 final class LegacySqlParser
 {
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     public static function create(): self
     {
@@ -14,16 +25,17 @@ final class LegacySqlParser
     }
 
     /**
-     * @return \Generator<array{table: string, values: array}>
+     * @return Generator<array{table: string, values: array}>
      */
-    public function parse(string $filePath): \Generator
+    public function parse(string $filePath): Generator
     {
         $handle = fopen($filePath, 'r');
         if (!$handle) {
-            throw new \RuntimeException(sprintf('Could not open file "%s"', $filePath));
+            throw new RuntimeException(sprintf('Could not open file "%s"', $filePath));
         }
 
         $buffer = '';
+
         try {
             while (($line = fgets($handle)) !== false) {
                 $line = trim($line);
@@ -38,13 +50,13 @@ final class LegacySqlParser
                     if (preg_match('/INSERT INTO `([^`]+)`(?:\s*\([^)]+\))?\s*VALUES\s*(.*);$/i', $buffer, $matches)) {
                         $tableName = $matches[1];
                         $valuesPart = $matches[2];
-                        
+
                         $rows = $this->parseValues($valuesPart);
-                        
+
                         foreach ($rows as $row) {
                             yield [
                                 'table' => $tableName,
-                                'values' => $row
+                                'values' => $row,
                             ];
                         }
                     }
@@ -68,56 +80,60 @@ final class LegacySqlParser
         $parenthesisDepth = 0;
 
         $len = strlen($input);
-        
-        for ($i = 0; $i < $len; $i++) {
+
+        for ($i = 0; $i < $len; ++$i) {
             $char = $input[$i];
 
             if ($escaped) {
                 $currentValue .= $char;
                 $escaped = false;
+
                 continue;
             }
 
-            if ($char === '\\') {
+            if ('\\' === $char) {
                 $currentValue .= $char;
                 $escaped = true;
+
                 continue;
             }
 
-            if ($char === "'" && !$escaped) {
+            if ("'" === $char && !$escaped) {
                 $inString = !$inString;
                 $currentValue .= $char;
+
                 continue;
             }
 
             if ($inString) {
                 $currentValue .= $char;
+
                 continue;
             }
 
-            if ($char === '(') {
+            if ('(' === $char) {
                 if ($parenthesisDepth > 0) {
                     $currentValue .= $char;
                 }
-                $parenthesisDepth++;
-            } elseif ($char === ')') {
-                $parenthesisDepth--;
-                if ($parenthesisDepth === 0) {
+                ++$parenthesisDepth;
+            } elseif (')' === $char) {
+                --$parenthesisDepth;
+                if (0 === $parenthesisDepth) {
                     $currentRow[] = $this->cleanValue($currentValue);
                     $rows[] = $currentRow;
                     $currentRow = [];
                     $currentValue = '';
-                    if (isset($input[$i + 1]) && $input[$i + 1] === ',') {
-                        $i++;
+                    if (isset($input[$i + 1]) && ',' === $input[$i + 1]) {
+                        ++$i;
                     }
                 } else {
                     $currentValue .= $char;
                 }
-            } elseif ($char === ',' && $parenthesisDepth === 1) {
+            } elseif (',' === $char && 1 === $parenthesisDepth) {
                 $currentRow[] = $this->cleanValue($currentValue);
                 $currentValue = '';
             } else {
-                if ($currentValue === '' && ctype_space($char)) {
+                if ('' === $currentValue && ctype_space($char)) {
                     continue;
                 }
                 $currentValue .= $char;
@@ -130,13 +146,15 @@ final class LegacySqlParser
     private function cleanValue(string $value): ?string
     {
         $value = trim($value);
-        if (strtoupper($value) === 'NULL') {
+        if ('NULL' === strtoupper($value)) {
             return null;
         }
         if (str_starts_with($value, "'") && str_ends_with($value, "'")) {
             $val = substr($value, 1, -1);
-            return str_replace(["\'", "\\\\", "\r", "\n"], ["'", "\\", "\r", "\n"], $val);
+
+            return str_replace(["\'", '\\\\', "\r", "\n"], ["'", '\\', "\r", "\n"], $val);
         }
+
         return $value;
     }
 }

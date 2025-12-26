@@ -12,7 +12,11 @@ use App\Domain\Entity\InvoiceLine;
 use App\Domain\Repository\InvoiceRepositoryInterface;
 use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\Resource\InvoiceLineInput;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
+
+use function is_array;
+
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -20,7 +24,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private InvoiceRepositoryInterface $invoiceRepository
+        private InvoiceRepositoryInterface $invoiceRepository,
     ) {
     }
 
@@ -67,7 +71,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         $invoice->address = $data->address;
         $invoice->email = $data->email;
         $invoice->taxId = $data->taxId;
-        if ($data->date instanceof \DateTimeImmutable) {
+        if ($data->date instanceof DateTimeImmutable) {
             $invoice->date = $data->date;
         }
 
@@ -83,8 +87,8 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
                 $line = new InvoiceLineInput();
                 $line->concept = $lineData['concept'] ?? null;
                 $line->description = $lineData['description'] ?? null;
-                $line->quantity = (int)($lineData['quantity'] ?? 1);
-                $line->price = (float)($lineData['price'] ?? 0.0);
+                $line->quantity = (int) ($lineData['quantity'] ?? 1);
+                $line->price = (float) ($lineData['price'] ?? 0.0);
             }
             if (!$line) {
                 continue;

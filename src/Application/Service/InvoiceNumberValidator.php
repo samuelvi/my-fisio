@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Application\Service;
 
+use function in_array;
+
 final class InvoiceNumberValidator
 {
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
     /**
      * @param array<int, string> $existingNumbers
@@ -21,7 +25,7 @@ final class InvoiceNumberValidator
      */
     public static function validateWithReason(string $number, array $existingNumbers): InvoiceNumberValidationResult
     {
-        if (trim($number) === '') {
+        if ('' === trim($number)) {
             return InvoiceNumberValidationResult::invalid('invoice_number_required');
         }
 
@@ -53,6 +57,7 @@ final class InvoiceNumberValidator
 
     /**
      * @param array<int, string> $existingNumbers
+     *
      * @return array<int, int>
      */
     private static function extractSequences(array $existingNumbers): array
@@ -60,7 +65,7 @@ final class InvoiceNumberValidator
         $sequences = [];
         foreach ($existingNumbers as $existingNumber) {
             $existingNumber = trim($existingNumber);
-            if ($existingNumber === '') {
+            if ('' === $existingNumber) {
                 continue;
             }
             if (!preg_match('/^\d{10}$/', $existingNumber)) {

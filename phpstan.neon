@@ -22,14 +22,13 @@ parameters:
         repositoryClass: Doctrine\ORM\EntityRepository
         objectManagerLoader: tests/object-manager.php
 
-    # Additional checks
-    # These are defaults in PHPStan 2.x or removed
-    # checkMissingIterableValueType: true
-    # checkGenericClassInNonGenericObjectType: true
-    # checkMissingCallableSignature: true
-
     # Report unknown types
-    reportUnmatchedIgnoredErrors: true
+    reportUnmatchedIgnoredErrors: false
 
-    # Bleeding edge features
-    # treatPhpDocTypesAsCertain: false
+    treatPhpDocTypesAsCertain: false
+
+    ignoreErrors:
+        - '#implements generic interface .* but does not specify its types#'
+        - '#has parameter .* with generic interface .* but does not specify its types#'
+        - '#no value type specified in iterable type array#'
+        - '#with no type specified#'

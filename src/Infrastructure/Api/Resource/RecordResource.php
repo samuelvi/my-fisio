@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Api\Resource;
 
 use ApiPlatform\Metadata\ApiProperty;
@@ -8,8 +10,9 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use App\Infrastructure\Api\State\RecordProvider;
 use App\Infrastructure\Api\State\RecordProcessor;
+use App\Infrastructure\Api\State\RecordProvider;
+use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -19,11 +22,11 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Get(),
         new GetCollection(),
         new Post(processor: RecordProcessor::class),
-        new Put(processor: RecordProcessor::class)
+        new Put(processor: RecordProcessor::class),
     ],
     provider: RecordProvider::class,
     normalizationContext: ['groups' => ['record:read']],
-    denormalizationContext: ['groups' => ['record:write']]
+    denormalizationContext: ['groups' => ['record:write']],
 )]
 class RecordResource
 {
@@ -32,7 +35,7 @@ class RecordResource
     public ?int $id = null;
 
     #[Groups(['record:read', 'record:write'])]
-    public ?string $patient = null; 
+    public ?string $patient = null;
 
     #[Groups(['record:read', 'record:write'])]
     #[Assert\NotBlank(normalizer: 'trim')]
@@ -66,7 +69,9 @@ class RecordResource
     public ?bool $sickLeave = false;
 
     #[Groups(['record:read', 'record:write'])]
-    public ?\DateTimeImmutable $createdAt = null;
+    public ?DateTimeImmutable $createdAt = null;
 
-    public function __construct() {}
+    public function __construct()
+    {
+    }
 }
