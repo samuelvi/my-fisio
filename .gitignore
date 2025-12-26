@@ -89,3 +89,7 @@ favicon.ico
 /node_modules/
 /public/build/
 ###< pentatrion/vite-bundle ###
+
+###> phpstan/phpstan ###
+phpstan.neon
+###< phpstan/phpstan ###

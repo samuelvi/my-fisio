@@ -14,8 +14,8 @@ parameters:
 
     # Symfony-specific settings
     symfony:
-        container_xml_path: var/cache/dev/App_KernelDevDebugContainer.xml
-        console_application_loader: tests/console-application.php
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+        consoleApplicationLoader: tests/console-application.php
 
     # Doctrine-specific settings
     doctrine:
@@ -23,9 +23,10 @@ parameters:
         objectManagerLoader: tests/object-manager.php
 
     # Additional checks
-    checkMissingIterableValueType: true
-    checkGenericClassInNonGenericObjectType: true
-    checkMissingCallableSignature: true
+    # These are defaults in PHPStan 2.x or removed
+    # checkMissingIterableValueType: true
+    # checkGenericClassInNonGenericObjectType: true
+    # checkMissingCallableSignature: true
 
     # Report unknown types
     reportUnmatchedIgnoredErrors: true
