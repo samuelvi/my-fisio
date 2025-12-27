@@ -64,9 +64,9 @@ class Invoice
     #[Groups(['invoice:read', 'invoice:write'])]
     public float $amount;
 
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: false)]
+    #[ORM\Column(type: Types::STRING, length: 50, nullable: false, name: 'full_name')]
     #[Groups(['invoice:read', 'invoice:write'])]
-    public string $name;
+    public string $fullName;
 
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
     #[Groups(['invoice:read', 'invoice:write'])]
@@ -104,16 +104,16 @@ class Invoice
     {
         $this->number = '';
         $this->amount = 0.0;
-        $this->name = '';
+        $this->fullName = '';
         $this->date = new DateTimeImmutable();
         $this->createdAt = new DateTimeImmutable();
         $this->lines = new ArrayCollection();
     }
 
-    public static function create(string $name): self
+    public static function create(string $fullName): self
     {
         $invoice = new self();
-        $invoice->name = $name;
+        $invoice->fullName = $fullName;
 
         return $invoice;
     }

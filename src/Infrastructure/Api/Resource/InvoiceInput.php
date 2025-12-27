@@ -17,7 +17,7 @@ final class InvoiceInput
     public ?DateTimeImmutable $date = null;
 
     #[Groups(['invoice:write'])]
-    public ?string $name = null;
+    public ?string $fullName = null;
 
     #[Groups(['invoice:write'])]
     public ?string $number = null;

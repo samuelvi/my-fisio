@@ -40,7 +40,7 @@ final class InvoiceCreateProcessor implements ProcessorInterface
             return $this->persistProcessor->process($data, $operation, $uriVariables, $context);
         }
 
-        if (!$data->name) {
+        if (!$data->fullName) {
             throw new BadRequestHttpException('Customer name is required.');
         }
 
@@ -65,7 +65,7 @@ final class InvoiceCreateProcessor implements ProcessorInterface
             throw new ValidationException($violations);
         }
 
-        $invoice = Invoice::create($data->name);
+        $invoice = Invoice::create($data->fullName);
         $invoice->phone = $data->phone;
         $invoice->address = $data->address;
         $invoice->email = $data->email;

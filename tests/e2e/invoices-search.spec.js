@@ -40,7 +40,7 @@ async function createTestInvoice(page, name, number, amount = 40) {
       body: JSON.stringify({
         date: new Date().toISOString(),
         number: number,
-        name: name,
+        fullName: name,
         taxId: '12345678Z',
         address: 'Test Address',
         phone: '123456789',
@@ -278,9 +278,9 @@ test.describe('Invoice Search', () => {
     const members = result.data.member || result.data['hydra:member'] || [];
 
     // Should find the García invoice
-    const foundInvoice = members.find(inv => inv.name.includes('García'));
+    const foundInvoice = members.find(inv => inv.fullName.includes('García'));
     expect(foundInvoice).toBeTruthy();
-    expect(foundInvoice.name).toBe('API Test García');
+    expect(foundInvoice.fullName).toBe('API Test García');
   });
 
   test('API returns correct results for number search', async ({ page }) => {

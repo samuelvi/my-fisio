@@ -115,7 +115,7 @@ final class MigrateLegacyDataCommand extends Command
                 1 => ['legacy' => 'numero', 'target' => 'number', 'type' => self::TYPE_STRING],
                 2 => ['legacy' => 'fecha_de_factura', 'target' => 'date', 'type' => self::TYPE_DATETIME],
                 3 => ['legacy' => 'total', 'target' => 'amount', 'type' => self::TYPE_FLOAT],
-                4 => ['legacy' => 'nombre', 'target' => 'name', 'type' => self::TYPE_STRING],
+                4 => ['legacy' => 'nombre', 'target' => 'full_name', 'type' => self::TYPE_STRING],
                 5 => ['legacy' => 'telefono', 'target' => 'phone', 'type' => self::TYPE_STRING],
                 6 => ['legacy' => 'direccion', 'target' => 'address', 'type' => self::TYPE_STRING],
                 7 => ['legacy' => 'email', 'target' => 'email', 'type' => self::TYPE_STRING],

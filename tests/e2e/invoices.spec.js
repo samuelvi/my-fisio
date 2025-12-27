@@ -157,7 +157,7 @@ test('invoice management flow', async ({ page, request }) => {
   // UI blocks empty customer fields, so validate server responses via API call.
   const missingName = await postInvoice(page, {
     date: new Date().toISOString(),
-    name: '',
+    fullName: '',
     taxId: '',
     lines: [{ concept: 'Test', quantity: 1, price: 10 }],
   });
@@ -166,7 +166,7 @@ test('invoice management flow', async ({ page, request }) => {
 
   const missingLines = await postInvoice(page, {
     date: new Date().toISOString(),
-    name: 'Client Minimal',
+    fullName: 'Client Minimal',
     taxId: '',
     lines: [],
   });
@@ -381,7 +381,7 @@ test('invoice management flow', async ({ page, request }) => {
   const invoice1Refresh = await getInvoice(page, invoice1Data.id);
   const basePayload = {
     date: invoice1Refresh.data.date,
-    name: invoice1Refresh.data.name,
+    fullName: invoice1Refresh.data.fullName,
     taxId: invoice1Refresh.data.taxId,
     address: invoice1Refresh.data.address,
     phone: invoice1Refresh.data.phone,

@@ -56,7 +56,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
             throw new NotFoundHttpException('Invoice not found.');
         }
 
-        if (!$data->name) {
+        if (!$data->fullName) {
             throw new BadRequestHttpException('Customer name is required.');
         }
 
@@ -93,7 +93,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         if (null !== $data->number) {
             $invoice->number = $data->number;
         }
-        $invoice->name = $data->name;
+        $invoice->fullName = $data->fullName;
         $invoice->phone = $data->phone;
         $invoice->address = $data->address;
         $invoice->email = $data->email;
