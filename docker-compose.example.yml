@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: physiotherapy_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: physiotherapy_db
+      POSTGRES_USER: physiotherapy_user
+      POSTGRES_PASSWORD: physiotherapy_pass
+      # Set locale for proper text handling
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    volumes:
+      # PostgreSQL data persistence
+      - postgres_data:/var/lib/postgresql/data
+      # 🎯 IMPORTANT: Mount init scripts for automatic extension setup
+      # Scripts in this directory run automatically when DB is created for the first time
+      # They execute in alphabetical order (01-*, 02-*, etc.)
+      - ./docker/postgres:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U physiotherapy_user -d physiotherapy_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: physiotherapy_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: physiotherapy_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP server
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  default:
+    name: physiotherapy_network

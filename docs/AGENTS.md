@@ -14,6 +14,14 @@ Upon completing any assigned task, you must strictly **review and validate** you
 5. **Documentation Review**: You check if `README.md`, `AGENTS.md`, or `Makefile` need updates to reflect the changes made.
 6. **Self-Correction**: You explicitly verify that the task was executed correctly and completely, ensuring nothing was missed before declaring completion.
 
+**Docker Compose Multi-Environment Policy:**
+When working with Docker infrastructure (`docker-compose.yaml` files), you MUST review and update ALL environment configurations:
+- **Development**: `docker/dev/docker-compose.yaml`
+- **Testing**: `docker/test/docker-compose.yaml`
+- **Production**: `docker/prod/docker-compose.yaml`
+
+Changes to one environment (e.g., adding a volume, environment variable, or service configuration) should be evaluated for applicability across all environments. This ensures consistency and prevents environment-specific bugs.
+
 ## Overview
 Responsive web application to manage a physiotherapy clinic with modern decoupled architecture.
 
@@ -177,26 +185,42 @@ Each event must contain:
 ## Development Environment
 
 ### Docker Setup
-The project uses Docker Compose for the development environment:
+The project uses Docker Compose with **separate configurations for each environment**:
+
+**Environments:**
+- **Development** (`docker/dev/`): Local development with debugging tools, exposed ports, and volume mounts
+- **Testing** (`docker/test/`): E2E testing environment with isolated database and services
+- **Production** (`docker/prod/`): Optimized configuration with security hardening and resource limits
 
 **Configured services:**
 - **PHP-FPM 8.4**: Container with necessary extensions (pgsql, redis, intl, opcache, etc.)
-- **PostgreSQL 16**: Main database
+- **PostgreSQL 16**: Main database with automatic extension initialization
 - **Redis 7**: Cache and session management
 - **Nginx**: Web server configured for Symfony
-- **MailPit**: Email capture for testing (UI at http://localhost:8025)
-- **Adminer**: Visual database management (UI at http://localhost:8080)
+- **MailPit** (dev/test only): Email capture for testing (UI at http://localhost:8025)
+- **Adminer** (dev only): Visual database management (UI at http://localhost:8080)
 
-**File location:**
+**Directory structure:**
 ```
-docker/dev/
-├── docker-compose.yaml       # Services configuration
-├── php/
-│   ├── Dockerfile            # Custom PHP image
-│   └── php.ini              # PHP configuration
-└── nginx/
-    ├── nginx.conf           # Nginx general configuration
-    └── default.conf         # Symfony site configuration
+docker/
+├── common/
+│   └── postgres/
+│       ├── 01-init-extensions.sql  # PostgreSQL extensions (unaccent, pg_trgm, fuzzystrmatch)
+│       └── README.md               # Extension initialization docs
+├── dev/
+│   ├── docker-compose.yaml     # Development configuration
+│   ├── php/
+│   │   ├── Dockerfile          # Custom PHP image
+│   │   └── php.ini            # PHP configuration
+│   └── nginx/
+│       ├── nginx.conf         # Nginx general configuration
+│       └── default.conf       # Symfony site configuration
+├── test/
+│   └── docker-compose.yaml     # Testing configuration (isolated DB)
+└── prod/
+    ├── docker-compose.yaml     # Production configuration (hardened)
+    ├── .env.example           # Production environment template
+    └── README.md              # Production deployment guide
 ```
 
 **Main commands (via Makefile):**

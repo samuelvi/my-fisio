@@ -8,6 +8,7 @@ use ApiPlatform\Doctrine\Orm\Extension\QueryCollectionExtensionInterface;
 use ApiPlatform\Doctrine\Orm\Util\QueryNameGeneratorInterface;
 use ApiPlatform\Metadata\Operation;
 use App\Domain\Entity\Invoice;
+use App\Infrastructure\Util\TextNormalizer;
 use Doctrine\ORM\QueryBuilder;
 
 use function sprintf;
@@ -35,16 +36,17 @@ final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
                 ->setParameter($parameterName, '%'.$value.'%');
         }
 
-        // Add case-insensitive and accent-insensitive search for customer name (name field)
+        // Add case-insensitive and accent-insensitive search for customer name (fullName field)
         if (isset($context['filters']['name']) && '' !== $context['filters']['name']) {
             $value = $context['filters']['name'];
             $rootAlias = $queryBuilder->getRootAliases()[0];
             $parameterName = 'invoice_name_ext';
 
-            // Use unaccent() to ignore accents in search (e.g., "garcia" matches "García")
+            // Use normalized column for fast search (no functions on left side)
+            $normalizedValue = TextNormalizer::normalize($value);
             $queryBuilder
-                ->andWhere(sprintf('LOWER(unaccent(%s.name)) LIKE LOWER(unaccent(:%s))', $rootAlias, $parameterName))
-                ->setParameter($parameterName, '%'.$value.'%');
+                ->andWhere(sprintf('%s.fullNameNormalized LIKE :%s', $rootAlias, $parameterName))
+                ->setParameter($parameterName, '%'.$normalizedValue.'%');
         }
     }
 }

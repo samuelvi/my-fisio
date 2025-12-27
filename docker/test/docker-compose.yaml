@@ -11,6 +11,8 @@ services:
       - "5433:5432" # Different port than dev
     volumes:
       - ./postgres/data:/var/lib/postgresql/data
+      # 🎯 PostgreSQL init scripts - auto-install extensions on first run
+      - ../common/postgres:/docker-entrypoint-initdb.d:ro
     networks:
       - physiotherapy_test_network
     healthcheck:

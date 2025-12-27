@@ -9,6 +9,7 @@ use ApiPlatform\State\ProviderInterface;
 use App\Domain\Entity\Patient;
 use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Api\Resource\PatientResource;
+use App\Infrastructure\Util\TextNormalizer;
 
 use function count;
 
@@ -70,27 +71,32 @@ class PatientProvider implements ProviderInterface
         if (isset($filters['search'])) {
             $search = $this->normalizeSearch((string) $filters['search']);
             if ('' !== $search) {
-                $searchTermFull = '%'.$search.'%';
+                // Normalize search term to match database normalized columns
+                $searchNormalized = TextNormalizer::normalize($search);
+                $searchTermFull = '%'.$searchNormalized.'%';
                 $useFuzzy = isset($filters['fuzzy']) && ('true' === $filters['fuzzy'] || true === $filters['fuzzy'] || '1' === $filters['fuzzy']);
 
                 $searchOr = $qb->expr()->orX();
-                // Use unaccent() for accent-insensitive search (e.g., "garcia" finds "García")
-                $searchOr->add('LOWER(unaccent(p.fullName)) = LOWER(unaccent(:searchExact))');
-                $searchOr->add('LOWER(unaccent(p.email)) = LOWER(unaccent(:searchExact))');
-                $searchOr->add('LOWER(p.phone) = LOWER(:searchExact)');
-                $searchOr->add('LOWER(unaccent(p.fullName)) LIKE LOWER(unaccent(:searchFull))');
-                $searchOr->add('LOWER(p.phone) LIKE LOWER(:searchFull)');
-                $searchOr->add('LOWER(unaccent(p.email)) LIKE LOWER(unaccent(:searchFull))');
+                // Use normalized columns for fast searching (no functions on left side)
+                $searchOr->add('p.fullNameNormalized = :searchExact');
+                $searchOr->add('LOWER(p.email) = :searchExactLower');
+                $searchOr->add('LOWER(p.phone) = :searchExactLower');
+                $searchOr->add('p.fullNameNormalized LIKE :searchFull');
+                $searchOr->add('LOWER(p.phone) LIKE :searchFullLower');
+                $searchOr->add('LOWER(p.email) LIKE :searchFullLower');
                 $qb->setParameter('searchFull', $searchTermFull);
-                $qb->setParameter('searchExact', $search);
+                $qb->setParameter('searchFullLower', '%'.strtolower($search).'%');
+                $qb->setParameter('searchExact', $searchNormalized);
+                $qb->setParameter('searchExactLower', strtolower($search));
 
                 $tokens = $this->extractSearchTokens($search);
                 if (count($tokens) > 1) {
                     $tokenAnd = $qb->expr()->andX();
                     foreach ($tokens as $index => $token) {
                         $param = 'searchToken'.$index;
-                        $tokenAnd->add(sprintf('LOWER(unaccent(p.fullName)) LIKE LOWER(unaccent(:%s))', $param));
-                        $qb->setParameter($param, '%'.$token.'%');
+                        $tokenNormalized = TextNormalizer::normalize($token);
+                        $tokenAnd->add(sprintf('p.fullNameNormalized LIKE :%s', $param));
+                        $qb->setParameter($param, '%'.$tokenNormalized.'%');
                     }
                     $searchOr->add($tokenAnd);
                 }
@@ -125,7 +131,7 @@ class PatientProvider implements ProviderInterface
                     }
                 }
                 $qb->andWhere($searchOr);
-                $qb->addOrderBy('CASE WHEN LOWER(p.fullName) = LOWER(:searchExact) OR LOWER(p.email) = LOWER(:searchExact) OR LOWER(p.phone) = LOWER(:searchExact) THEN 0 WHEN (LOWER(p.fullName) LIKE LOWER(:searchFull) OR LOWER(p.email) LIKE LOWER(:searchFull) OR LOWER(p.phone) LIKE LOWER(:searchFull)) THEN 1 ELSE 2 END', 'ASC');
+                $qb->addOrderBy('CASE WHEN p.fullNameNormalized = :searchExact OR LOWER(p.email) = :searchExactLower OR LOWER(p.phone) = :searchExactLower THEN 0 WHEN (p.fullNameNormalized LIKE :searchFull OR LOWER(p.email) LIKE :searchFullLower OR LOWER(p.phone) LIKE :searchFullLower) THEN 1 ELSE 2 END', 'ASC');
                 $hasSearch = true;
             }
         }
@@ -161,9 +167,13 @@ class PatientProvider implements ProviderInterface
             ->setParameter('ids', $ids);
 
         if ($hasSearch) {
-            $finalQb->addOrderBy('CASE WHEN LOWER(p.fullName) = LOWER(:searchExact) OR LOWER(p.email) = LOWER(:searchExact) OR LOWER(p.phone) = LOWER(:searchExact) THEN 0 WHEN (LOWER(p.fullName) LIKE LOWER(:searchFull) OR LOWER(p.email) LIKE LOWER(:searchFull) OR LOWER(p.phone) LIKE LOWER(:searchFull)) THEN 1 ELSE 2 END', 'ASC')
-                ->setParameter('searchExact', $search)
-                ->setParameter('searchFull', $searchTermFull);
+            $searchNormalized = TextNormalizer::normalize($search);
+            $searchTermFullNormalized = '%'.$searchNormalized.'%';
+            $finalQb->addOrderBy('CASE WHEN p.fullNameNormalized = :searchExact OR LOWER(p.email) = :searchExactLower OR LOWER(p.phone) = :searchExactLower THEN 0 WHEN (p.fullNameNormalized LIKE :searchFull OR LOWER(p.email) LIKE :searchFullLower OR LOWER(p.phone) LIKE :searchFullLower) THEN 1 ELSE 2 END', 'ASC')
+                ->setParameter('searchExact', $searchNormalized)
+                ->setParameter('searchExactLower', strtolower($search))
+                ->setParameter('searchFull', $searchTermFullNormalized)
+                ->setParameter('searchFullLower', '%'.strtolower($search).'%');
         }
 
         if (isset($filters['order']) && 'alpha' === $filters['order']) {

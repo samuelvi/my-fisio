@@ -1,0 +1,16 @@
+# Production environment files
+.env
+
+# SSL certificates (should be managed separately)
+nginx/ssl/*.key
+nginx/ssl/*.crt
+nginx/ssl/*.pem
+
+# Backups (if stored here temporarily)
+backups/
+*.sql
+*.dump
+
+# Logs (if stored locally)
+logs/
+*.log

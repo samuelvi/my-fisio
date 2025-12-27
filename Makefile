@@ -1,4 +1,4 @@
-.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-require composer-require-dev composer-remove composer-validate composer-dump-autoload symfony cache-clear cache-warmup db-create db-drop db-collation db-migrate db-migration-create db-fixtures db-reset db-validate install-api install-cache install-redis-bundle install-event-store install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-e2e-ui
+.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-require composer-require-dev composer-remove composer-validate composer-dump-autoload symfony cache-clear cache-warmup db-create db-drop db-collation db-migrate db-migration-create db-fixtures db-reset db-validate install-api install-cache install-redis-bundle install-event-store install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-e2e-ui prod-up prod-down prod-restart prod-logs prod-status prod-health prod-db-migrate prod-db-check prod-db-backup prod-db-restore prod-cache-clear prod-cache-warmup
 
 # Default target
 .DEFAULT_GOAL := help
@@ -6,6 +6,7 @@
 # Docker compose file locations
 DOCKER_COMPOSE_DEV = docker-compose -f docker/dev/docker-compose.yaml -f docker/dev/docker-compose.override.yaml
 DOCKER_COMPOSE_TEST = docker-compose -f docker/test/docker-compose.yaml
+DOCKER_COMPOSE_PROD = docker-compose -f docker/prod/docker-compose.yaml
 
 # Colors for terminal output
 GREEN  := [0;32m
@@ -69,6 +70,91 @@ test-logs: ## Show logs from all containers (Test)
 
 test-shell-php: ## Access PHP container shell (Test)
 	$(DOCKER_COMPOSE_TEST) exec php_test sh
+
+##@ Docker Management (Production)
+
+prod-up: ## Start all containers (Production) - SAFE: Starts services
+	@echo "$(GREEN)Starting containers (Production)...$(NC)"
+	@if [ ! -f "docker/prod/.env" ]; then \
+		echo "$(YELLOW)ERROR: docker/prod/.env not found!$(NC)"; \
+		echo "$(YELLOW)Copy docker/prod/.env.example to docker/prod/.env and configure it.$(NC)"; \
+		exit 1; \
+	fi
+	$(DOCKER_COMPOSE_PROD) up -d
+
+prod-down: ## Stop containers (Production) - SAFE: Stops without removing data
+	@echo "$(YELLOW)Stopping containers (Production)...$(NC)"
+	@echo "$(YELLOW)Note: Data volumes are preserved$(NC)"
+	$(DOCKER_COMPOSE_PROD) down
+
+prod-restart: prod-down prod-up ## Restart containers (Production)
+
+prod-logs: ## Show logs (Production) (use: make prod-logs service=php)
+	@if [ -z "$(service)" ]; then \
+		$(DOCKER_COMPOSE_PROD) logs -f; \
+	else \
+		$(DOCKER_COMPOSE_PROD) logs -f $(service); \
+	fi
+
+prod-status: ## Show container status (Production)
+	@echo "$(GREEN)Production container status:$(NC)"
+	$(DOCKER_COMPOSE_PROD) ps
+
+prod-health: ## Check health status (Production)
+	@echo "$(GREEN)Checking health status...$(NC)"
+	@$(DOCKER_COMPOSE_PROD) ps --format json | grep -q "health" && \
+		echo "$(GREEN)Health checks enabled$(NC)" || \
+		echo "$(YELLOW)No health checks configured$(NC)"
+
+##@ Production Database Operations (SAFE - No destructive commands)
+
+prod-db-migrate: ## Apply migrations (Production)
+	@echo "$(GREEN)Running migrations (Production)...$(NC)"
+	@echo "$(YELLOW)⚠ This will modify the production database schema$(NC)"
+	@read -p "Continue? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		$(DOCKER_COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction; \
+	else \
+		echo "$(YELLOW)Migration cancelled$(NC)"; \
+	fi
+
+prod-db-check: ## Verify PostgreSQL extensions (Production)
+	@echo "$(GREEN)Checking PostgreSQL extensions (Production)...$(NC)"
+	$(DOCKER_COMPOSE_PROD) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "\dx"
+
+prod-db-backup: ## Create database backup (Production)
+	@echo "$(GREEN)Creating database backup (Production)...$(NC)"
+	@mkdir -p docker/prod/backups
+	@BACKUP_FILE="docker/prod/backups/backup_$$(date +%Y%m%d_%H%M%S).sql"; \
+	$(DOCKER_COMPOSE_PROD) exec -T postgres pg_dump -U physiotherapy_user physiotherapy_db > $$BACKUP_FILE; \
+	echo "$(GREEN)Backup created: $$BACKUP_FILE$(NC)"
+
+prod-db-restore: ## Restore database from backup (use: make prod-db-restore file=path/to/backup.sql)
+	@if [ -z "$(file)" ]; then \
+		echo "$(YELLOW)Usage: make prod-db-restore file=path/to/backup.sql$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)⚠ WARNING: This will restore the database from backup$(NC)"
+	@echo "$(YELLOW)⚠ Current data may be overwritten$(NC)"
+	@read -p "Continue? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		cat $(file) | $(DOCKER_COMPOSE_PROD) exec -T postgres psql -U physiotherapy_user -d physiotherapy_db; \
+		echo "$(GREEN)Database restored from: $(file)$(NC)"; \
+	else \
+		echo "$(YELLOW)Restore cancelled$(NC)"; \
+	fi
+
+##@ Production Cache Operations
+
+prod-cache-clear: ## Clear application cache (Production)
+	@echo "$(GREEN)Clearing cache (Production)...$(NC)"
+	$(DOCKER_COMPOSE_PROD) exec php php bin/console cache:clear --env=prod --no-warmup
+
+prod-cache-warmup: ## Warm up cache (Production)
+	@echo "$(GREEN)Warming up cache (Production)...$(NC)"
+	$(DOCKER_COMPOSE_PROD) exec php php bin/console cache:warmup --env=prod
 
 ##@ Container Access (Dev)
 
