@@ -82,7 +82,7 @@ make install-api        # API Platform (optional)
 make db-setup
 ```
 
-This will create the database and run all migrations.
+This will create the database, ensure the `case_insensitive` collation exists, and run all migrations.
 
 ## Installing Development Tools
 
@@ -147,6 +147,8 @@ make composer-validate
 ```bash
 make db-create
 ```
+
+This command also ensures the `case_insensitive` collation is available for patient search fields.
 
 ### Run Migrations
 

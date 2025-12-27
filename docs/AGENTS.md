@@ -219,10 +219,12 @@ docker/dev/
 
 **Database**
 - `make db-migrate`: Apply migrations.
+- `make db-collation`: Ensure the `case_insensitive` collation exists (required for patient search fields).
 - `make db-migration-create`: Generate new migration.
 - `make db-fixtures`: Load test data.
 - `make db-reset`: Full reset (Drop -> Create -> Migrate -> Fixtures).
 - `make db-validate`: Validate Doctrine schema.
+- Note: `make db-create` runs `db-collation` automatically.
 
 **Quality & Testing**
 - `make test`: Run PHPUnit tests.

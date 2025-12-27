@@ -1,4 +1,4 @@
-.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-require composer-require-dev composer-remove composer-validate composer-dump-autoload symfony cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-api install-cache install-redis-bundle install-event-store install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-e2e-ui
+.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-require composer-require-dev composer-remove composer-validate composer-dump-autoload symfony cache-clear cache-warmup db-create db-drop db-collation db-migrate db-migration-create db-fixtures db-reset db-validate install-api install-cache install-redis-bundle install-event-store install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-e2e-ui
 
 # Default target
 .DEFAULT_GOAL := help
@@ -157,10 +157,15 @@ cache-warmup: ## Warmup Symfony cache
 db-create: ## Create database
 	@echo "$(GREEN)Creating database...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php php bin/console doctrine:database:create --if-not-exists
+	@$(MAKE) db-collation
 
 db-drop: ## Drop database
 	@echo "$(YELLOW)Dropping database...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:database:drop --force
+
+db-collation: ## Ensure case-insensitive collation exists (Dev)
+	@echo "$(GREEN)Ensuring case-insensitive collation...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE COLLATION IF NOT EXISTS case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false);"
 
 db-migrate: ## Run database migrations
 	@echo "$(GREEN)Running migrations...$(NC)"
