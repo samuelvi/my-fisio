@@ -112,7 +112,7 @@ export default function PatientDetail() {
                             </div>
                             <div>
                                 <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('dni')}</dt>
-                                <dd className="text-gray-900 font-bold">{patient.identityDocument || '-'}</dd>
+                                <dd className="text-gray-900 font-bold">{patient.taxId || '-'}</dd>
                             </div>
                         </div>
                     </div>

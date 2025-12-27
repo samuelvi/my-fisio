@@ -18,7 +18,7 @@ final class PatientInput
 
     public ?string $dateOfBirth = null;
 
-    public ?string $identityDocument = null;
+    public ?string $taxId = null;
 
     public ?string $phone = null;
 

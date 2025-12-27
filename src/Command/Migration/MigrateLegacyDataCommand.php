@@ -57,7 +57,7 @@ final class MigrateLegacyDataCommand extends Command
                 1 => ['legacy' => 'nombre', 'target' => 'first_name', 'type' => self::TYPE_STRING],
                 2 => ['legacy' => 'apellidos', 'target' => 'last_name', 'type' => self::TYPE_STRING],
                 3 => ['legacy' => 'fecha_de_nacimiento', 'target' => 'date_of_birth', 'type' => self::TYPE_DATE],
-                4 => ['legacy' => 'dni', 'target' => 'identity_document', 'type' => self::TYPE_STRING],
+                4 => ['legacy' => 'dni', 'target' => 'tax_id', 'type' => self::TYPE_STRING],
                 5 => ['legacy' => 'telefono', 'target' => 'phone', 'type' => self::TYPE_STRING],
                 6 => ['legacy' => 'fecha_de_creacion', 'target' => 'created_at', 'type' => self::TYPE_DATE],
                 7 => ['legacy' => 'direccion', 'target' => 'address', 'type' => self::TYPE_STRING],

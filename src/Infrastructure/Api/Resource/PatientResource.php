@@ -54,7 +54,7 @@ class PatientResource
     public ?DateTimeInterface $dateOfBirth = null;
 
     #[Groups(['patient:read', 'patient:write'])]
-    public ?string $identityDocument = null;
+    public ?string $taxId = null;
 
     #[Groups(['patient:read', 'patient:write'])]
     public ?string $phone = null;

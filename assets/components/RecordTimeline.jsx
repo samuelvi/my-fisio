@@ -163,7 +163,7 @@ export default function RecordTimeline({ records, patient, patientId, onAddRecor
                                                     </div>
                                                     <div>
                                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">{t('dni')}</span>
-                                                        <p className="text-gray-900 font-bold">{patient.identityDocument || '-'}</p>
+                                                        <p className="text-gray-900 font-bold">{patient.taxId || '-'}</p>
                                                     </div>
                                                     <div>
                                                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-1">{t('phone')}</span>

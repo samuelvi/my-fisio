@@ -63,7 +63,7 @@ export default function FullHistory() {
                     </div>
                     <div>
                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('dni_identity')}</h4>
-                        <p className="text-gray-900 font-medium">{patient.identityDocument || '-'}</p>
+                        <p className="text-gray-900 font-medium">{patient.taxId || '-'}</p>
                     </div>
                     <div>
                         <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('date_of_birth')}</h4>

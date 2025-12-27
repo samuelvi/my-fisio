@@ -45,7 +45,7 @@ class Patient
 
     #[ORM\Column(type: Types::STRING, length: 15, nullable: true)]
     #[Groups(['patient:read', 'patient:write'])]
-    public ?string $identityDocument = null;
+    public ?string $taxId = null;
 
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
     #[Groups(['patient:read', 'patient:write'])]

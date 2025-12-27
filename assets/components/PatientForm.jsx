@@ -17,7 +17,7 @@ export default function PatientForm() {
     const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
-        identityDocument: '',
+        taxId: '',
         dateOfBirth: '',
         phone: '',
         email: '',
@@ -55,7 +55,7 @@ export default function PatientForm() {
             setFormData({
                 firstName: data.firstName || '',
                 lastName: data.lastName || '',
-                identityDocument: data.identityDocument || '',
+                taxId: data.taxId || '',
                 dateOfBirth: formattedDate,
                 phone: data.phone || '',
                 email: data.email || '',
@@ -203,13 +203,13 @@ export default function PatientForm() {
                                 </div>
 
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label htmlFor="identityDocument" className="block text-sm font-semibold text-gray-700">{t('id_document')}</label>
+                                    <label htmlFor="taxId" className="block text-sm font-semibold text-gray-700">{t('id_document')}</label>
                                     <input
                                         type="text"
-                                        name="identityDocument"
-                                        id="identityDocument"
+                                        name="taxId"
+                                        id="taxId"
                                         placeholder={t('id_document_placeholder')}
-                                        value={formData.identityDocument}
+                                        value={formData.taxId}
                                         onChange={handleChange}
                                         className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
                                     />
