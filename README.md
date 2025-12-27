@@ -7,7 +7,7 @@ Comprehensive management system for physiotherapy clinics with modern architectu
 ### Backend
 - **Framework**: Symfony 7.4
 - **PHP**: 8.4 (PHP-FPM)
-- **Database**: PostgreSQL 16
+- **Database**: MariaDB 11
 - **Cache/Sessions**: Redis 7
 - **Email Testing**: MailPit
 - **Web Server**: Nginx
@@ -81,14 +81,14 @@ Once the containers are started, you will have access to:
 | Vite Dev Server | http://localhost:5173 | Frontend dev server (HMR) |
 | MailPit UI | http://localhost:8025 | Web interface for development emails |
 | Adminer | http://localhost:8080 | Visual database management |
-| PostgreSQL | localhost:5432 | Main database |
+| MariaDB | localhost:3306 | Main database |
 | Redis | localhost:6379 | Cache and session storage |
 
 ### Adminer Login Credentials
 
 To manage the database through Adminer, use:
-- **System**: `PostgreSQL`
-- **Server**: `postgres`
+- **System**: `MySQL`
+- **Server**: `mariadb`
 - **Username**: `physiotherapy_user`
 - **Password**: `physiotherapy_pass`
 - **Database**: `physiotherapy_db`
@@ -139,7 +139,7 @@ will also read `.env.dev` and `.env.dev.local`.
 # Access PHP container
 make dev-shell-php
 
-# Access PostgreSQL
+# Access MariaDB
 make dev-shell-db
 
 # Access Redis CLI
@@ -323,7 +323,7 @@ For more details about the architecture, see [docs/AGENTS.md](docs/AGENTS.md).
 Environment variables are managed in `docker/dev/docker-compose.yaml`:
 
 ```yaml
-DATABASE_URL=postgresql://physiotherapy_user:physiotherapy_pass@postgres:5432/physiotherapy_db
+DATABASE_URL=mysql://physiotherapy_user:physiotherapy_pass@mariadb:3306/physiotherapy_db?serverVersion=mariadb-11.0.0&charset=utf8mb4
 REDIS_URL=redis://redis:6379
 APP_ENV=dev
 APP_DEBUG=1
@@ -417,8 +417,8 @@ chown -R www-data:www-data var/
 # Check container status
 make dev-ps
 
-# Restart PostgreSQL
-docker-compose -f docker/dev/docker-compose.yaml restart postgres
+# Restart MariaDB
+docker-compose -f docker/dev/docker-compose.yaml restart mariadb
 ```
 
 ### Technical Decisions

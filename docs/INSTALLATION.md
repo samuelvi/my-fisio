@@ -21,7 +21,7 @@ make dev-install
 This command executes the following steps:
 1. Builds all Docker containers
 2. Starts all services
-3. Waits for PostgreSQL and Redis to be ready
+3. Waits for MariaDB and Redis to be ready
 4. Initializes Symfony 7.4 skeleton
 5. Installs all Composer dependencies
 6. Installs recommended packages (Redis Bundle, Broadway Event Store)
@@ -188,7 +188,7 @@ Once installed, access the application at:
 
 - **Application**: http://localhost
 - **MailPit UI**: http://localhost:8025 (Email testing)
-- **PostgreSQL**: localhost:5432
+- **MariaDB**: localhost:3306
 - **Redis**: localhost:6379
 
 View all URLs:
@@ -205,7 +205,7 @@ make urls
 make dev-shell-php
 ```
 
-### Access PostgreSQL Database
+### Access MariaDB Database
 
 ```bash
 make dev-shell-db
@@ -306,7 +306,7 @@ make dev-logs
 
 # Or check specific service
 make dev-logs service=php
-make dev-logs service=postgres
+make dev-logs service=mariadb
 ```
 
 ### Permission Issues
@@ -320,11 +320,11 @@ chown -R www-data:www-data var/
 ### Database Connection Issues
 
 ```bash
-# Check PostgreSQL status
+# Check MariaDB status
 make dev-ps
 
-# Restart PostgreSQL
-docker-compose -f docker/dev/docker-compose.yaml restart postgres
+# Restart MariaDB
+docker-compose -f docker/dev/docker-compose.yaml restart mariadb
 ```
 
 ### Reset Everything
@@ -347,7 +347,7 @@ Edit `.env` file to configure environment variables:
 
 ```bash
 # Database
-DATABASE_URL="postgresql://user:pass@postgres:5432/db?serverVersion=16"
+DATABASE_URL="mysql://user:pass@mariadb:3306/db?serverVersion=mariadb-11.0.0&charset=utf8mb4"
 
 # Redis
 REDIS_URL=redis://redis:6379

@@ -12,8 +12,8 @@ services:
       - "3307:3306" # Different port than dev
     volumes:
       - ./mariadb/data:/var/lib/mysql
-      # 🎯 MariaDB init scripts - run on first startup
-      - ../common/mariadb:/docker-entrypoint-initdb.d:ro
+      # Custom MariaDB configuration (utf8mb4 defaults)
+      - ../common/mariadb/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     networks:
       - physiotherapy_test_network
     healthcheck:

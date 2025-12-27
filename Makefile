@@ -119,15 +119,15 @@ prod-db-migrate: ## Apply migrations (Production)
 		echo "$(YELLOW)Migration cancelled$(NC)"; \
 	fi
 
-prod-db-check: ## Verify PostgreSQL extensions (Production)
-	@echo "$(GREEN)Checking PostgreSQL extensions (Production)...$(NC)"
-	$(DOCKER_COMPOSE_PROD) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "\dx"
+prod-db-check: ## Verify MariaDB connection (Production)
+	@echo "$(GREEN)Checking MariaDB connection (Production)...$(NC)"
+	$(DOCKER_COMPOSE_PROD) exec mariadb mariadb -u physiotherapy_user -p$$MARIADB_PASSWORD physiotherapy_db -e "SHOW DATABASES;"
 
 prod-db-backup: ## Create database backup (Production)
 	@echo "$(GREEN)Creating database backup (Production)...$(NC)"
 	@mkdir -p docker/prod/backups
 	@BACKUP_FILE="docker/prod/backups/backup_$$(date +%Y%m%d_%H%M%S).sql"; \
-	$(DOCKER_COMPOSE_PROD) exec -T postgres pg_dump -U physiotherapy_user physiotherapy_db > $$BACKUP_FILE; \
+	$(DOCKER_COMPOSE_PROD) exec -T mariadb mariadb-dump -u physiotherapy_user -p$$MARIADB_PASSWORD physiotherapy_db > $$BACKUP_FILE; \
 	echo "$(GREEN)Backup created: $$BACKUP_FILE$(NC)"
 
 prod-db-restore: ## Restore database from backup (use: make prod-db-restore file=path/to/backup.sql)
@@ -140,7 +140,7 @@ prod-db-restore: ## Restore database from backup (use: make prod-db-restore file
 	@read -p "Continue? [y/N] " -n 1 -r; \
 	echo; \
 	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		cat $(file) | $(DOCKER_COMPOSE_PROD) exec -T postgres psql -U physiotherapy_user -d physiotherapy_db; \
+		cat $(file) | $(DOCKER_COMPOSE_PROD) exec -T mariadb mariadb -u physiotherapy_user -p$$MARIADB_PASSWORD physiotherapy_db; \
 		echo "$(GREEN)Database restored from: $(file)$(NC)"; \
 	else \
 		echo "$(YELLOW)Restore cancelled$(NC)"; \
@@ -162,9 +162,9 @@ dev-shell-php: ## Access PHP container shell
 	@echo "$(GREEN)Accessing PHP container...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php sh
 
-dev-shell-db: ## Access PostgreSQL database shell
-	@echo "$(GREEN)Accessing PostgreSQL...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db
+dev-shell-db: ## Access MariaDB database shell
+	@echo "$(GREEN)Accessing MariaDB...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec mariadb mariadb -u physiotherapy_user -pphysiotherapy_pass physiotherapy_db
 
 dev-shell-redis: ## Access Redis CLI
 	@echo "$(GREEN)Accessing Redis CLI...$(NC)"
@@ -250,16 +250,11 @@ db-drop: ## Drop database
 	@echo "$(YELLOW)Dropping database...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:database:drop --force
 
-db-collation: ## Ensure case-insensitive collation exists (Dev)
-	@echo "$(GREEN)Ensuring case-insensitive collation...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE COLLATION IF NOT EXISTS case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false);"
+db-collation: ## MariaDB uses utf8mb4_unicode_ci by default (Dev)
+	@echo "$(GREEN)MariaDB uses utf8mb4_unicode_ci collation by default$(NC)"
 
-db-extensions: ## Install PostgreSQL extensions for fuzzy search (Dev)
-	@echo "$(GREEN)Installing PostgreSQL extensions for fuzzy search...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
-	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;"
-	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
-	@echo "$(GREEN)Extensions installed successfully!$(NC)"
+db-extensions: ## MariaDB extensions are configured in init scripts (Dev)
+	@echo "$(GREEN)MariaDB extensions are automatically configured via init scripts$(NC)"
 
 db-migrate: ## Run database migrations
 	@echo "$(GREEN)Running migrations...$(NC)"
@@ -376,9 +371,6 @@ test-coverage: ## Run tests with coverage
 test-reset-db: ## Reset Test Database
 	@echo "$(GREEN)Resetting Test Database...$(NC)"
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:schema:drop --force --full-database
-	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:query:sql "CREATE EXTENSION IF NOT EXISTS pg_trgm"
-	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:query:sql "CREATE EXTENSION IF NOT EXISTS fuzzystrmatch"
-	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:query:sql "CREATE COLLATION IF NOT EXISTS case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:schema:create
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:fixtures:load --no-interaction
 
@@ -423,11 +415,11 @@ init-symfony: ## Initialize Symfony application
 wait-for-services: ## Wait for services to be ready
 	@echo "$(YELLOW)Waiting for services to be ready...$(NC)"
 	@sleep 5
-	@until $(DOCKER_COMPOSE_DEV) exec postgres pg_isready -U physiotherapy_user > /dev/null 2>&1; do \
-		echo "$(YELLOW)Waiting for PostgreSQL...$(NC)"; \
+	@until $(DOCKER_COMPOSE_DEV) exec mariadb mariadb -u physiotherapy_user -pphysiotherapy_pass -e "SELECT 1" > /dev/null 2>&1; do \
+		echo "$(YELLOW)Waiting for MariaDB...$(NC)"; \
 		sleep 2; \
 	done
-	@echo "$(GREEN)PostgreSQL is ready!$(NC)"
+	@echo "$(GREEN)MariaDB is ready!$(NC)"
 	@until $(DOCKER_COMPOSE_DEV) exec redis redis-cli ping > /dev/null 2>&1; do \
 		echo "$(YELLOW)Waiting for Redis...$(NC)"; \
 		sleep 2; \
@@ -448,7 +440,7 @@ success-message: ## Display success message
 	@echo "  • Vite Dev Server:  $(YELLOW)http://localhost:5173$(NC)"
 	@echo "  • MailPit UI:       $(YELLOW)http://localhost:8025$(NC)"
 	@echo "  • Adminer UI:       $(YELLOW)http://localhost:8080$(NC)"
-	@echo "  • PostgreSQL:       $(YELLOW)localhost:5432$(NC)"
+	@echo "  • MariaDB:          $(YELLOW)localhost:3306$(NC)"
 	@echo "  • Redis:            $(YELLOW)localhost:6379$(NC)"
 	@echo ""
 	@echo "$(GREEN)Next steps:$(NC)"
@@ -482,5 +474,5 @@ urls: ## Show all service URLs
 	@echo "  Vite Dev Server:  http://localhost:5173"
 	@echo "  MailPit UI:       http://localhost:8025"
 	@echo "  Adminer UI:       http://localhost:8080"
-	@echo "  PostgreSQL:       localhost:5432"
+	@echo "  MariaDB:          localhost:3306"
 	@echo "  Redis:            localhost:6379"

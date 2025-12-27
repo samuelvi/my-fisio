@@ -10,14 +10,14 @@ use function strtolower;
 /**
  * Utility class for normalizing text for case-insensitive and accent-insensitive searches.
  *
- * This normalization matches the database generated columns that use unaccent(LOWER(text))
+ * This normalization matches the database generated columns that use LOWER(text) with accent removal
  */
 final class TextNormalizer
 {
     /**
      * Normalizes text by removing accents and converting to lowercase.
      *
-     * This matches the PostgreSQL expression: unaccent(LOWER(text))
+     * This matches the database expression: LOWER(text) with transliteration
      *
      * @param string $text The text to normalize
      * @return string The normalized text (lowercase, no accents)

@@ -13,10 +13,8 @@ services:
     volumes:
       # MariaDB data persistence (bind mount to host)
       - ./docker/common/mariadb/data:/var/lib/mysql
-      # 🎯 IMPORTANT: Mount init scripts for automatic setup
-      # Scripts in this directory run automatically when DB is created for the first time
-      # They execute in alphabetical order (01-*, 02-*, etc.)
-      - ./docker/common/mariadb:/docker-entrypoint-initdb.d:ro
+      # Custom MariaDB configuration (utf8mb4 defaults)
+      - ./docker/common/mariadb/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     ports:
       - "3306:3306"
     healthcheck:
