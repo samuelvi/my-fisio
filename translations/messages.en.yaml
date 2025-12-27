@@ -2,6 +2,7 @@
 app_name: "PhysioApp"
 dashboard: "Dashboard"
 patients: "Patients"
+patient_information: "Patient information"
 appointments: "Appointments"
 menu: "Menu"
 close: "Close"

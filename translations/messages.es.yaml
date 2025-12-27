@@ -2,6 +2,7 @@
 app_name: "PhysioApp"
 dashboard: "Panel de Control"
 patients: "Pacientes"
+patient_information: "Informacion del paciente"
 appointments: "Citas"
 menu: "Menú"
 close: "Cerrar"
