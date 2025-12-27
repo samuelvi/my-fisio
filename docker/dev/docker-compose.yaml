@@ -1,23 +1,23 @@
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:16-alpine
-    container_name: dev_physiotherapy_postgres
+  # MariaDB Database
+  mariadb:
+    image: mariadb:11
+    container_name: dev_physiotherapy_mariadb
     environment:
-      POSTGRES_DB: physiotherapy_db
-      POSTGRES_USER: physiotherapy_user
-      POSTGRES_PASSWORD: physiotherapy_pass
-      PGDATA: /var/lib/postgresql/data/pgdata
+      MARIADB_DATABASE: physiotherapy_db
+      MARIADB_USER: physiotherapy_user
+      MARIADB_PASSWORD: physiotherapy_pass
+      MARIADB_ROOT_PASSWORD: root_pass
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - ./postgres/data:/var/lib/postgresql/data
-      # 🎯 PostgreSQL init scripts - auto-install extensions on first run
-      - ../common/postgres:/docker-entrypoint-initdb.d:ro
+      - ./mariadb/data:/var/lib/mysql
+      # 🎯 MariaDB init scripts - run on first startup
+      - ../common/mariadb:/docker-entrypoint-initdb.d:ro
     networks:
       - physiotherapy_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U physiotherapy_user -d physiotherapy_db"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -51,12 +51,12 @@ services:
     networks:
       - physiotherapy_network
     depends_on:
-      postgres:
+      mariadb:
         condition: service_healthy
       redis:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://physiotherapy_user:physiotherapy_pass@postgres:5432/physiotherapy_db?serverVersion=16&charset=utf8
+      - DATABASE_URL=mysql://physiotherapy_user:physiotherapy_pass@mariadb:3306/physiotherapy_db?serverVersion=mariadb-11.0.0&charset=utf8mb4
       - REDIS_URL=redis://redis:6379
       - APP_ENV=dev
       - APP_DEBUG=1

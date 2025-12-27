@@ -62,10 +62,12 @@ private/*
 /.phpunit.cache/
 
 # Docker Data
-/docker/dev/postgres/data/
-/docker/dev/redis/data/
-/docker/test/postgres/data/
-/docker/test/redis/data/
+docker/dev/mariadb/data
+docker/test/mariadb/data
+docker/prod/mariadb/data
+docker/dev/redis/data
+docker/test/redis/data
+docker/prod/redis/data
 
 # Composer
 composer.phar
@@ -93,3 +95,5 @@ favicon.ico
 ###> phpstan/phpstan ###
 phpstan.neon
 ###< phpstan/phpstan ###
+
+

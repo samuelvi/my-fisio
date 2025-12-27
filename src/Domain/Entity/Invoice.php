@@ -68,9 +68,6 @@ class Invoice
     #[Groups(['invoice:read', 'invoice:write'])]
     public string $fullName;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true, insertable: false, updatable: false, generated: 'ALWAYS')]
-    public ?string $fullNameNormalized = null;
-
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
     #[Groups(['invoice:read', 'invoice:write'])]
     public ?string $phone = null;

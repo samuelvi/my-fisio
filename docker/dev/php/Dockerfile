@@ -7,8 +7,8 @@ RUN apk add --no-cache \
     curl \
     libzip-dev \
     icu-dev \
-    libpq-dev \
-    postgresql-dev \
+    mariadb-dev \
+    mariadb-client \
     oniguruma-dev \
     linux-headers \
     libpng-dev \
@@ -20,8 +20,8 @@ RUN apk add --no-cache \
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
     docker-php-ext-install \
     pdo \
-    pdo_pgsql \
-    pgsql \
+    pdo_mysql \
+    mysqli \
     intl \
     opcache \
     zip \
