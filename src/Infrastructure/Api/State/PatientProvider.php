@@ -74,12 +74,12 @@ class PatientProvider implements ProviderInterface
                 $useFuzzy = isset($filters['fuzzy']) && ('true' === $filters['fuzzy'] || true === $filters['fuzzy'] || '1' === $filters['fuzzy']);
 
                 $searchOr = $qb->expr()->orX();
-                $searchOr->add('LOWER(p.fullName) = LOWER(:searchExact)');
-                $searchOr->add('LOWER(p.email) = LOWER(:searchExact)');
+                $searchOr->add('p.fullName = :searchExact');
+                $searchOr->add('p.email = :searchExact');
                 $searchOr->add('p.phone = :searchExact');
-                $searchOr->add('LOWER(p.fullName) LIKE LOWER(:searchFull)');
+                $searchOr->add('p.fullName LIKE :searchFull');
                 $searchOr->add('p.phone LIKE :searchFull');
-                $searchOr->add('LOWER(p.email) LIKE LOWER(:searchFull)');
+                $searchOr->add('p.email LIKE :searchFull');
                 $qb->setParameter('searchFull', $searchTermFull);
                 $qb->setParameter('searchExact', $search);
 
@@ -88,7 +88,7 @@ class PatientProvider implements ProviderInterface
                     $tokenAnd = $qb->expr()->andX();
                     foreach ($tokens as $index => $token) {
                         $param = 'searchToken'.$index;
-                        $tokenAnd->add(sprintf('LOWER(p.fullName) LIKE LOWER(:%s)', $param));
+                        $tokenAnd->add(sprintf('p.fullName LIKE :%s', $param));
                         $qb->setParameter($param, '%'.$token.'%');
                     }
                     $searchOr->add($tokenAnd);

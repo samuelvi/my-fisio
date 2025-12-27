@@ -277,6 +277,9 @@ test-coverage: ## Run tests with coverage
 test-reset-db: ## Reset Test Database
 	@echo "$(GREEN)Resetting Test Database...$(NC)"
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:schema:drop --force --full-database
+	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:query:sql "CREATE EXTENSION IF NOT EXISTS pg_trgm"
+	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:query:sql "CREATE EXTENSION IF NOT EXISTS fuzzystrmatch"
+	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:query:sql "CREATE COLLATION IF NOT EXISTS case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:schema:create
 	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:fixtures:load --no-interaction
 

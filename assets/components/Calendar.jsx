@@ -106,10 +106,10 @@ export default function Calendar() {
             setValidationError(null);
             return;
         }
-        
+
         const start = new Date(formData.startsAt);
         const end = new Date(formData.endsAt);
-        
+
         if (end <= start) {
             setValidationError(t('error_end_after_start'));
             return;
@@ -142,7 +142,7 @@ export default function Calendar() {
                     end: fetchInfo.endStr
                 }
             });
-            
+
             const data = response.data['member'] || response.data['hydra:member'] || [];
             const events = data.map(app => {
                 const colors = getEventColors(app.title, app.type);
@@ -161,7 +161,7 @@ export default function Calendar() {
                     textColor: colors.text
                 };
             });
-            
+
             successCallback(events);
         } catch (error) {
             console.error('Error fetching events:', error);
@@ -173,7 +173,7 @@ export default function Calendar() {
         const calendarApi = arg.view.calendar;
         const start = arg.date;
         const end = new Date(start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
-        
+
         calendarApi.select({
             start: start,
             end: end,
@@ -210,7 +210,7 @@ export default function Calendar() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (validationError) return;
 
         try {
@@ -281,16 +281,16 @@ export default function Calendar() {
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm h-full overflow-hidden relative border border-gray-200">
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>
-                <button 
+                <button
                     onClick={() => {
                         const now = new Date();
                         // Round to next hour for cleaner start time
                         now.setMinutes(0, 0, 0);
                         now.setHours(now.getHours() + 1);
-                        handleDateSelect({ 
-                            startStr: now.toISOString(), 
-                            endStr: new Date(now.getTime() + (DEFAULT_DURATION_MINUTES * 60000)).toISOString(), 
-                            allDay: false 
+                        handleDateSelect({
+                            startStr: now.toISOString(),
+                            endStr: new Date(now.getTime() + (DEFAULT_DURATION_MINUTES * 60000)).toISOString(),
+                            allDay: false
                         });
                     }}
                     className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-md font-bold transition shadow-sm"
@@ -298,7 +298,7 @@ export default function Calendar() {
                     + {t('new_appointment')}
                 </button>
             </div>
-            
+
             <div className="calendar-container border rounded-lg overflow-hidden border-gray-100 shadow-sm">
                 <FullCalendar
                     ref={ref => setCalendarRef(ref)}
@@ -323,9 +323,8 @@ export default function Calendar() {
                     slotLabelInterval="01:00"
                     selectMinDistance={5}
                     dateClick={handleDateClick}
-                    events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick} 
+                    events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick}
                     eventDrop={handleEventDrop} eventResize={handleEventResize}
-                    height="700px"
                 />
             </div>
 
@@ -342,9 +341,9 @@ export default function Calendar() {
                                             {currentEvent ? t('edit_appointment') : t('new_appointment')}
                                         </h3>
                                         {currentEvent && (
-                                            <button 
-                                                type="button" 
-                                                onClick={() => setIsDeleteConfirmOpen(true)} 
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsDeleteConfirmOpen(true)}
                                                 className="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50"
                                                 title={t('delete')}
                                             >
@@ -422,8 +421,8 @@ export default function Calendar() {
                                 </div>
                                 <div className="bg-gray-50 px-6 py-4 sm:px-8 flex justify-between items-center gap-4">
                                     <button type="button" onClick={() => { setModalOpen(false); calendarRef?.getApi()?.unselect(); }} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-bold text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition">{t('cancel')}</button>
-                                    <button 
-                                        type="submit" 
+                                    <button
+                                        type="submit"
                                         disabled={!!validationError}
                                         className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 text-base font-bold text-white sm:w-auto sm:text-sm transition ${validationError ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'}`}
                                     >
@@ -489,11 +488,11 @@ export default function Calendar() {
                 .fc-v-event { box-shadow: 0 1px 3px rgba(0,0,0,0.1); border-left: 3px solid rgba(0,0,0,0.1) !important; }
                 .fc .fc-timegrid-slot { height: 2rem !important; }
                 .fc .fc-timegrid-slot-label { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; }
-                .fc-timegrid-event-harness-shadow .fc-timegrid-event, 
+                .fc-timegrid-event-harness-shadow .fc-timegrid-event,
                 .fc-timegrid-bg-harness .fc-highlight,
                 .fc-daygrid-bg-harness .fc-highlight,
-                .fc-event-mirror { 
-                    background-color: rgba(var(--color-primary), 0.1) !important; 
+                .fc-event-mirror {
+                    background-color: rgba(var(--color-primary), 0.1) !important;
                     border: 2px dashed rgb(var(--color-primary)) !important;
                     opacity: 1;
                 }

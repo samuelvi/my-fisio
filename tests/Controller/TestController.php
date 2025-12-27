@@ -95,6 +95,9 @@ class TestController extends AbstractController
         // This is CRITICAL for CI environments where schema is recreated
         $connection->executeStatement('CREATE EXTENSION IF NOT EXISTS pg_trgm');
         $connection->executeStatement('CREATE EXTENSION IF NOT EXISTS fuzzystrmatch');
+        
+        // Create case-insensitive collation for ICU
+        $connection->executeStatement("CREATE COLLATION IF NOT EXISTS case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false)");
 
         $metadatas = $this->entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($this->entityManager);

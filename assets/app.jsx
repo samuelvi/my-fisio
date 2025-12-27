@@ -74,18 +74,29 @@ axios.interceptors.response.use(
 
 const ProtectedRoute = ({ children }) => {
     const isAuthenticated = !!localStorage.getItem('token');
-    return isAuthenticated ? children : <Navigate to="/login" />;
+    return isAuthenticated ? children : <Navigate to="/login?expired=1" />;
+};
+
+const PublicOnlyRoute = ({ children }) => {
+    const isAuthenticated = !!localStorage.getItem('token');
+    return isAuthenticated ? <Navigate to="/dashboard" /> : children;
 };
 
 function App() {
-    const isAuthenticated = !!localStorage.getItem('token');
-
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
+                <Route path="/login" element={
+                    <PublicOnlyRoute>
+                        <Login />
+                    </PublicOnlyRoute>
+                } />
                 
-                <Route path="/" element={isAuthenticated ? <Navigate to="/dashboard" /> : <Login />} />
+                <Route path="/" element={
+                    <PublicOnlyRoute>
+                        <Login />
+                    </PublicOnlyRoute>
+                } />
 
                 <Route path="/dashboard" element={
                     <ProtectedRoute>

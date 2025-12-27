@@ -1,13 +1,8 @@
 doctrine:
     dbal:
         url: '%env(resolve:DATABASE_URL)%'
-        driver: 'pdo_pgsql'
-        server_version: '16'
-        charset: utf8
-
-        # Logging (disable in production)
-        logging: '%kernel.debug%'
-        profiling: '%kernel.debug%'
+        profiling_collect_backtrace: '%kernel.debug%'
+        use_savepoints: true
 
     orm:
         auto_generate_proxy_classes: true
