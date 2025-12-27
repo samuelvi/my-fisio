@@ -9,23 +9,24 @@ use ApiPlatform\State\ProviderInterface;
 use App\Domain\Entity\Patient;
 use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Api\Resource\PatientResource;
-use App\Infrastructure\Util\TextNormalizer;
-
-use function count;
+use App\Infrastructure\Search\PatientSearchStrategyFactory;
+use App\Infrastructure\Search\PatientSearchStrategyInterface;
 
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
-use function sprintf;
-use function strlen;
-
 class PatientProvider implements ProviderInterface
 {
+    private PatientSearchStrategyInterface $searchStrategy;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private int $itemsPerPage,
     ) {
+        // Auto-detect database platform and use appropriate search strategy
+        $connection = $this->entityManager->getConnection();
+        $this->searchStrategy = PatientSearchStrategyFactory::create($connection);
     }
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
@@ -67,71 +68,14 @@ class PatientProvider implements ProviderInterface
 
         $hasSearch = false;
         $search = '';
-        $searchTermFull = '';
         if (isset($filters['search'])) {
             $search = $this->normalizeSearch((string) $filters['search']);
             if ('' !== $search) {
-                // Normalize search term to match database normalized columns
-                $searchNormalized = TextNormalizer::normalize($search);
-                $searchTermFull = '%'.$searchNormalized.'%';
                 $useFuzzy = isset($filters['fuzzy']) && ('true' === $filters['fuzzy'] || true === $filters['fuzzy'] || '1' === $filters['fuzzy']);
 
-                $searchOr = $qb->expr()->orX();
-                // Use normalized columns for fast searching (no functions on left side)
-                $searchOr->add('p.fullNameNormalized = :searchExact');
-                $searchOr->add('LOWER(p.email) = :searchExactLower');
-                $searchOr->add('LOWER(p.phone) = :searchExactLower');
-                $searchOr->add('p.fullNameNormalized LIKE :searchFull');
-                $searchOr->add('LOWER(p.phone) LIKE :searchFullLower');
-                $searchOr->add('LOWER(p.email) LIKE :searchFullLower');
-                $qb->setParameter('searchFull', $searchTermFull);
-                $qb->setParameter('searchFullLower', '%'.strtolower($search).'%');
-                $qb->setParameter('searchExact', $searchNormalized);
-                $qb->setParameter('searchExactLower', strtolower($search));
-
-                $tokens = $this->extractSearchTokens($search);
-                if (count($tokens) > 1) {
-                    $tokenAnd = $qb->expr()->andX();
-                    foreach ($tokens as $index => $token) {
-                        $param = 'searchToken'.$index;
-                        $tokenNormalized = TextNormalizer::normalize($token);
-                        $tokenAnd->add(sprintf('p.fullNameNormalized LIKE :%s', $param));
-                        $qb->setParameter($param, '%'.$tokenNormalized.'%');
-                    }
-                    $searchOr->add($tokenAnd);
-                }
-
-                if ($useFuzzy && strlen($search) >= 3) {
-                    $conn = $this->entityManager->getConnection();
-                    $maxDistance = $this->getMaxLevenshteinDistance($search);
-                    $maxLength = $this->getMaxLevenshteinLength($search);
-                    $similarIds = $conn->fetchFirstColumn(
-                        'SELECT id FROM patients 
-                         WHERE full_name % :s
-                            OR first_name % :s
-                            OR last_name % :s
-                            OR email % :s
-                            OR (
-                                char_length(:s) <= :maxLength
-                                AND (
-                                    levenshtein_less_equal(first_name::text, :s::text, :maxDistance) <= :maxDistance
-                                    OR levenshtein_less_equal(last_name::text, :s::text, :maxDistance) <= :maxDistance
-                                )
-                            )',
-                        [
-                            's' => $search,
-                            'maxLength' => $maxLength,
-                            'maxDistance' => $maxDistance,
-                        ],
-                    );
-
-                    if (!empty($similarIds)) {
-                        $searchOr->add('p.id IN (:similarIds)');
-                        $qb->setParameter('similarIds', array_values(array_unique($similarIds)));
-                    }
-                }
-                $qb->andWhere($searchOr);
-                $qb->addOrderBy('CASE WHEN p.fullNameNormalized = :searchExact OR LOWER(p.email) = :searchExactLower OR LOWER(p.phone) = :searchExactLower THEN 0 WHEN (p.fullNameNormalized LIKE :searchFull OR LOWER(p.email) LIKE :searchFullLower OR LOWER(p.phone) LIKE :searchFullLower) THEN 1 ELSE 2 END', 'ASC');
+                // Use database-specific search strategy
+                $this->searchStrategy->applySearchConditions($qb, $search, $useFuzzy);
+                $this->searchStrategy->applySearchOrdering($qb, $search);
                 $hasSearch = true;
             }
         }
@@ -167,13 +111,11 @@ class PatientProvider implements ProviderInterface
             ->setParameter('ids', $ids);
 
         if ($hasSearch) {
-            $searchNormalized = TextNormalizer::normalize($search);
-            $searchTermFullNormalized = '%'.$searchNormalized.'%';
-            $finalQb->addOrderBy('CASE WHEN p.fullNameNormalized = :searchExact OR LOWER(p.email) = :searchExactLower OR LOWER(p.phone) = :searchExactLower THEN 0 WHEN (p.fullNameNormalized LIKE :searchFull OR LOWER(p.email) LIKE :searchFullLower OR LOWER(p.phone) LIKE :searchFullLower) THEN 1 ELSE 2 END', 'ASC')
-                ->setParameter('searchExact', $searchNormalized)
-                ->setParameter('searchExactLower', strtolower($search))
-                ->setParameter('searchFull', $searchTermFullNormalized)
-                ->setParameter('searchFullLower', '%'.strtolower($search).'%');
+            // Re-apply search ordering for the final query
+            $this->searchStrategy->applySearchOrdering($finalQb, $search);
+            // Re-set search parameters for the final query
+            $finalQb->setParameter('searchExact', $search)
+                ->setParameter('searchFull', '%'.$search.'%');
         }
 
         if (isset($filters['order']) && 'alpha' === $filters['order']) {
@@ -257,42 +199,5 @@ class PatientProvider implements ProviderInterface
         $search = trim($search);
 
         return preg_replace('/\s+/', ' ', $search) ?? '';
-    }
-
-    /**
-     * @return string[]
-     */
-    private function extractSearchTokens(string $search): array
-    {
-        $tokens = preg_split('/\s+/', $search) ?: [];
-        $tokens = array_filter(array_map('trim', $tokens), static fn (string $token) => '' !== $token);
-
-        return array_values(array_unique($tokens));
-    }
-
-    private function getMaxLevenshteinDistance(string $search): int
-    {
-        $length = strlen($search);
-        if ($length <= 4) {
-            return 1;
-        }
-        if ($length <= 6) {
-            return 2;
-        }
-
-        return 3;
-    }
-
-    private function getMaxLevenshteinLength(string $search): int
-    {
-        $length = strlen($search);
-        if ($length <= 6) {
-            return 6;
-        }
-        if ($length <= 10) {
-            return 8;
-        }
-
-        return 0;
     }
 }

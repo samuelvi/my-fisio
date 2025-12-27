@@ -175,8 +175,17 @@ final class MigrateLegacyDataCommand extends Command
         $connection = $this->entityManager->getConnection();
 
         $io->text('Cleaning existing data...');
-        $connection->executeStatement('TRUNCATE TABLE appointments, records, customers, patients, invoices, invoice_lines, counters RESTART IDENTITY CASCADE');
-        $connection->executeStatement('TRUNCATE TABLE users RESTART IDENTITY CASCADE');
+        // MariaDB: Disable foreign key checks to allow truncating tables with foreign keys
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+        $connection->executeStatement('TRUNCATE TABLE appointments');
+        $connection->executeStatement('TRUNCATE TABLE records');
+        $connection->executeStatement('TRUNCATE TABLE customers');
+        $connection->executeStatement('TRUNCATE TABLE patients');
+        $connection->executeStatement('TRUNCATE TABLE invoices');
+        $connection->executeStatement('TRUNCATE TABLE invoice_lines');
+        $connection->executeStatement('TRUNCATE TABLE counters');
+        $connection->executeStatement('TRUNCATE TABLE users');
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
 
         $io->text('Reading dump file and grouping data...');
         $dataByTable = [
@@ -378,11 +387,15 @@ final class MigrateLegacyDataCommand extends Command
 
     private function resetSequence(Connection $connection, string $table): void
     {
-        $sql = sprintf("SELECT setval(pg_get_serial_sequence('%s', 'id'), (SELECT MAX(id) FROM %s))", $table, $table);
-
+        // MariaDB: Reset AUTO_INCREMENT to MAX(id) + 1
         try {
-            $connection->executeQuery($sql);
+            $maxId = $connection->fetchOne("SELECT MAX(id) FROM $table");
+            if ($maxId !== null && $maxId !== false) {
+                $nextId = (int) $maxId + 1;
+                $connection->executeStatement("ALTER TABLE $table AUTO_INCREMENT = $nextId");
+            }
         } catch (Exception $e) {
+            // Silent: table might not exist or have no rows
         }
     }
 
