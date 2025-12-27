@@ -158,6 +158,7 @@ db-create: ## Create database
 	@echo "$(GREEN)Creating database...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php php bin/console doctrine:database:create --if-not-exists
 	@$(MAKE) db-collation
+	@$(MAKE) db-extensions
 
 db-drop: ## Drop database
 	@echo "$(YELLOW)Dropping database...$(NC)"
@@ -166,6 +167,13 @@ db-drop: ## Drop database
 db-collation: ## Ensure case-insensitive collation exists (Dev)
 	@echo "$(GREEN)Ensuring case-insensitive collation...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE COLLATION IF NOT EXISTS case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false);"
+
+db-extensions: ## Install PostgreSQL extensions for fuzzy search (Dev)
+	@echo "$(GREEN)Installing PostgreSQL extensions for fuzzy search...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;"
+	$(DOCKER_COMPOSE_DEV) exec postgres psql -U physiotherapy_user -d physiotherapy_db -c "CREATE EXTENSION IF NOT EXISTS unaccent;"
+	@echo "$(GREEN)Extensions installed successfully!$(NC)"
 
 db-migrate: ## Run database migrations
 	@echo "$(GREEN)Running migrations...$(NC)"

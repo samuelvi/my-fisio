@@ -14,8 +14,10 @@ export default function PatientList() {
     const [useFuzzy, setUseFuzzy] = useState(sessionStorage.getItem('patientList_useFuzzy') === 'true');
     const [page, setPage] = useState(parseInt(sessionStorage.getItem('patientList_page') || '1', 10));
     const [hasNextPage, setHasNextPage] = useState(false);
+    const [searchTrigger, setSearchTrigger] = useState(0);
     const ITEMS_PER_PAGE = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10', 10);
 
+    // Save to sessionStorage whenever values change
     useEffect(() => {
         sessionStorage.setItem('patientList_searchInput', searchInput);
         sessionStorage.setItem('patientList_searchTerm', searchTerm);
@@ -23,13 +25,19 @@ export default function PatientList() {
         sessionStorage.setItem('patientList_sortOrder', sortOrder);
         sessionStorage.setItem('patientList_useFuzzy', useFuzzy.toString());
         sessionStorage.setItem('patientList_page', page.toString());
+    }, [searchInput, searchTerm, statusFilter, sortOrder, useFuzzy, page]);
+
+    // Only fetch when searchTrigger or page changes
+    useEffect(() => {
         fetchPatients();
-    }, [statusFilter, page, searchTerm, sortOrder, useFuzzy]);
+    }, [page, searchTrigger]);
 
     const handleSearch = (e) => {
         e.preventDefault();
-        setPage(1); // Reset to page 1 on new search
+        setPage(1);
         setSearchTerm(searchInput);
+        // Increment trigger to force search even if term hasn't changed
+        setSearchTrigger(prev => prev + 1);
     };
 
     const handleClear = () => {

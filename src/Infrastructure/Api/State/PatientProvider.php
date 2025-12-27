@@ -74,12 +74,13 @@ class PatientProvider implements ProviderInterface
                 $useFuzzy = isset($filters['fuzzy']) && ('true' === $filters['fuzzy'] || true === $filters['fuzzy'] || '1' === $filters['fuzzy']);
 
                 $searchOr = $qb->expr()->orX();
-                $searchOr->add('p.fullName = :searchExact');
-                $searchOr->add('p.email = :searchExact');
-                $searchOr->add('p.phone = :searchExact');
-                $searchOr->add('p.fullName LIKE :searchFull');
-                $searchOr->add('p.phone LIKE :searchFull');
-                $searchOr->add('p.email LIKE :searchFull');
+                // Use unaccent() for accent-insensitive search (e.g., "garcia" finds "García")
+                $searchOr->add('LOWER(unaccent(p.fullName)) = LOWER(unaccent(:searchExact))');
+                $searchOr->add('LOWER(unaccent(p.email)) = LOWER(unaccent(:searchExact))');
+                $searchOr->add('LOWER(p.phone) = LOWER(:searchExact)');
+                $searchOr->add('LOWER(unaccent(p.fullName)) LIKE LOWER(unaccent(:searchFull))');
+                $searchOr->add('LOWER(p.phone) LIKE LOWER(:searchFull)');
+                $searchOr->add('LOWER(unaccent(p.email)) LIKE LOWER(unaccent(:searchFull))');
                 $qb->setParameter('searchFull', $searchTermFull);
                 $qb->setParameter('searchExact', $search);
 
@@ -88,7 +89,7 @@ class PatientProvider implements ProviderInterface
                     $tokenAnd = $qb->expr()->andX();
                     foreach ($tokens as $index => $token) {
                         $param = 'searchToken'.$index;
-                        $tokenAnd->add(sprintf('p.fullName LIKE :%s', $param));
+                        $tokenAnd->add(sprintf('LOWER(unaccent(p.fullName)) LIKE LOWER(unaccent(:%s))', $param));
                         $qb->setParameter($param, '%'.$token.'%');
                     }
                     $searchOr->add($tokenAnd);
@@ -124,7 +125,7 @@ class PatientProvider implements ProviderInterface
                     }
                 }
                 $qb->andWhere($searchOr);
-                $qb->addOrderBy('CASE WHEN p.fullName = :searchExact OR p.email = :searchExact OR p.phone = :searchExact THEN 0 WHEN (p.fullName LIKE :searchFull OR p.email LIKE :searchFull OR p.phone LIKE :searchFull) THEN 1 ELSE 2 END', 'ASC');
+                $qb->addOrderBy('CASE WHEN LOWER(p.fullName) = LOWER(:searchExact) OR LOWER(p.email) = LOWER(:searchExact) OR LOWER(p.phone) = LOWER(:searchExact) THEN 0 WHEN (LOWER(p.fullName) LIKE LOWER(:searchFull) OR LOWER(p.email) LIKE LOWER(:searchFull) OR LOWER(p.phone) LIKE LOWER(:searchFull)) THEN 1 ELSE 2 END', 'ASC');
                 $hasSearch = true;
             }
         }
@@ -160,7 +161,7 @@ class PatientProvider implements ProviderInterface
             ->setParameter('ids', $ids);
 
         if ($hasSearch) {
-            $finalQb->addOrderBy('CASE WHEN p.fullName = :searchExact OR p.email = :searchExact OR p.phone = :searchExact THEN 0 WHEN (p.fullName LIKE :searchFull OR p.email LIKE :searchFull OR p.phone LIKE :searchFull) THEN 1 ELSE 2 END', 'ASC')
+            $finalQb->addOrderBy('CASE WHEN LOWER(p.fullName) = LOWER(:searchExact) OR LOWER(p.email) = LOWER(:searchExact) OR LOWER(p.phone) = LOWER(:searchExact) THEN 0 WHEN (LOWER(p.fullName) LIKE LOWER(:searchFull) OR LOWER(p.email) LIKE LOWER(:searchFull) OR LOWER(p.phone) LIKE LOWER(:searchFull)) THEN 1 ELSE 2 END', 'ASC')
                 ->setParameter('searchExact', $search)
                 ->setParameter('searchFull', $searchTermFull);
         }

@@ -27,15 +27,15 @@ class Patient
     #[Groups(['patient:read', 'record:read'])]
     public ?int $id = null;
 
-    #[ORM\Column(type: Types::STRING, length: 150, nullable: false, options: ['collation' => 'case_insensitive'])]
+    #[ORM\Column(type: Types::STRING, length: 150, nullable: false)]
     #[Groups(['patient:read'])]
     public string $fullName;
 
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: false, options: ['collation' => 'case_insensitive'])]
+    #[ORM\Column(type: Types::STRING, length: 50, nullable: false)]
     #[Groups(['patient:read', 'patient:write', 'record:read'])]
     public string $firstName;
 
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: false, options: ['collation' => 'case_insensitive'])]
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: false)]
     #[Groups(['patient:read', 'patient:write', 'record:read'])]
     public string $lastName;
 
@@ -59,7 +59,7 @@ class Patient
     #[Groups(['patient:read', 'patient:write'])]
     public ?string $address = null;
 
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true, options: ['collation' => 'case_insensitive'])]
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
     #[Groups(['patient:read', 'patient:write'])]
     public ?string $email = null;
 

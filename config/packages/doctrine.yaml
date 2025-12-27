@@ -22,7 +22,8 @@ doctrine:
 
         # DQL functions can be added here if needed
         dql:
-            string_functions: {}
+            string_functions:
+                unaccent: App\Infrastructure\Persistence\Doctrine\Function\UnaccentFunction
             numeric_functions: {}
             datetime_functions: {}
 

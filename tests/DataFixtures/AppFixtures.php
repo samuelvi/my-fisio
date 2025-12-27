@@ -35,8 +35,14 @@ class AppFixtures extends Fixture
             'physiotherapyTreatment' => 'Initial physiotherapy treatment notes.',
         ]);
 
-        // 13 middle patients
-        PatientFactory::createMany(13);
+        // Patients with accented names for search testing
+        PatientFactory::createOne(['firstName' => 'José', 'lastName' => 'García']);
+        PatientFactory::createOne(['firstName' => 'María', 'lastName' => 'López']);
+        PatientFactory::createOne(['firstName' => 'Ángel', 'lastName' => 'Martínez']);
+        PatientFactory::createOne(['firstName' => 'Inés', 'lastName' => 'Pérez']);
+
+        // 9 middle patients (reduced from 13 to keep total at 15)
+        PatientFactory::createMany(9);
 
         // Last patient (will be at the beginning of the list if sorted by ID DESC)
         $lastPatient = PatientFactory::createOne(['firstName' => 'ZLast', 'lastName' => 'Patient']);

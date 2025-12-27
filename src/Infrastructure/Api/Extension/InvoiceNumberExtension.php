@@ -28,9 +28,23 @@ final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
             // Force parameter name to avoid conflicts
             $parameterName = 'invoice_number_ext';
 
+            // Use LOWER() for case-insensitive search
+            // Changed to '%value%' to match anywhere in the number, not just the beginning
             $queryBuilder
-                ->andWhere(sprintf('%s.number LIKE :%s', $rootAlias, $parameterName))
-                ->setParameter($parameterName, $value.'%');
+                ->andWhere(sprintf('LOWER(%s.number) LIKE LOWER(:%s)', $rootAlias, $parameterName))
+                ->setParameter($parameterName, '%'.$value.'%');
+        }
+
+        // Add case-insensitive and accent-insensitive search for customer name (name field)
+        if (isset($context['filters']['name']) && '' !== $context['filters']['name']) {
+            $value = $context['filters']['name'];
+            $rootAlias = $queryBuilder->getRootAliases()[0];
+            $parameterName = 'invoice_name_ext';
+
+            // Use unaccent() to ignore accents in search (e.g., "garcia" matches "García")
+            $queryBuilder
+                ->andWhere(sprintf('LOWER(unaccent(%s.name)) LIKE LOWER(unaccent(:%s))', $rootAlias, $parameterName))
+                ->setParameter($parameterName, '%'.$value.'%');
         }
     }
 }
