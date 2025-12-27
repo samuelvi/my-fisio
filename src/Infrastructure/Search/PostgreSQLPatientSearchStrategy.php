@@ -58,12 +58,12 @@ final class PostgreSQLPatientSearchStrategy implements PatientSearchStrategyInte
         if ($useFuzzy && strlen($search) >= 4) {
             foreach ($tokens as $index => $token) {
                 if (strlen($token) >= 4) {
-                    $chars = str_split($token);
-                    $fuzzyPattern = '%' . implode('%', $chars) . '%';
-
-                    $param = 'fuzzyToken' . $index;
-                    $searchOr->add(sprintf('LOWER(p.fullName) LIKE LOWER(:%s)', $param));
-                    $qb->setParameter($param, $fuzzyPattern);
+                    $patterns = $this->buildFuzzyPatterns($token);
+                    foreach ($patterns as $patternIndex => $pattern) {
+                        $param = sprintf('fuzzyToken%s_%s', $index, $patternIndex);
+                        $searchOr->add(sprintf('LOWER(p.fullName) LIKE LOWER(:%s)', $param));
+                        $qb->setParameter($param, $pattern);
+                    }
                 }
             }
         }
@@ -97,5 +97,26 @@ final class PostgreSQLPatientSearchStrategy implements PatientSearchStrategyInte
         $tokens = array_filter(array_map('trim', $tokens), static fn(string $token) => '' !== $token);
 
         return array_values(array_unique($tokens));
+    }
+
+    /**
+     * @return string[]
+     */
+    private function buildFuzzyPatterns(string $token): array
+    {
+        $chars = str_split($token);
+        $patterns = [];
+        $patterns[] = '%' . implode('%', $chars) . '%';
+
+        if (count($chars) >= 5) {
+            foreach ($chars as $index => $_char) {
+                $reduced = $chars;
+                unset($reduced[$index]);
+                $reduced = array_values($reduced);
+                $patterns[] = '%' . implode('%', $reduced) . '%';
+            }
+        }
+
+        return array_values(array_unique($patterns));
     }
 }

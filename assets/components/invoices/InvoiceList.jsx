@@ -13,12 +13,14 @@ export default function InvoiceList() {
     const [nameInput, setNameInput] = useState('');
     const [numberInput, setNumberInput] = useState('');
     const [yearInput, setYearInput] = useState(new Date().getFullYear().toString());
+    const [taxIdInput, setTaxIdInput] = useState('');
 
     // Applied Filter States
     const [filters, setFilters] = useState({
         name: '',
         number: '',
-        year: new Date().getFullYear().toString()
+        year: new Date().getFullYear().toString(),
+        taxId: ''
     });
 
     const [page, setPage] = useState(parseInt(sessionStorage.getItem('invoiceList_page') || '1', 10));
@@ -47,7 +49,8 @@ export default function InvoiceList() {
                 'order[date]': 'desc',
             };
 
-            if (filters.name) params['name'] = filters.name;
+            if (filters.name) params['fullName'] = filters.name;
+            if (filters.taxId) params['taxId'] = filters.taxId;
             
             let numberQuery = '';
             if (filters.year && filters.year !== 'all') {
@@ -93,7 +96,8 @@ export default function InvoiceList() {
         setFilters({
             name: nameInput,
             number: numberInput,
-            year: yearInput
+            year: yearInput,
+            taxId: taxIdInput
         });
     };
 
@@ -102,11 +106,13 @@ export default function InvoiceList() {
         setNameInput('');
         setNumberInput('');
         setYearInput(resetYear);
+        setTaxIdInput('');
         setPage(1);
         setFilters({
             name: '',
             number: '',
-            year: resetYear
+            year: resetYear,
+            taxId: ''
         });
     };
 
@@ -206,7 +212,7 @@ export default function InvoiceList() {
 
             {/* Filters */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
-                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 items-end">
+                <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 items-end">
                     <div>
                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('customer_name')}</label>
                         <input
@@ -215,6 +221,16 @@ export default function InvoiceList() {
                             onChange={(e) => setNameInput(e.target.value)}
                             className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
                             placeholder={t('search_by_name')}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">{t('tax_id')}</label>
+                        <input
+                            type="text"
+                            value={taxIdInput}
+                            onChange={(e) => setTaxIdInput(e.target.value)}
+                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
+                            placeholder={t('search_by_tax_id')}
                         />
                     </div>
                     <div>
@@ -277,7 +293,7 @@ export default function InvoiceList() {
                                             {new Date(invoice.date).toLocaleDateString()}
                                         </td>
                                         <td className="px-4 lg:px-8 py-5 whitespace-nowrap">
-                                            <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">{invoice.name}</div>
+                                            <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">{invoice.fullName}</div>
                                             <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">{invoice.taxId}</div>
                                         </td>
                                         <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-sm text-right font-black text-gray-900">
@@ -318,7 +334,7 @@ export default function InvoiceList() {
                                 <div className="text-sm font-bold text-primary">{invoice.number}</div>
                                 <div className="text-xs text-gray-500">{new Date(invoice.date).toLocaleDateString()}</div>
                             </div>
-                            <div className="text-sm font-semibold text-gray-900 truncate">{invoice.name}</div>
+                            <div className="text-sm font-semibold text-gray-900 truncate">{invoice.fullName}</div>
                             <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{invoice.taxId}</div>
                             <div className="flex items-center justify-between">
                                 <div className="text-sm font-black text-gray-900">

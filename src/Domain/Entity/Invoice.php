@@ -38,9 +38,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
     order: ['date' => 'DESC', 'number' => 'DESC'],
 )]
 #[ApiFilter(SearchFilter::class, properties: [
-    'taxId' => 'exact',
-    'customer.firstName' => 'partial',
-    'customer.lastName' => 'partial',
+    'fullName' => 'partial',
+    'taxId' => 'partial',
 ])]
 #[ApiFilter(DateFilter::class, properties: ['date'])]
 #[ApiFilter(OrderFilter::class, properties: ['date', 'createdAt', 'amount'], arguments: ['orderParameterName' => 'order'])]
