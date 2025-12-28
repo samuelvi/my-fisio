@@ -28,4 +28,17 @@ final class DoctrinePatientRepository extends ServiceEntityRepository implements
 
         return (int) ($result[0]['total'] ?? 0);
     }
+
+    #[\Override]
+    public function findForInvoicePrefill(int $id): ?array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->select('p.fullName', 'p.taxId', 'p.email', 'p.phone', 'p.address')
+            ->where('p.id = :id')
+            ->setParameter('id', $id);
+
+        $result = $qb->getQuery()->getArrayResult();
+
+        return $result[0] ?? null;
+    }
 }

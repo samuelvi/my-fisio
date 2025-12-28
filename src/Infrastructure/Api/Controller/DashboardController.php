@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Infrastructure\Api\Controller;
 
 use App\Application\Query\Dashboard\GetDashboardStats\GetDashboardStatsQuery;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

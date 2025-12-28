@@ -74,10 +74,18 @@ src/
 │   └── Repository/    # Repository interfaces
 ├── Infrastructure/    # Concrete implementations, persistence, Event Store
 │   ├── Persistence/   # Doctrine, migrations
+│   │   └── Repository/  # Concrete repository implementations
 │   ├── EventStore/    # Event Store implementation
 │   └── Api/           # Controllers, serializers
+│       └── Controller/  # HTTP Controllers (NOT in src/Controller/)
 └── Shared/            # Shared code between contexts
 ```
+
+**IMPORTANT - Controller Location**:
+- Controllers MUST be placed in `src/Infrastructure/Api/Controller/` (DDD compliance).
+- DO NOT create controllers directly in `src/Controller/` (Symfony default).
+- Controllers are infrastructure concerns that expose domain logic via HTTP.
+- Use route attributes with full namespace to avoid conflicts.
 
 ### Bounded Contexts (to be defined as needed)
 - **Patient Management**: Patient management
@@ -95,12 +103,36 @@ src/
 - CQRS: read/write separation using Symfony Messenger buses (`command.bus`, `query.bus`).
 - Repositories only in domain layer (interfaces)
 - **Doctrine & Performance Standards**:
-    - **No UnitOfWork Cache**: To ensure absolute data freshness, all read queries MUST bypass Doctrine's Identity Map. 
+    - **No UnitOfWork Cache**: To ensure absolute data freshness, all read queries MUST bypass Doctrine's Identity Map.
         - Use `getArrayResult()` exclusively for data fetching (it ignores the UOW and Identity Map).
         - If a sequential process requires high consistency after multiple writes, call `$entityManager->clear()` to purge the UnitOfWork.
     - **Native Queries**: Use `QueryBuilder` for all interactions. Magic methods like `find()` or `findBy()` are prohibited.
     - Efficient Fetching: Always use `getArrayResult()` for data fetching.
     - Mapping: Manually map array results to specialized DTOs (Read model) or Entities.
+- **Repository Pattern & Dependency Injection**:
+    - **NO EntityManager in Controllers or API Resources**: Controllers MUST NOT inject `EntityManagerInterface` directly.
+    - **Repository Interfaces**: All database queries MUST be encapsulated in repository methods defined in `Domain/Repository/` interfaces.
+    - **Repository Implementations**: Concrete implementations belong in `Infrastructure/Persistence/Repository/`.
+    - **Custom Query Methods**: Every query needs its own named method (e.g., `findPatientForInvoicePrefill(int $id): ?Patient`). NO generic `find()` or `findBy()` magic methods.
+    - **QueryBuilder Only**: All repository methods MUST use QueryBuilder, never magic methods.
+    - **Example Structure**:
+        ```php
+        // Domain/Repository/PatientRepositoryInterface.php
+        interface PatientRepositoryInterface {
+            public function findPatientForInvoicePrefill(int $id): ?Patient;
+        }
+
+        // Infrastructure/Persistence/Repository/PatientRepository.php
+        class PatientRepository implements PatientRepositoryInterface {
+            public function findPatientForInvoicePrefill(int $id): ?Patient {
+                $qb = $this->createQueryBuilder('p')
+                    ->where('p.id = :id')
+                    ->setParameter('id', $id);
+                $result = $qb->getQuery()->getArrayResult();
+                return $result ? Patient::fromArray($result[0]) : null;
+            }
+        }
+        ```
 - **Encapsulation & Named Constructors**: 
     - All `__construct` methods MUST be `private` for Entities, DTOs, and Value Objects.
     - Use `named constructors` (static factory methods like `public static function create(...)`) for instantiation. 
@@ -482,6 +514,7 @@ When adapting pipelines from other projects:
 4. Identify main aggregates
 5. Design key domain events
 6. Establish API contracts (endpoints)
+7. 
 7. Configure Event Store
 
 ## Notes

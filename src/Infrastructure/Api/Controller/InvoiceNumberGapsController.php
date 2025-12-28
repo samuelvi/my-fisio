@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Infrastructure\Api\Controller;
 
 use App\Application\Query\Invoice\GetInvoiceNumberGaps\GetInvoiceNumberGapsQuery;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Infrastructure\Api\Controller;
 
-use App\Domain\Entity\Patient;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Domain\Repository\PatientRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class InvoicePrefillController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
+        private readonly PatientRepositoryInterface $patientRepository,
     ) {
     }
 
@@ -29,20 +28,17 @@ class InvoicePrefillController extends AbstractController
             throw new BadRequestHttpException('patientId parameter is required');
         }
 
-        $patient = $this->entityManager->getRepository(Patient::class)->find((int) $patientId);
+        $prefillData = $this->patientRepository->findForInvoicePrefill((int) $patientId);
 
-        if (!$patient) {
+        if (!$prefillData) {
             throw new NotFoundHttpException('Patient not found');
         }
 
-        // Map patient data to invoice customer fields
-        $prefillData = [
-            'fullName' => $patient->fullName,
-            'taxId' => $patient->taxId ?? '',
-            'email' => $patient->email ?? '',
-            'phone' => $patient->phone ?? '',
-            'address' => $patient->address ?? '',
-        ];
+        // Ensure all fields have default values
+        $prefillData['taxId'] ??= '';
+        $prefillData['email'] ??= '';
+        $prefillData['phone'] ??= '';
+        $prefillData['address'] ??= '';
 
         return new JsonResponse($prefillData);
     }
