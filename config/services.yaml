@@ -7,6 +7,8 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    # Set default timezone for the application (no timezone conversions)
+    app.timezone: 'UTC'
     items_per_page: '%env(int:ITEMS_PER_PAGE)%'
     company_name: '%env(COMPANY_NAME)%'
     company_tax_id: '%env(COMPANY_TAX_ID)%'
@@ -61,6 +63,11 @@ services:
         arguments:
             - '@snc_redis.default'
             - { prefix: 'session_', ttl: 1296000 }
+
+    # Custom DateTime normalizer to avoid timezone conversion issues
+    App\Infrastructure\Serializer\DateTimeNormalizer:
+        tags:
+            - { name: 'serializer.normalizer', priority: 100 }
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

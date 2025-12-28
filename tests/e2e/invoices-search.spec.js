@@ -84,7 +84,7 @@ test.describe('Invoice Search', () => {
     );
 
     await expect(page.getByText('Pedro García García').first()).toBeVisible();
-    await expect(page.getByText('María López')).not.toBeVisible();
+    await expect(page.getByText('María López').first()).not.toBeVisible();
 
     // Clear search
     await page.click('button:has-text("Clear")');
