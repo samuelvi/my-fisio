@@ -6,19 +6,38 @@ on:
   pull_request:
     branches: [ "main", "master", "develop" ]
 
+# Global environment variables
+env:
+  COMPOSE_FILE: docker/test/docker-compose.yaml
+  COMPOSE_EXEC: docker compose -f docker/test/docker-compose.yaml exec -T php_test
+
 jobs:
-  tests:
-    name: Run Tests (PHPUnit & E2E)
+  # ============================================================================
+  # Backend Tests (PHPUnit + Quality Checks)
+  # ============================================================================
+  backend-tests:
+    name: Backend Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
+      # --- Setup ---
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Cache Composer vendor
+      # --- Caching ---
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ hashFiles('docker/test/php/**') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
           path: vendor
@@ -26,71 +45,126 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-composer-
 
-      - name: Build PHP test image (cached)
-        uses: docker/build-push-action@v5
-        with:
-          context: docker/test/php
-          file: docker/test/php/Dockerfile
-          tags: test-php_test:latest
-          load: true
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build and Start Services (Test Environment)
+      # --- Build Infrastructure ---
+      - name: Build PHP image with cache
         run: |
-          docker compose -f docker/test/docker-compose.yaml up -d --no-build
+          docker buildx build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --load -t test-php_test:latest \
+            -f docker/test/php/Dockerfile \
+            docker/test/php
+
+          # Rotate cache to prevent bloat
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+
+      - name: Start services
+        run: docker compose -f ${{ env.COMPOSE_FILE }} up -d
         env:
-          CI: true
+          DOCKER_BUILDKIT: 1
 
-      - name: Wait for Services
+      - name: Wait for services to be healthy
         run: |
-          echo "Waiting for services to be healthy..."
-          timeout 90s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_mariadb)" == "healthy" ]; do echo "Waiting for MariaDB..."; sleep 3; done'
-          echo "MariaDB is healthy!"
+          echo "⏳ Waiting for MariaDB..."
+          timeout 90s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_mariadb)" == "healthy" ]; do sleep 3; done'
+          echo "✅ MariaDB ready"
 
-          timeout 30s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_redis)" == "healthy" ]; do echo "Waiting for Redis..."; sleep 2; done'
-          echo "Redis is healthy!"
+          echo "⏳ Waiting for Redis..."
+          timeout 30s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_redis)" == "healthy" ]; do sleep 2; done'
+          echo "✅ Redis ready"
 
-          echo "All services ready!"
-          docker compose -f docker/test/docker-compose.yaml ps
+          docker compose -f ${{ env.COMPOSE_FILE }} ps
 
-      - name: Install Composer Dependencies
+      # --- Dependencies ---
+      - name: Install Composer dependencies
         run: |
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test composer install --no-interaction --prefer-dist --optimize-autoloader
+          # Fix permissions
+          ${{ env.COMPOSE_EXEC }} chown -R www-data:www-data /var/www/html
 
-      - name: Generate JWT Keys (Test)
+          # Install with optimizations
+          ${{ env.COMPOSE_EXEC }} php -d memory_limit=512M \
+            /usr/local/bin/composer install \
+            --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+          # Run post-install scripts
+          ${{ env.COMPOSE_EXEC }} composer run-script post-install-cmd --no-interaction || true
+
+      # --- Setup ---
+      - name: Generate JWT keys
         run: |
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test mkdir -p config/jwt
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
+          ${{ env.COMPOSE_EXEC }} mkdir -p config/jwt
+          ${{ env.COMPOSE_EXEC }} php bin/console lexik:jwt:generate-keypair --skip-if-exists
 
-      - name: Setup Database (Reset & Fixtures)
+      - name: Setup database
         run: |
-          echo "Resetting Database..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
+          echo "🗄️  Resetting database..."
+          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:drop --force --full-database
+          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:create
+          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:fixtures:load --no-interaction
+          echo "✅ Database ready"
 
-      - name: Run Quality Checks
+      # --- Quality Checks ---
+      - name: PHP CS Fixer
         continue-on-error: true
         run: |
-          echo "Running PHP CS Fixer..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test vendor/bin/php-cs-fixer fix --dry-run --diff
-          
-          echo "Running PHPStan..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test vendor/bin/phpstan analyse src --level=8 || echo "PHPStan found issues"
+          echo "🔍 Running PHP CS Fixer..."
+          ${{ env.COMPOSE_EXEC }} vendor/bin/php-cs-fixer fix --dry-run --diff || echo "⚠️  Style issues found"
 
-      - name: Run PHPUnit Tests
+      - name: PHPStan (Level 8)
+        continue-on-error: true
         run: |
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/phpunit
+          echo "🔍 Running PHPStan..."
+          ${{ env.COMPOSE_EXEC }} vendor/bin/phpstan analyse src --level=8 || echo "⚠️  Type errors found"
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # --- Tests ---
+      - name: PHPUnit Tests
+        run: |
+          echo "🧪 Running PHPUnit tests..."
+          ${{ env.COMPOSE_EXEC }} php bin/phpunit
+
+      # --- Cleanup ---
+      - name: Stop containers
+        if: always()
+        run: docker compose -f ${{ env.COMPOSE_FILE }} down -v
+
+  # ============================================================================
+  # E2E Tests (Playwright)
+  # ============================================================================
+  e2e-tests:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: backend-tests
+
+    steps:
+      # --- Setup ---
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # --- Caching ---
+      - name: Cache Docker layers
+        uses: actions/cache@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ hashFiles('docker/test/php/**') }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
-      - name: Install Node Dependencies
-        run: npm ci
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+
+      - name: Cache npm dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('package-lock.json') }}
 
       - name: Cache Playwright browsers
         uses: actions/cache@v4
@@ -100,31 +174,89 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
 
-      - name: Build Assets (Vite)
-        run: npm run build
-
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-
-      - name: Reset Test Database (E2E)
+      # --- Build Infrastructure ---
+      - name: Build PHP image with cache
         run: |
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
+          docker buildx build \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --load -t test-php_test:latest \
+            -f docker/test/php/Dockerfile \
+            docker/test/php
 
-      - name: Run Playwright E2E Tests
-        run: npx playwright test
+      - name: Start services
+        run: docker compose -f ${{ env.COMPOSE_FILE }} up -d
+        env:
+          DOCKER_BUILDKIT: 1
+
+      - name: Wait for services to be healthy
+        run: |
+          timeout 90s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_mariadb)" == "healthy" ]; do sleep 3; done'
+          timeout 30s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_redis)" == "healthy" ]; do sleep 2; done'
+
+      # --- Dependencies ---
+      - name: Install Composer dependencies
+        run: |
+          ${{ env.COMPOSE_EXEC }} chown -R www-data:www-data /var/www/html
+          ${{ env.COMPOSE_EXEC }} php -d memory_limit=512M \
+            /usr/local/bin/composer install \
+            --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # --- Setup ---
+      - name: Generate JWT keys
+        run: |
+          ${{ env.COMPOSE_EXEC }} mkdir -p config/jwt
+          ${{ env.COMPOSE_EXEC }} php bin/console lexik:jwt:generate-keypair --skip-if-exists
+
+      - name: Setup database with fixtures
+        run: |
+          echo "🗄️  Setting up database..."
+          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:drop --force --full-database
+          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:create
+          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:fixtures:load --no-interaction
+
+      - name: Build frontend assets
+        run: |
+          echo "⚡ Building with Vite..."
+          npm run build
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # --- Tests ---
+      - name: Run Playwright E2E tests
+        run: |
+          echo "🎭 Running E2E tests..."
+          npx playwright test
         env:
           CI: true
 
-      - name: Upload Playwright Report
+      # --- Artifacts ---
+      - name: Upload Playwright report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
           path: var/log/playwright/report/
-          retention-days: 30
+          retention-days: 14
 
-      - name: Stop Containers
+      - name: Upload test screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-screenshots
+          path: var/log/playwright/test-results/**/*.png
+          retention-days: 7
+
+      # --- Cleanup ---
+      - name: Stop containers
         if: always()
-        run: docker compose -f docker/test/docker-compose.yaml down -v
+        run: docker compose -f ${{ env.COMPOSE_FILE }} down -v

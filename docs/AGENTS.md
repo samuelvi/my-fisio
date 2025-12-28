@@ -293,6 +293,182 @@ See `make help` for complete command list.
 - **Location**: `tests/Functional/`, `tests/Unit/`.
 - **Config**: `phpunit.dist.xml`.
 
+## CI/CD Pipeline Strategy
+
+### Infrastructure Awareness
+When creating or modifying CI/CD pipelines (GitHub Actions, Bitbucket Pipelines, GitLab CI, etc.), you MUST consider the project's infrastructure and optimize for performance:
+
+**Current Project Infrastructure:**
+- **Database**: MariaDB 11 (NOT PostgreSQL) with `utf8mb4_unicode_ci` collation
+- **PHP**: 8.4 with specific extensions (pdo_mysql, redis, intl, opcache)
+- **Cache**: Redis 7
+- **Frontend**: React 18 + Vite (requires build step)
+- **Containerization**: Docker Compose with separate test environment (`docker/test/`)
+- **Testing**: PHPUnit + Playwright E2E
+
+### Intelligent Caching Strategy
+
+**MANDATORY**: All pipelines MUST implement multi-layer caching to optimize build times and reduce resource consumption.
+
+#### 1. Docker Layer Cache
+```yaml
+# GitHub Actions Example
+- name: Cache Docker layers
+  uses: actions/cache@v4
+  with:
+    path: /tmp/.buildx-cache
+    key: ${{ runner.os }}-buildx-${{ github.sha }}
+    restore-keys: |
+      ${{ runner.os }}-buildx-
+
+- name: Build with cache
+  run: |
+    docker buildx build \
+      --cache-from type=local,src=/tmp/.buildx-cache \
+      --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+      --load -t test-php_test:latest \
+      -f docker/test/php/Dockerfile docker/test/php
+
+    # Prevent cache bloat
+    rm -rf /tmp/.buildx-cache
+    mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+```
+
+**Benefits**: Reduces build time from 3-5min to 30-60sec on subsequent runs.
+
+#### 2. Composer Dependencies Cache
+```yaml
+- name: Cache Composer vendor
+  uses: actions/cache@v4
+  with:
+    path: vendor
+    key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+    restore-keys: |
+      ${{ runner.os }}-composer-
+```
+
+**Benefits**: Skips downloading unchanged dependencies (~1-2min saved).
+
+#### 3. Node/npm Cache
+```yaml
+- name: Setup Node.js
+  uses: actions/setup-node@v4
+  with:
+    node-version: '20'
+    cache: 'npm'  # Automatic npm cache
+
+- name: Cache Playwright browsers
+  uses: actions/cache@v4
+  with:
+    path: ~/.cache/ms-playwright
+    key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+```
+
+**Benefits**: Avoids re-downloading browser binaries (~500MB, ~2min saved).
+
+#### 4. Build Artifacts Cache
+```yaml
+- name: Build Assets (Vite)
+  run: npm run build
+
+# Cache for deployment pipelines
+- name: Cache built assets
+  uses: actions/cache@v4
+  with:
+    path: public/build
+    key: ${{ runner.os }}-vite-${{ hashFiles('assets/**') }}
+```
+
+### Database Service Configuration
+
+**CRITICAL**: Pipelines MUST wait for database health before running tests.
+
+```yaml
+# MariaDB Health Check (Current Project)
+- name: Wait for Services
+  run: |
+    timeout 90s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_mariadb)" == "healthy" ]; do sleep 3; done'
+    timeout 30s bash -c 'until [ "$(docker inspect -f {{.State.Health.Status}} test_physiotherapy_redis)" == "healthy" ]; do sleep 2; done'
+```
+
+**Common Mistake**: Using PostgreSQL commands (`pg_isready`) when the project uses MariaDB.
+
+### Performance Optimizations
+
+#### Memory Management
+```yaml
+- name: Install Composer Dependencies
+  run: |
+    docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+      php -d memory_limit=512M /usr/local/bin/composer install \
+      --no-interaction --prefer-dist --optimize-autoloader --no-scripts
+```
+
+#### Parallel Execution
+```yaml
+# Run tests in parallel when possible
+- name: Run PHPUnit Tests
+  run: docker compose exec -T php_test php bin/phpunit --parallel
+
+- name: Run Playwright E2E Tests
+  run: npx playwright test --workers=2
+```
+
+#### Conditional Steps
+```yaml
+# Skip quality checks on draft PRs
+- name: Run Quality Checks
+  if: github.event.pull_request.draft == false
+  continue-on-error: true
+  run: |
+    docker compose exec -T php_test vendor/bin/phpstan analyse src
+```
+
+### Bitbucket Pipelines Example
+```yaml
+pipelines:
+  default:
+    - step:
+        name: Build & Test
+        caches:
+          - docker
+          - composer
+          - node
+        services:
+          - docker
+        script:
+          - docker buildx create --use
+          - docker buildx build --cache-from type=registry,ref=$IMAGE_NAME:cache
+            --cache-to type=registry,ref=$IMAGE_NAME:cache,mode=max
+            --load -t test-php_test:latest docker/test/php
+          - docker compose -f docker/test/docker-compose.yaml up -d
+          - docker compose exec -T php_test composer install --optimize-autoloader
+          - docker compose exec -T php_test php bin/phpunit
+
+definitions:
+  caches:
+    composer: vendor
+    node: node_modules
+```
+
+### Best Practices
+
+1. **Always use BuildKit**: Set `DOCKER_BUILDKIT=1` for faster builds
+2. **Cache invalidation**: Use content hashes (`composer.lock`, `package-lock.json`) not timestamps
+3. **Fail fast**: Run linting/static analysis before expensive test suites
+4. **Artifact retention**: Keep test reports/screenshots for 30 days maximum
+5. **Resource limits**: Set timeouts to prevent hanging builds
+6. **Environment isolation**: Use `docker/test/` environment, never pollute dev database
+
+### Migration Notes
+
+When adapting pipelines from other projects:
+- **Check database type**: PostgreSQL vs MariaDB vs MySQL commands differ
+- **Verify PHP extensions**: Match production requirements
+- **Review cache paths**: Align with project structure
+- **Test health checks**: Ensure service readiness detection works
+- **Validate build context**: Docker build paths must match compose config
+
 ## Next Steps
 1. Install Symfony 7.4 in the project
 2. Configure DDD structure (Application, Domain, Infrastructure)
