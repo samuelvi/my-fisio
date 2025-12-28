@@ -53,13 +53,22 @@ export default function InvoiceList() {
             if (filters.taxId) params['taxId'] = filters.taxId;
             
             let numberQuery = '';
-            if (filters.year && filters.year !== 'all') {
+            if (filters.number) {
+                // If number already includes year (starts with 4 digits), use it as-is
+                // Otherwise, prepend the selected year
+                const startsWithYear = /^\d{4}/.test(filters.number);
+                if (startsWithYear) {
+                    numberQuery = filters.number;
+                } else if (filters.year && filters.year !== 'all') {
+                    numberQuery = filters.year + filters.number;
+                } else {
+                    numberQuery = filters.number;
+                }
+            } else if (filters.year && filters.year !== 'all') {
+                // If only year is selected, search for invoices starting with that year
                 numberQuery = filters.year;
             }
-            if (filters.number) {
-                numberQuery += filters.number;
-            }
-            
+
             if (numberQuery) {
                 params['number'] = numberQuery;
             }

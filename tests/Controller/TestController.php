@@ -53,11 +53,20 @@ class TestController extends AbstractController
             'roles' => ['ROLE_ADMIN'],
         ]);
 
+        // First patient
         $firstPatient = PatientFactory::createOne(['firstName' => 'AFirst', 'lastName' => 'Patient']);
         RecordFactory::createMany(2, ['patient' => $firstPatient]);
 
-        PatientFactory::createMany(13);
+        // Patients with accented names for search testing
+        PatientFactory::createOne(['firstName' => 'José', 'lastName' => 'García']);
+        PatientFactory::createOne(['firstName' => 'María', 'lastName' => 'López']);
+        PatientFactory::createOne(['firstName' => 'Ángel', 'lastName' => 'Martínez']);
+        PatientFactory::createOne(['firstName' => 'Inés', 'lastName' => 'Pérez']);
 
+        // 9 middle patients (reduced from 13 to keep total at 15)
+        PatientFactory::createMany(9);
+
+        // Last patient
         $lastPatient = PatientFactory::createOne(['firstName' => 'ZLast', 'lastName' => 'Patient']);
         RecordFactory::createMany(2, ['patient' => $lastPatient]);
 
@@ -86,19 +95,28 @@ class TestController extends AbstractController
     private function prepareSchema(): void
     {
         $connection = $this->entityManager->getConnection();
-        $connection->executeStatement('DROP SCHEMA public CASCADE');
-        $connection->executeStatement('CREATE SCHEMA public');
-        $connection->executeStatement('GRANT ALL ON SCHEMA public TO public');
-        $connection->executeStatement('GRANT ALL ON SCHEMA public TO ' . $connection->getParams()['user']);
 
-        // Ensure required PostgreSQL extensions for fuzzy search are enabled
-        // This is CRITICAL for CI environments where schema is recreated
-        $connection->executeStatement('CREATE EXTENSION IF NOT EXISTS pg_trgm');
-        $connection->executeStatement('CREATE EXTENSION IF NOT EXISTS fuzzystrmatch');
-        
-        // Create case-insensitive collation for ICU
-        $connection->executeStatement("CREATE COLLATION IF NOT EXISTS case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false)");
+        // Get database name from connection params
+        $dbName = $connection->getParams()['dbname'];
 
+        // Close any existing connections to the database
+        $this->entityManager->clear();
+
+        // Drop all tables (MariaDB approach)
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+
+        $tables = $connection->fetchAllAssociative(
+            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?",
+            [$dbName]
+        );
+
+        foreach ($tables as $table) {
+            $connection->executeStatement('DROP TABLE IF EXISTS ' . $table['TABLE_NAME']);
+        }
+
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+
+        // Create schema using Doctrine
         $metadatas = $this->entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($this->entityManager);
         $schemaTool->createSchema($metadatas);

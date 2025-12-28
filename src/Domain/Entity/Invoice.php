@@ -7,6 +7,7 @@ namespace App\Domain\Entity;
 use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
@@ -40,6 +41,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiFilter(SearchFilter::class, properties: [
     'fullName' => 'partial',
     'taxId' => 'partial',
+    'number' => 'partial',
 ])]
 #[ApiFilter(DateFilter::class, properties: ['date'])]
 #[ApiFilter(OrderFilter::class, properties: ['date', 'createdAt', 'amount'], arguments: ['orderParameterName' => 'order'])]

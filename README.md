@@ -268,6 +268,55 @@ make test-down
 
 The coverage report will be generated in `var/coverage/index.html`.
 
+## API Testing with curl
+
+### Get JWT Token
+
+```bash
+# Login and get token
+TOKEN=$(curl -s -X POST http://localhost/api/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"tina@tinafisio.com","password":"password"}' \
+  | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+
+# Verify token
+echo $TOKEN
+```
+
+### Test Patients Filter
+
+```bash
+# Search patients by name (case-insensitive, accent-insensitive)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost/api/patients?search=garcia" | jq '.member'
+
+# Search with fuzzy matching
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost/api/patients?search=jose&fuzzy=true" | jq '.member'
+```
+
+### Test Invoices Filter
+
+```bash
+# Search invoices by customer name
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost/api/invoices?fullName=garcia" | jq '.member'
+
+# Search invoices by number (partial match)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost/api/invoices?number=2025000001" | jq '.member'
+
+# Search invoices by VAT ID
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost/api/invoices?taxId=12345678" | jq '.member'
+
+# Combined filters with pagination
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "http://localhost/api/invoices?fullName=pedro&page=1&itemsPerPage=10&order[date]=desc" | jq '.'
+```
+
+**Note**: Remove `| jq '.'` if you don't have jq installed, or install it with `brew install jq` (macOS) / `apt install jq` (Linux).
+
 ## Project Architecture
 
 ```

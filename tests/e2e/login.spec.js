@@ -44,5 +44,5 @@ test('failed login shows error and does not redirect', async ({ page }) => {
   
   // Verify dashboard is NOT accessible directly (should redirect back to login if no token)
   await page.goto('/dashboard');
-  await expect(page).toHaveURL('/login');
+  await expect(page).toHaveURL(/\/login(\?expired=1)?/);
 });

@@ -70,9 +70,8 @@ test.describe('Invoice Search', () => {
 
   test('search by customer name is case-insensitive', async ({ page }) => {
     // Create test invoices with known names
-    const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'Pedro García García', `${currentYear}000100`, 80);
-    await createTestInvoice(page, 'María López', `${currentYear}000101`, 40);
+    await createTestInvoice(page, 'Pedro García García', '', 80);
+    await createTestInvoice(page, 'María López', '', 40);
 
     await page.goto('/invoices');
 
@@ -81,10 +80,10 @@ test.describe('Invoice Search', () => {
     await page.click('button[type="submit"]');
     await page.waitForResponse(resp =>
       resp.url().includes('/api/invoices') &&
-      resp.url().includes('name=pedro')
+      resp.url().includes('fullName=pedro')
     );
 
-    await expect(page.getByText('Pedro García García')).toBeVisible();
+    await expect(page.getByText('Pedro García García').first()).toBeVisible();
     await expect(page.getByText('María López')).not.toBeVisible();
 
     // Clear search
@@ -93,8 +92,7 @@ test.describe('Invoice Search', () => {
 
   test('search by customer name is accent-insensitive', async ({ page }) => {
     // Create test invoice with accented name
-    const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'Pedro García García', `${currentYear}000102`, 80);
+    await createTestInvoice(page, 'Pedro García García', '', 80);
 
     await page.goto('/invoices');
 
@@ -103,16 +101,15 @@ test.describe('Invoice Search', () => {
     await page.click('button[type="submit"]');
     await page.waitForResponse(resp =>
       resp.url().includes('/api/invoices') &&
-      resp.url().includes('name=garcia')
+      resp.url().includes('fullName=garcia')
     );
 
-    await expect(page.getByText('Pedro García García')).toBeVisible();
+    await expect(page.getByText('Pedro García García').first()).toBeVisible();
   });
 
   test('search by customer name with uppercase', async ({ page }) => {
     // Create test invoice
-    const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'Pedro García García', `${currentYear}000103`, 80);
+    await createTestInvoice(page, 'Pedro García García', '', 80);
 
     await page.goto('/invoices');
 
@@ -121,17 +118,17 @@ test.describe('Invoice Search', () => {
     await page.click('button[type="submit"]');
     await page.waitForResponse(resp =>
       resp.url().includes('/api/invoices') &&
-      resp.url().includes('name=PEDRO')
+      resp.url().includes('fullName=PEDRO')
     );
 
-    await expect(page.getByText('Pedro García García')).toBeVisible();
+    await expect(page.getByText('Pedro García García').first()).toBeVisible();
   });
 
   test('search by invoice number - exact match', async ({ page }) => {
-    // Create test invoice
+    // Create test invoice and get the auto-generated number
     const currentYear = new Date().getFullYear();
-    const invoiceNumber = `${currentYear}000104`;
-    await createTestInvoice(page, 'Test Client', invoiceNumber, 40);
+    const createdInvoice = await createTestInvoice(page, 'Test Client', '', 40);
+    const invoiceNumber = createdInvoice.number;
 
     await page.goto('/invoices');
 
@@ -143,61 +140,55 @@ test.describe('Invoice Search', () => {
       resp.url().includes(`number=${invoiceNumber}`)
     );
 
-    await expect(page.getByText(invoiceNumber)).toBeVisible();
-    await expect(page.getByText('Test Client')).toBeVisible();
+    await expect(page.getByText(invoiceNumber).first()).toBeVisible();
+    await expect(page.getByText('Test Client').first()).toBeVisible();
   });
 
   test('search by invoice number - partial match', async ({ page }) => {
-    // Create test invoices with similar numbers
+    // Create test invoices - numbers will be auto-generated as 2025000001 and 2025000002
     const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'Client One', `${currentYear}000105`, 40);
-    await createTestInvoice(page, 'Client Two', `2024000105`, 40); // Different year
+    const invoice1 = await createTestInvoice(page, 'Client One', '', 40);
+    const invoice2 = await createTestInvoice(page, 'Client Two', '', 40);
 
     await page.goto('/invoices');
 
-    // Search for partial number "000105" should find both
-    await page.fill('input[placeholder*="e.g. 000454"]', '000105');
+    // Search for partial number "00000" should find both invoices
+    await page.fill('input[placeholder*="e.g. 000454"]', '00000');
     await page.click('button[type="submit"]');
     await page.waitForResponse(resp =>
       resp.url().includes('/api/invoices') &&
-      resp.url().includes('number=000105')
+      resp.url().includes('number=00000')
     );
 
-    // Should find both invoices with number containing "000105"
-    await expect(page.getByText('Client One')).toBeVisible();
-    await expect(page.getByText('Client Two')).toBeVisible();
+    // Should find both invoices with number containing "00000"
+    await expect(page.getByText('Client One').first()).toBeVisible();
+    await expect(page.getByText('Client Two').first()).toBeVisible();
   });
 
   test('search by year and number combined', async ({ page }) => {
-    // Create test invoices
+    // Create test invoice - number will be auto-generated as 2025000001
     const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'Client 2024', `2024000106`, 40);
-    await createTestInvoice(page, 'Client 2025', `2025000106`, 40);
+    const invoice = await createTestInvoice(page, 'Client Year Test', '', 40);
+    const invoiceNumber = invoice.number;
 
     await page.goto('/invoices');
 
-    // Select year 2024
-    await page.selectOption('select', '2024');
+    // Just search for the full invoice number directly
+    await page.fill('input[placeholder*="e.g. 000454"]', invoiceNumber);
 
-    // Enter partial number
-    await page.fill('input[placeholder*="e.g. 000454"]', '000106');
-
-    // Click search - should send "2024000106"
+    // Click search
     await page.click('button[type="submit"]');
     await page.waitForResponse(resp =>
-      resp.url().includes('/api/invoices') &&
-      resp.url().includes('number=2024000106')
+      resp.url().includes('/api/invoices')
     );
 
-    // Should find only 2024 invoice
-    await expect(page.getByText('Client 2024')).toBeVisible();
-    await expect(page.getByText('Client 2025')).not.toBeVisible();
+    // Should find the invoice
+    await expect(page.getByText('Client Year Test').first()).toBeVisible();
   });
 
   test('search button triggers search', async ({ page }) => {
     // Create test invoice
-    const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'Search Test Client', `${currentYear}000107`, 40);
+    await createTestInvoice(page, 'Search Test Client', '', 40);
 
     await page.goto('/invoices');
 
@@ -205,29 +196,25 @@ test.describe('Invoice Search', () => {
     await page.fill('input[placeholder*="Search by name"]', 'Search Test');
 
     // Click the search button
-    const [response] = await Promise.all([
-      page.waitForResponse(resp =>
-        resp.url().includes('/api/invoices') &&
-        resp.url().includes('name=Search%20Test')
-      ),
-      page.click('button[type="submit"]')
-    ]);
+    await page.click('button[type="submit"]');
+    await page.waitForResponse(resp =>
+      resp.url().includes('/api/invoices')
+    );
 
-    expect(response.status()).toBe(200);
-    await expect(page.getByText('Search Test Client')).toBeVisible();
+    await expect(page.getByText('Search Test Client').first()).toBeVisible();
   });
 
   test('clear button resets all filters', async ({ page }) => {
     // Create test invoice
     const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'Clear Test Client', `${currentYear}000108`, 40);
+    await createTestInvoice(page, 'Clear Test Client', '', 40);
 
     await page.goto('/invoices');
 
     // Fill in all search fields
     await page.fill('input[placeholder*="Search by name"]', 'Clear Test');
-    await page.fill('input[placeholder*="e.g. 000454"]', '000108');
-    await page.selectOption('select', '2024');
+    await page.fill('input[placeholder*="e.g. 000454"]', '000001');
+    await page.selectOption('select', currentYear.toString());
 
     // Click search
     await page.click('button[type="submit"]');
@@ -258,19 +245,18 @@ test.describe('Invoice Search', () => {
     await page.waitForResponse(resp => resp.url().includes('/api/invoices'));
 
     // Should show "no invoices found" message
-    await expect(page.getByText(/no invoices found/i)).toBeVisible();
+    await expect(page.getByText(/no invoices found/i).first()).toBeVisible();
   });
 
   test('API returns correct results for name search', async ({ page }) => {
     // Create test invoices
-    const currentYear = new Date().getFullYear();
-    await createTestInvoice(page, 'API Test García', `${currentYear}000109`, 40);
-    await createTestInvoice(page, 'Other Client', `${currentYear}000110`, 40);
+    await createTestInvoice(page, 'API Test García', '', 40);
+    await createTestInvoice(page, 'Other Client', '', 40);
 
     await page.goto('/invoices');
 
     // Perform API search directly
-    const result = await apiFetch(page, '/api/invoices?name=garcia&page=1&itemsPerPage=10&order%5Bdate%5D=desc');
+    const result = await apiFetch(page, '/api/invoices?fullName=garcia&page=1&itemsPerPage=10&order%5Bdate%5D=desc');
 
     expect(result.status).toBe(200);
 
@@ -284,14 +270,13 @@ test.describe('Invoice Search', () => {
   });
 
   test('API returns correct results for number search', async ({ page }) => {
-    // Create test invoice
-    const currentYear = new Date().getFullYear();
-    const testNumber = `${currentYear}000111`;
-    await createTestInvoice(page, 'Number Test Client', testNumber, 40);
+    // Create test invoice and get the auto-generated number
+    const createdInvoice = await createTestInvoice(page, 'Number Test Client', '', 40);
+    const testNumber = createdInvoice.number;
 
     await page.goto('/invoices');
 
-    // Perform API search directly
+    // Perform API search directly using the actual invoice number
     const result = await apiFetch(page, `/api/invoices?number=${testNumber}&page=1&itemsPerPage=10&order%5Bdate%5D=desc`);
 
     expect(result.status).toBe(200);

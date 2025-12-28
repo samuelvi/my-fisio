@@ -59,7 +59,7 @@ services:
       - DATABASE_URL=mysql://physiotherapy_user:physiotherapy_pass@mariadb_test:3306/physiotherapy_test_db?serverVersion=mariadb-11.0.0&charset=utf8mb4
       - REDIS_URL=redis://redis_test:6379
       - APP_ENV=test
-      - APP_DEBUG=1
+      - APP_DEBUG=0
       - APP_SECRET=test_secret_12345
       - ITEMS_PER_PAGE=4
 
