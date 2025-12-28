@@ -53,7 +53,7 @@ export default function InvoiceForm() {
                 const response = await axios.get(`/api/invoices/${id}`);
                 const data = response.data;
                 setDate(data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
-                setCustomerName(data.name || '');
+                setCustomerName(data.fullName || '');
                 setCustomerTaxId(data.taxId || '');
                 setCustomerAddress(data.address || '');
                 setCustomerPhone(data.phone || '');
@@ -115,7 +115,7 @@ export default function InvoiceForm() {
 
         const payload = {
             date: new Date(date).toISOString(),
-            name: customerName,
+            fullName: customerName,
             taxId: customerTaxId,
             address: customerAddress,
             phone: customerPhone,

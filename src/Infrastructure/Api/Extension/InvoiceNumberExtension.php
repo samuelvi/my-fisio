@@ -37,8 +37,15 @@ final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
 
         // Add case-insensitive search for customer name (fullName field)
         // MariaDB with utf8mb4_unicode_ci collation handles accent-insensitive comparisons automatically
-        if (isset($context['filters']['name']) && '' !== $context['filters']['name']) {
-            $value = $context['filters']['name'];
+        $nameFilter = null;
+        if (isset($context['filters']['fullName']) && '' !== $context['filters']['fullName']) {
+            $nameFilter = $context['filters']['fullName'];
+        } elseif (isset($context['filters']['name']) && '' !== $context['filters']['name']) {
+            $nameFilter = $context['filters']['name'];
+        }
+
+        if (null !== $nameFilter) {
+            $value = $nameFilter;
             $rootAlias = $queryBuilder->getRootAliases()[0];
             $parameterName = 'invoice_name_ext';
 
@@ -46,6 +53,16 @@ final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
             // MariaDB collation handles accent-insensitive matching automatically
             $queryBuilder
                 ->andWhere(sprintf('LOWER(%s.fullName) LIKE LOWER(:%s)', $rootAlias, $parameterName))
+                ->setParameter($parameterName, '%'.$value.'%');
+        }
+
+        if (isset($context['filters']['taxId']) && '' !== $context['filters']['taxId']) {
+            $value = $context['filters']['taxId'];
+            $rootAlias = $queryBuilder->getRootAliases()[0];
+            $parameterName = 'invoice_tax_id_ext';
+
+            $queryBuilder
+                ->andWhere(sprintf('LOWER(%s.taxId) LIKE LOWER(:%s)', $rootAlias, $parameterName))
                 ->setParameter($parameterName, '%'.$value.'%');
         }
     }

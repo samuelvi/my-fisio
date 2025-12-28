@@ -55,7 +55,7 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             number: $data['number'],
             date: $data['date'],
             amount: (float) $data['amount'],
-            name: $data['name'],
+            fullName: $data['fullName'],
             taxId: $data['taxId'],
             address: $data['address'],
             phone: $data['phone'],

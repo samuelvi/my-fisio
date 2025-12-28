@@ -16,7 +16,7 @@ final readonly class InvoiceExportView
         public string $number,
         public DateTimeInterface $date,
         public float $amount,
-        public string $name,
+        public string $fullName,
         public ?string $taxId,
         public ?string $address,
         public ?string $phone,
@@ -30,13 +30,13 @@ final readonly class InvoiceExportView
         string $number,
         DateTimeInterface $date,
         float $amount,
-        string $name,
+        string $fullName,
         ?string $taxId,
         ?string $address,
         ?string $phone,
         ?string $email,
         array $lines,
     ): self {
-        return new self($id, $number, $date, $amount, $name, $taxId, $address, $phone, $email, $lines);
+        return new self($id, $number, $date, $amount, $fullName, $taxId, $address, $phone, $email, $lines);
     }
 }
