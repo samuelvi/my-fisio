@@ -9,7 +9,6 @@ on:
 # Global environment variables
 env:
   COMPOSE_FILE: docker/test/docker-compose.yaml
-  COMPOSE_EXEC: docker compose -f docker/test/docker-compose.yaml exec -T php_test
 
 jobs:
   # ============================================================================
@@ -80,28 +79,29 @@ jobs:
       - name: Install Composer dependencies
         run: |
           # Fix permissions
-          ${{ env.COMPOSE_EXEC }} chown -R www-data:www-data /var/www/html
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test chown -R www-data:www-data /var/www/html
 
           # Install with optimizations
-          ${{ env.COMPOSE_EXEC }} php -d memory_limit=512M \
-            /usr/local/bin/composer install \
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+            php -d memory_limit=512M /usr/bin/composer install \
             --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
           # Run post-install scripts
-          ${{ env.COMPOSE_EXEC }} composer run-script post-install-cmd --no-interaction || true
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+            composer run-script post-install-cmd --no-interaction || true
 
       # --- Setup ---
       - name: Generate JWT keys
         run: |
-          ${{ env.COMPOSE_EXEC }} mkdir -p config/jwt
-          ${{ env.COMPOSE_EXEC }} php bin/console lexik:jwt:generate-keypair --skip-if-exists
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test mkdir -p config/jwt
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
 
       - name: Setup database
         run: |
           echo "🗄️  Resetting database..."
-          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:drop --force --full-database
-          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:create
-          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:fixtures:load --no-interaction
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
           echo "✅ Database ready"
 
       # --- Quality Checks ---
@@ -109,19 +109,19 @@ jobs:
         continue-on-error: true
         run: |
           echo "🔍 Running PHP CS Fixer..."
-          ${{ env.COMPOSE_EXEC }} vendor/bin/php-cs-fixer fix --dry-run --diff || echo "⚠️  Style issues found"
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test vendor/bin/php-cs-fixer fix --dry-run --diff || echo "⚠️  Style issues found"
 
       - name: PHPStan (Level 8)
         continue-on-error: true
         run: |
           echo "🔍 Running PHPStan..."
-          ${{ env.COMPOSE_EXEC }} vendor/bin/phpstan analyse src --level=8 || echo "⚠️  Type errors found"
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test vendor/bin/phpstan analyse src --level=8 || echo "⚠️  Type errors found"
 
       # --- Tests ---
       - name: PHPUnit Tests
         run: |
           echo "🧪 Running PHPUnit tests..."
-          ${{ env.COMPOSE_EXEC }} php bin/phpunit
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/phpunit
 
       # --- Cleanup ---
       - name: Stop containers
@@ -196,9 +196,9 @@ jobs:
       # --- Dependencies ---
       - name: Install Composer dependencies
         run: |
-          ${{ env.COMPOSE_EXEC }} chown -R www-data:www-data /var/www/html
-          ${{ env.COMPOSE_EXEC }} php -d memory_limit=512M \
-            /usr/local/bin/composer install \
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test chown -R www-data:www-data /var/www/html
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+            php -d memory_limit=512M /usr/bin/composer install \
             --no-interaction --prefer-dist --optimize-autoloader --no-scripts
 
       - name: Setup Node.js
@@ -213,15 +213,15 @@ jobs:
       # --- Setup ---
       - name: Generate JWT keys
         run: |
-          ${{ env.COMPOSE_EXEC }} mkdir -p config/jwt
-          ${{ env.COMPOSE_EXEC }} php bin/console lexik:jwt:generate-keypair --skip-if-exists
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test mkdir -p config/jwt
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
 
       - name: Setup database with fixtures
         run: |
           echo "🗄️  Setting up database..."
-          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:drop --force --full-database
-          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:schema:create
-          ${{ env.COMPOSE_EXEC }} php bin/console doctrine:fixtures:load --no-interaction
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
 
       - name: Build frontend assets
         run: |
