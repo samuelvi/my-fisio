@@ -71,7 +71,6 @@ docker/prod/redis/data
 
 # Composer
 composer.phar
-/composer.lock
 
 # Logs
 *.log

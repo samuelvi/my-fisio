@@ -78,8 +78,13 @@ jobs:
       # --- Dependencies ---
       - name: Install Composer dependencies
         run: |
+          # Fix git ownership issue
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+            git config --global --add safe.directory /var/www/html
+
           # Fix permissions
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test chown -R www-data:www-data /var/www/html
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+            chown -R www-data:www-data /var/www/html
 
           # Install with optimizations
           docker compose -f docker/test/docker-compose.yaml exec -T php_test \
@@ -196,7 +201,13 @@ jobs:
       # --- Dependencies ---
       - name: Install Composer dependencies
         run: |
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test chown -R www-data:www-data /var/www/html
+          # Fix git ownership issue
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+            git config --global --add safe.directory /var/www/html
+
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
+            chown -R www-data:www-data /var/www/html
+
           docker compose -f docker/test/docker-compose.yaml exec -T php_test \
             php -d memory_limit=512M /usr/bin/composer install \
             --no-interaction --prefer-dist --optimize-autoloader --no-scripts

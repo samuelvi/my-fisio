@@ -11,7 +11,7 @@
         "ext-iconv": "*",
         "ext-json": "*",
         "ext-pdo": "*",
-        "ext-pgsql": "*",
+        "ext-pdo_mysql": "*",
         "ext-redis": "*",
         "api-platform/doctrine-orm": "^4.2",
         "api-platform/symfony": "^4.2",
