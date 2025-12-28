@@ -71,6 +71,9 @@ test-logs: ## Show logs from all containers (Test)
 test-shell-php: ## Access PHP container shell (Test)
 	$(DOCKER_COMPOSE_TEST) exec php_test sh
 
+test-assets-build: ## Build frontend assets in test environment
+	$(DOCKER_COMPOSE_TEST) run --rm node_test npm run build
+
 ##@ Docker Management (Production)
 
 prod-up: ## Start all containers (Production) - SAFE: Starts services

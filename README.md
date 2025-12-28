@@ -233,6 +233,8 @@ make test
 make test-coverage
 ```
 
+**Appointments note**: when validating appointment slots, compare only the date and hour/minute. Ignore seconds and timezone offsets, since slot placement is what matters.
+
 ### End-to-End Tests (Playwright)
 
 We use a separate Docker environment for E2E tests to avoid polluting the development database.

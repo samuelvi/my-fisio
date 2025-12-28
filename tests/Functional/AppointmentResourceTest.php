@@ -16,6 +16,29 @@ class AppointmentResourceTest extends ApiTestCase
     use Factories;
     use ResetDatabase;
 
+    private function requestAppointment(string $method, string $uri, array $auth, array $payload = []): array
+    {
+        $client = self::createClient();
+        $options = [
+            'auth_bearer' => $auth['token'],
+            'headers' => [
+                'Content-Type' => 'application/ld+json',
+                'Accept' => 'application/ld+json',
+            ],
+        ];
+
+        if (!empty($payload)) {
+            $options['json'] = $payload;
+        }
+
+        $response = $client->request($method, $uri, $options);
+
+        return [
+            'response' => $response,
+            'data' => $response->getStatusCode() === 204 ? [] : $response->toArray(false),
+        ];
+    }
+
     private function authenticate(): array
     {
         $client = self::createClient();
@@ -116,5 +139,183 @@ class AppointmentResourceTest extends ApiTestCase
         $this->assertJsonContains([
             'totalItems' => 3,
         ]);
+    }
+
+    public function testCreateAppointmentPersistsAndReloads(): void
+    {
+        $auth = $this->authenticate();
+        $patient = PatientFactory::createOne();
+
+        $payload = [
+            'patientId' => $patient->id,
+            'userId' => $auth['userId'],
+            'title' => 'Session A',
+            'startsAt' => '2026-01-10T09:00:00+00:00',
+            'endsAt' => '2026-01-10T10:00:00+00:00',
+            'notes' => 'Initial booking',
+            'type' => 'appointment',
+            'allDay' => false,
+        ];
+
+        $create = $this->requestAppointment('POST', '/api/appointments', $auth, $payload);
+        $this->assertResponseStatusCodeSame(201);
+
+        $id = $create['data']['id'] ?? null;
+        $this->assertNotNull($id);
+
+        $get = $this->requestAppointment('GET', "/api/appointments/{$id}", $auth);
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'id' => $id,
+            'title' => 'Session A',
+            'patientName' => $patient->firstName.' '.$patient->lastName,
+            'notes' => 'Initial booking',
+            'type' => 'appointment',
+            'allDay' => false,
+        ]);
+        $startsAt = new \DateTimeImmutable($get['data']['startsAt']);
+        $endsAt = new \DateTimeImmutable($get['data']['endsAt']);
+        $this->assertSame('2026-01-10T09:00', $startsAt->format('Y-m-d\\TH:i'));
+        $this->assertSame('2026-01-10T10:00', $endsAt->format('Y-m-d\\TH:i'));
+    }
+
+    public function testUpdateAppointmentPersistsAllFields(): void
+    {
+        $auth = $this->authenticate();
+        $patient = PatientFactory::createOne();
+        $newPatient = PatientFactory::createOne();
+
+        $create = $this->requestAppointment('POST', '/api/appointments', $auth, [
+            'patientId' => $patient->id,
+            'userId' => $auth['userId'],
+            'title' => 'Session B',
+            'startsAt' => '2026-02-01T09:30:00+00:00',
+            'endsAt' => '2026-02-01T10:30:00+00:00',
+            'notes' => 'Before update',
+            'type' => 'appointment',
+            'allDay' => false,
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $id = $create['data']['id'];
+
+        $updatePayload = [
+            'patientId' => $newPatient->id,
+            'userId' => $auth['userId'],
+            'title' => 'Session B Updated',
+            'startsAt' => '2026-02-02T11:00:00+00:00',
+            'endsAt' => '2026-02-02T12:15:00+00:00',
+            'notes' => 'Updated notes',
+            'type' => 'other',
+            'allDay' => false,
+        ];
+
+        $this->requestAppointment('PUT', "/api/appointments/{$id}", $auth, $updatePayload);
+        $this->assertResponseIsSuccessful();
+
+        $get = $this->requestAppointment('GET', "/api/appointments/{$id}", $auth);
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'id' => $id,
+            'title' => 'Session B Updated',
+            'patientName' => $newPatient->firstName.' '.$newPatient->lastName,
+            'notes' => 'Updated notes',
+            'type' => 'other',
+            'allDay' => false,
+        ]);
+        $startsAt = new \DateTimeImmutable($get['data']['startsAt']);
+        $endsAt = new \DateTimeImmutable($get['data']['endsAt']);
+        $this->assertSame('2026-02-02T11:00', $startsAt->format('Y-m-d\\TH:i'));
+        $this->assertSame('2026-02-02T12:15', $endsAt->format('Y-m-d\\TH:i'));
+    }
+
+    public function testMoveAppointmentSlotPersistsDates(): void
+    {
+        $auth = $this->authenticate();
+        $patient = PatientFactory::createOne();
+
+        $create = $this->requestAppointment('POST', '/api/appointments', $auth, [
+            'patientId' => $patient->id,
+            'userId' => $auth['userId'],
+            'title' => 'Slot Move',
+            'startsAt' => '2026-03-05T08:00:00+00:00',
+            'endsAt' => '2026-03-05T09:00:00+00:00',
+            'notes' => 'Move me',
+            'type' => 'appointment',
+            'allDay' => false,
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $id = $create['data']['id'];
+
+        $this->requestAppointment('PUT', "/api/appointments/{$id}", $auth, [
+            'patientId' => $patient->id,
+            'userId' => $auth['userId'],
+            'title' => 'Slot Move',
+            'startsAt' => '2026-03-06T14:30:00+00:00',
+            'endsAt' => '2026-03-06T15:30:00+00:00',
+            'notes' => 'Move me',
+            'type' => 'appointment',
+            'allDay' => false,
+        ]);
+        $this->assertResponseIsSuccessful();
+
+        $get = $this->requestAppointment('GET', "/api/appointments/{$id}", $auth);
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'id' => $id,
+        ]);
+        $startsAt = new \DateTimeImmutable($get['data']['startsAt']);
+        $endsAt = new \DateTimeImmutable($get['data']['endsAt']);
+        $this->assertSame('2026-03-06T14:30', $startsAt->format('Y-m-d\\TH:i'));
+        $this->assertSame('2026-03-06T15:30', $endsAt->format('Y-m-d\\TH:i'));
+    }
+
+    public function testDeleteCanceledKeepsAppointment(): void
+    {
+        $auth = $this->authenticate();
+        $patient = PatientFactory::createOne();
+
+        $create = $this->requestAppointment('POST', '/api/appointments', $auth, [
+            'patientId' => $patient->id,
+            'userId' => $auth['userId'],
+            'title' => 'Cancel Delete',
+            'startsAt' => '2026-04-01T09:00:00+00:00',
+            'endsAt' => '2026-04-01T10:00:00+00:00',
+            'notes' => 'Do not delete',
+            'type' => 'appointment',
+            'allDay' => false,
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $id = $create['data']['id'];
+
+        $this->requestAppointment('GET', "/api/appointments/{$id}", $auth);
+        $this->assertResponseIsSuccessful();
+
+        $this->requestAppointment('GET', "/api/appointments/{$id}", $auth);
+        $this->assertResponseIsSuccessful();
+    }
+
+    public function testDeleteConfirmedRemovesAppointment(): void
+    {
+        $auth = $this->authenticate();
+        $patient = PatientFactory::createOne();
+
+        $create = $this->requestAppointment('POST', '/api/appointments', $auth, [
+            'patientId' => $patient->id,
+            'userId' => $auth['userId'],
+            'title' => 'Delete Confirmed',
+            'startsAt' => '2026-04-02T10:00:00+00:00',
+            'endsAt' => '2026-04-02T11:00:00+00:00',
+            'notes' => 'Delete me',
+            'type' => 'appointment',
+            'allDay' => false,
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+        $id = $create['data']['id'];
+
+        $this->requestAppointment('DELETE', "/api/appointments/{$id}", $auth);
+        $this->assertResponseStatusCodeSame(204);
+
+        $this->requestAppointment('GET', "/api/appointments/{$id}", $auth);
+        $this->assertResponseStatusCodeSame(404);
     }
 }

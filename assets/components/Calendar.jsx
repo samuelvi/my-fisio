@@ -154,7 +154,8 @@ export default function Calendar() {
                     allDay: app.allDay,
                     extendedProps: {
                         notes: app.notes,
-                        type: app.type || 'appointment'
+                        type: app.type || 'appointment',
+                        patientId: app.patientId ?? null
                     },
                     backgroundColor: colors.bg,
                     borderColor: colors.bg,
@@ -242,12 +243,14 @@ export default function Calendar() {
     const handleEventDrop = async (dropInfo) => {
         const { event } = dropInfo;
         try {
+            const safeEnd = event.end ?? new Date(event.start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
             const payload = {
                 title: event.title,
                 notes: event.extendedProps.notes,
                 type: event.extendedProps.type,
+                patientId: event.extendedProps.patientId ?? null,
                 startsAt: event.start.toISOString(),
-                endsAt: event.end ? event.end.toISOString() : null,
+                endsAt: safeEnd.toISOString(),
                 allDay: event.allDay,
                 userId: 1
             };
@@ -261,12 +264,14 @@ export default function Calendar() {
     const handleEventResize = async (resizeInfo) => {
         const { event } = resizeInfo;
         try {
+            const safeEnd = event.end ?? new Date(event.start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
             const payload = {
                 title: event.title,
                 notes: event.extendedProps.notes,
                 type: event.extendedProps.type,
+                patientId: event.extendedProps.patientId ?? null,
                 startsAt: event.start.toISOString(),
-                endsAt: event.end ? event.end.toISOString() : null,
+                endsAt: safeEnd.toISOString(),
                 allDay: event.allDay,
                 userId: 1
             };

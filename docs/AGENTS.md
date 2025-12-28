@@ -182,6 +182,7 @@ src/
 
 ## Testing Rules
 - **UI tests must click by accessible name**: use role/name selectors for buttons and links; never click by `id` or `class`.
+- **Appointments slot validation**: assert only date + hour/minute; ignore seconds and timezone offsets.
 
 ## Git Workflow
 - **Commit Messages**: Must follow the [Conventional Commits](https://www.conventionalcommits.org/) specification.
