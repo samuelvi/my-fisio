@@ -398,6 +398,40 @@ test-e2e-ui: ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="
 	fi
 	npx playwright test --ui $(file)
 
+test-e2e-video: ## Run E2E test with video recording (use: make test-e2e-video file="tests/e2e/login.spec.js")
+	@echo "$(GREEN)Running E2E Test with Video Recording...$(NC)"
+	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
+		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
+		make test-up; \
+		sleep 5; \
+	fi
+	$(DOCKER_COMPOSE_TEST) exec -T php_test mkdir -p config/jwt
+	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
+	make test-reset-db
+	@echo "$(YELLOW)Enabling video recording...$(NC)"
+	@perl -i -pe 's/video: '\''retain-on-failure'\''/video: '\''on'\''/' playwright.config.cjs
+	@npx playwright test $(file) || true
+	@echo "$(YELLOW)Restoring video config...$(NC)"
+	@perl -i -pe 's/video: '\''on'\''/video: '\''retain-on-failure'\''/' playwright.config.cjs
+	@echo ""
+	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║  Test completed! Video recording:                         ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@VIDEO_PATH=$$(find var/log/playwright/test-results -name "*.webm" -type f 2>/dev/null | head -n 1); \
+	if [ -n "$$VIDEO_PATH" ]; then \
+		echo "$(GREEN)📹 Video saved at:$(NC)"; \
+		echo "   $(YELLOW)$$VIDEO_PATH$(NC)"; \
+		echo ""; \
+		echo "$(GREEN)To open the video:$(NC)"; \
+		echo "   open $$VIDEO_PATH"; \
+		echo ""; \
+		echo "$(GREEN)To view HTML report:$(NC)"; \
+		echo "   npx playwright show-report var/log/playwright/report"; \
+	else \
+		echo "$(YELLOW)⚠ No video found. Test may have been skipped or failed to record.$(NC)"; \
+	fi
+
 test-all: test-unit test-e2e ## Run full test suite (unit + E2E)
 
 ##@ Project Setup
