@@ -104,9 +104,18 @@ jobs:
       - name: Setup database
         run: |
           echo "🗄️  Resetting database..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
+          echo "🔍 Debugging: Checking DATABASE_URL..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test printenv DATABASE_URL
+          echo "🔍 Debugging: Testing database connection..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console dbal:run-sql "SELECT 1" || echo "⚠️  Database connection failed"
+          echo "🔍 Debugging: Clearing cache..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console cache:clear --env=test
+          echo "🔍 Debugging: Running schema drop..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database -vvv
+          echo "🔍 Debugging: Running schema create..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create -vvv
+          echo "🔍 Debugging: Loading fixtures..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction -vvv
           echo "✅ Database ready"
 
       # --- Quality Checks ---
