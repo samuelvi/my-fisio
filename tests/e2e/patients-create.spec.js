@@ -81,12 +81,12 @@ test('patient creation flow with server validation', async ({ page, request }) =
   
   // VERIFY EXACTLY 1 PATIENT IN LIST (Desktop & Mobile)
   const desktopRows = page.locator('tbody tr:not(:has-text("No patients found"))');
-  const mobileLinks = page.locator('.md\\:hidden a[href^="/patients/"]');
-  
+  const mobileViewButtons = page.locator('.md\\:hidden .patient-view-btn');
+
   await expect(desktopRows).toHaveCount(1);
-  // Also check mobile view locator if present in DOM
-  if (await mobileLinks.count() > 0) {
-      await expect(mobileLinks).toHaveCount(1);
+  // Also check mobile view buttons if present in DOM
+  if (await mobileViewButtons.count() > 0) {
+      await expect(mobileViewButtons).toHaveCount(1);
   }
   
   // DIRECT API VERIFICATION (Zero filters, raw DB count)
