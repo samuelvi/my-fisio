@@ -107,6 +107,12 @@ src/
     - *Note 1*: Framework-managed Services (Controllers, Commands, Processors, Providers) are exempt to maintain Autowiring compatibility.
     - *Note 2*: **API Platform Resources** (classes in `src/Infrastructure/Api/Resource/`) are exempt. They MUST have a `public __construct` and be instantiated via `new` to ensure proper serialization and API Platform compatibility.
 - Dependency Injection with Symfony
+- **Dependency Management (Composer)**:
+    - **CRITICAL**: `composer.lock` MUST be committed to the repository.
+    - **Reason**: Ensures reproducible builds across all environments (dev, test, prod, CI/CD).
+    - **Never ignore**: Do NOT add `composer.lock` to `.gitignore`.
+    - **Updates**: When updating dependencies, commit the updated `composer.lock` file.
+    - **CI/CD**: Pipelines rely on `composer.lock` to install exact versions, avoiding "works on my machine" issues.
 - **Pagination Strategy**: Implement the **N+1 Fetch Pattern** for all collection endpoints.
     - **Operation**: Fetch `N+1` records from the database when `N` items are requested per page.
     - **Indicator**: Use the `N+1` record as a signal to enable the "Next" button in the UI.
