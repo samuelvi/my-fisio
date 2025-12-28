@@ -78,22 +78,8 @@ jobs:
       # --- Dependencies ---
       - name: Install Composer dependencies
         run: |
-          # Fix git ownership issue
           docker compose -f docker/test/docker-compose.yaml exec -T php_test \
-            git config --global --add safe.directory /var/www/html
-
-          # Fix permissions
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
-            chown -R www-data:www-data /var/www/html
-
-          # Install with optimizations
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
-            php -d memory_limit=512M /usr/bin/composer install \
-            --no-interaction --prefer-dist --optimize-autoloader --no-scripts
-
-          # Run post-install scripts
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test \
-            composer run-script post-install-cmd --no-interaction || true
+            composer install --no-interaction --prefer-dist --optimize-autoloader
 
       # --- Setup ---
       - name: Generate JWT keys
@@ -104,18 +90,9 @@ jobs:
       - name: Setup database
         run: |
           echo "🗄️  Resetting database..."
-          echo "🔍 Debugging: Checking DATABASE_URL..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test printenv DATABASE_URL
-          echo "🔍 Debugging: Testing database connection..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console dbal:run-sql "SELECT 1" || echo "⚠️  Database connection failed"
-          echo "🔍 Debugging: Clearing cache..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console cache:clear --env=test
-          echo "🔍 Debugging: Running schema drop..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database -vvv
-          echo "🔍 Debugging: Running schema create..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create -vvv
-          echo "🔍 Debugging: Loading fixtures..."
-          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction -vvv
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:drop --force --full-database
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
           echo "✅ Database ready"
 
       # --- Quality Checks ---
