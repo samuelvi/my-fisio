@@ -44,10 +44,7 @@ services:
         arguments:
             $itemsPerPage: '%items_per_page%'
 
-    App\Infrastructure\Api\State\AppointmentProvider:
-        arguments:
-            $entityManager: '@doctrine.orm.entity_manager'
-            $requestStack: '@request_stack'
+    # AppointmentProvider uses autowiring for all dependencies
 
     # DDD Repository Bindings
     App\Domain\Repository\PatientRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrinePatientRepository'

@@ -147,10 +147,14 @@ export default function Calendar() {
 
     const fetchEvents = async (fetchInfo, successCallback, failureCallback) => {
         try {
+            // Get the current view type from the calendar instance
+            const currentView = calendarRef?.getApi()?.view?.type || 'timeGridWeek';
+
             const response = await axios.get('/api/appointments', {
                 params: {
                     start: fetchInfo.startStr,
-                    end: fetchInfo.endStr
+                    end: fetchInfo.endStr,
+                    view: currentView // Send the current view type (timeGridWeek, dayGridMonth, etc.)
                 }
             });
 

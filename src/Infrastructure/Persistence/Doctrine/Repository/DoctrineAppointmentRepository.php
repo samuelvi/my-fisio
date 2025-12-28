@@ -39,4 +39,10 @@ final class DoctrineAppointmentRepository extends ServiceEntityRepository implem
 
         return (int) ($result[0]['total'] ?? 0);
     }
+
+    public function save(Appointment $appointment): void
+    {
+        $this->getEntityManager()->persist($appointment);
+        $this->getEntityManager()->flush();
+    }
 }
