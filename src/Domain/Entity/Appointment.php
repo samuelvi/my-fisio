@@ -30,10 +30,10 @@ class Appointment
     #[ORM\Column(type: 'boolean', nullable: true)]
     public ?bool $allDay = null;
 
-    #[ORM\Column(type: 'datetimetz_immutable', nullable: false)]
+    #[ORM\Column(type: 'datetime_immutable', nullable: false)]
     public DateTimeImmutable $startsAt;
 
-    #[ORM\Column(type: 'datetimetz_immutable', nullable: false)]
+    #[ORM\Column(type: 'datetime_immutable', nullable: false)]
     public DateTimeImmutable $endsAt;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -42,10 +42,10 @@ class Appointment
     #[ORM\Column(type: 'text', nullable: true)]
     public ?string $notes = null;
 
-    #[ORM\Column(type: 'datetimetz_immutable', nullable: false)]
+    #[ORM\Column(type: 'datetime_immutable', nullable: false)]
     public DateTimeImmutable $createdAt;
 
-    #[ORM\Column(type: 'datetimetz_immutable', nullable: true)]
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public ?DateTimeImmutable $updatedAt = null;
 
     private function __construct(

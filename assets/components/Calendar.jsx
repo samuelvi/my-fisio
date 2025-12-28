@@ -14,6 +14,17 @@ import { useLanguage } from './LanguageContext';
 registerLocale('en', enUS);
 registerLocale('es', es);
 
+// Convert Date to simple DATETIME format (no timezone)
+function toSimpleDateTimeString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+}
+
 export default function Calendar() {
     const { t, language } = useLanguage();
     const [isMobile, setIsMobile] = useState(false);
@@ -249,8 +260,8 @@ export default function Calendar() {
                 notes: event.extendedProps.notes,
                 type: event.extendedProps.type,
                 patientId: event.extendedProps.patientId ?? null,
-                startsAt: event.start.toISOString(),
-                endsAt: safeEnd.toISOString(),
+                startsAt: toSimpleDateTimeString(event.start),
+                endsAt: toSimpleDateTimeString(safeEnd),
                 allDay: event.allDay,
                 userId: 1
             };
@@ -270,8 +281,8 @@ export default function Calendar() {
                 notes: event.extendedProps.notes,
                 type: event.extendedProps.type,
                 patientId: event.extendedProps.patientId ?? null,
-                startsAt: event.start.toISOString(),
-                endsAt: safeEnd.toISOString(),
+                startsAt: toSimpleDateTimeString(event.start),
+                endsAt: toSimpleDateTimeString(safeEnd),
                 allDay: event.allDay,
                 userId: 1
             };
@@ -293,8 +304,8 @@ export default function Calendar() {
                         now.setMinutes(0, 0, 0);
                         now.setHours(now.getHours() + 1);
                         handleDateSelect({
-                            startStr: now.toISOString(),
-                            endStr: new Date(now.getTime() + (DEFAULT_DURATION_MINUTES * 60000)).toISOString(),
+                            startStr: toSimpleDateTimeString(now),
+                            endStr: toSimpleDateTimeString(new Date(now.getTime() + (DEFAULT_DURATION_MINUTES * 60000))),
                             allDay: false
                         });
                     }}
@@ -388,7 +399,7 @@ export default function Calendar() {
                                                 <label className="block text-sm font-semibold text-gray-700 mb-1">{t('start')}</label>
                                                 <DatePicker
                                                     selected={formData.startsAt ? new Date(formData.startsAt) : null}
-                                                    onChange={(date) => setFormData({...formData, startsAt: date ? date.toISOString() : ''})}
+                                                    onChange={(date) => setFormData({...formData, startsAt: date ? toSimpleDateTimeString(date) : ''})}
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}
@@ -402,7 +413,7 @@ export default function Calendar() {
                                                 <label className="block text-sm font-semibold text-gray-700 mb-1">{t('end')}</label>
                                                 <DatePicker
                                                     selected={formData.endsAt ? new Date(formData.endsAt) : null}
-                                                    onChange={(date) => setFormData({...formData, endsAt: date ? date.toISOString() : ''})}
+                                                    onChange={(date) => setFormData({...formData, endsAt: date ? toSimpleDateTimeString(date) : ''})}
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}

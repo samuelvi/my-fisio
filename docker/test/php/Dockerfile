@@ -38,6 +38,9 @@ RUN pecl install apcu && docker-php-ext-enable apcu
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Set timezone to match development environment
+RUN echo "date.timezone = Europe/Madrid" > /usr/local/etc/php/conf.d/timezone.ini
+
 # Set working directory
 WORKDIR /var/www/html
 
