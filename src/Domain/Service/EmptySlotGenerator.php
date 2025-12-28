@@ -10,6 +10,11 @@ use DateTimeImmutable;
 
 class EmptySlotGenerator
 {
+    public function __construct(
+        private WeekGridBuilder $weekGridBuilder,
+    ) {
+    }
+
     /**
      * Generate empty slot data for a date range based on the week grid configuration.
      *
@@ -17,7 +22,7 @@ class EmptySlotGenerator
      */
     public function generateSlotsForDateRange(DateTimeImmutable $start, DateTimeImmutable $end): array
     {
-        $weekGrid = WeekGridBuilder::buildWeekGrid();
+        $weekGrid = $this->weekGridBuilder->buildWeekGrid();
         $slots = [];
 
         // Create a date period covering all days in the range

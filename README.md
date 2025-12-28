@@ -399,6 +399,63 @@ normal day column (e.g., `50` means the weekend columns are half-width).
 
 `VITE_INVOICE_EDIT_ENABLED` controls whether invoice editing is enabled (`true` or `false`).
 
+### Calendar Configuration
+
+#### Frontend Calendar Settings
+
+These `VITE_*` variables control the visual appearance and behavior of the calendar in the frontend:
+
+- **`VITE_CALENDAR_FIRST_DAY`**: First day of the week (`0` = Sunday, `1` = Monday)
+- **`VITE_CALENDAR_SLOT_DURATION_MINUTES`**: Visual slot duration in minutes (e.g., `15`, `30`, `60`)
+- **`VITE_DEFAULT_APPOINTMENT_DURATION`**: Default duration for new appointments in minutes (e.g., `60`)
+- **`VITE_CALENDAR_NARROW_SATURDAY`**: Render Saturday column narrower (`true`/`false`)
+- **`VITE_CALENDAR_NARROW_SUNDAY`**: Render Sunday column narrower (`true`/`false`)
+- **`VITE_CALENDAR_WEEKEND_WIDTH_PERCENT`**: Weekend column width as percentage (e.g., `50`)
+- **`VITE_CALENDAR_SCROLL_TIME`**: Initial scroll time in calendar view (e.g., `08:00:00`)
+
+#### Appointment Validation
+
+- **`MAX_APPOINTMENT_DURATION`**: Maximum allowed duration for appointments in hours (e.g., `10`)
+
+This setting prevents users from creating excessively long appointments that could span multiple days or interfere with the calendar's usability.
+
+#### Backend Calendar Slots Configuration
+
+**`CALENDAR_AUTO_CREATE_SLOTS`**: Enable or disable automatic creation of empty appointment slots (`true`/`false`)
+
+When enabled (`true`), the system automatically creates empty appointment slots in the weekly calendar view when no appointments exist for that week. This feature helps visualize available time slots. Set to `false` to disable this behavior (useful for testing environments).
+
+- **Production/Development**: `true` (enabled by default)
+- **Test Environment**: `false` (disabled to prevent interference with tests)
+
+These variables define the **working hours** for each weekday. When `CALENDAR_AUTO_CREATE_SLOTS=true` and viewing the weekly calendar with no appointments, the system creates empty slots based on this configuration.
+
+Format: `"HH:MM-HH:MM,HH:MM-HH:MM,..."` (comma-separated time ranges)
+
+```dotenv
+# Monday working hours
+CALENDAR_SLOTS_MONDAY="09:00-10:00,10:00-11:00,11:00-12:00,12:00-13:00,14:00-15:00,15:00-16:00"
+
+# Tuesday working hours
+CALENDAR_SLOTS_TUESDAY="09:00-10:00,10:00-11:00,11:00-12:00,15:00-16:00,16:00-17:00"
+
+# Wednesday working hours
+CALENDAR_SLOTS_WEDNESDAY="09:00-10:00,10:00-11:00,11:00-12:00,12:00-13:00,14:00-15:00,15:00-16:00,16:00-17:00"
+
+# Thursday working hours
+CALENDAR_SLOTS_THURSDAY="09:00-10:00,10:00-11:00,11:00-12:00,15:00-16:00"
+
+# Friday working hours
+CALENDAR_SLOTS_FRIDAY="09:00-10:00,10:00-11:00,11:00-12:00,12:00-13:00,14:00-15:00,15:00-16:00,16:00-17:00"
+```
+
+**Notes:**
+- Empty appointment slots are only created when viewing the **weekly calendar** (`timeGridWeek`)
+- Slots are created **only if no appointments exist** for that week
+- Each time range represents one appointment slot (e.g., `09:00-10:00` creates a 1-hour slot)
+- You can customize working hours per day to match your clinic's schedule
+- Weekend days (Saturday/Sunday) are not included by default
+
 ### PHP
 
 Custom PHP configuration is located in `docker/dev/php/php.ini`:

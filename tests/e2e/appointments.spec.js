@@ -97,7 +97,7 @@ async function addMinutesLocal(page, { year, month, day, hour, minute }, minutes
 }
 
 async function openCalendarModal(page, titleText) {
-  const event = page.locator('.fc-event', { hasText: titleText }).first();
+  const event = page.locator('.fc-event').filter({ hasText: titleText }).first();
   await expect(event).toBeVisible();
   await event.click();
 }
@@ -168,9 +168,9 @@ test('appointments calendar flow', async ({ page, request }) => {
   await page.goto('/appointments');
   await expect(page.getByRole('heading', { name: 'Clinic Calendar' })).toBeVisible();
 
+  // Create appointment for today at 9 AM (should be visible in current week view)
   const baseParts = await page.evaluate(() => {
     const date = new Date();
-    date.setDate(date.getDate() + 1);
     date.setHours(9, 0, 0, 0);
     return {
       year: date.getFullYear(),
@@ -188,7 +188,7 @@ test('appointments calendar flow', async ({ page, request }) => {
   // 1) Create appointment with concrete data
   await page.getByRole('button', { name: 'New Appointment' }).click();
   await setInputValue(inputByLabel(page, 'Title'), 'Slot Test A');
-  await page.locator('label', { hasText: 'Appointment' }).click();
+  await page.locator('label').filter({ hasText: 'Appointment' }).click();
   await setDatePickerValue(page, 'Start', baseStart.picker);
   await setDatePickerValue(page, 'End', baseEnd.picker);
   await setInputValue(textareaByLabel(page, 'Notes'), 'Initial notes');
@@ -208,16 +208,26 @@ test('appointments calendar flow', async ({ page, request }) => {
   ]);
   const created = await createResponse.json();
   const appointmentId = created.id;
-  await expect(page.locator('.fc-event', { hasText: 'Slot Test A' }).first()).toBeVisible();
+
+  // Wait for the modal to close
+  await expect(page.locator('.fixed.inset-0')).toBeHidden({ timeout: 5000 });
+
+  // Wait for calendar to refresh
+  await page.waitForTimeout(1000);
+
+  await expect(page.locator('.fc-event').filter({ hasText: 'Slot Test A' }).first()).toBeVisible({ timeout: 10000 });
 
   await page.reload();
-  await expect(page.locator('.fc-event', { hasText: 'Slot Test A' }).first()).toBeVisible();
+  await expect(page.locator('.fc-event').filter({ hasText: 'Slot Test A' }).first()).toBeVisible();
 
+  // Verify appointment data via API
   const createdFetch = await getAppointment(page, appointmentId);
   expect(createdFetch.status).toBe(200);
   expect(createdFetch.data.title).toBe('Slot Test A');
   expect(createdFetch.data.notes).toBe('Initial notes');
   expect(createdFetch.data.type).toBe('appointment');
+
+  // Verify appointment appears in calendar
   const createdSlot = await getEventSlotInfo(page, 'Slot Test A');
   expect(createdSlot?.date).toBe(createdStartInfo.dateKey);
   expect(createdSlot?.timeText).toContain(createdRange);
@@ -225,7 +235,7 @@ test('appointments calendar flow', async ({ page, request }) => {
   // 2) Modify all appointment data
   await openCalendarModal(page, 'Slot Test A');
   await setInputValue(inputByLabel(page, 'Title'), 'Slot Test B');
-  await page.locator('label', { hasText: 'Other' }).click();
+  await page.locator('label').filter({ hasText: 'Other' }).click();
 
   const updatedParts = { ...baseParts, hour: 11, minute: 0 };
   const updatedStart = await buildLocalDateTime(page, updatedParts);
@@ -250,7 +260,7 @@ test('appointments calendar flow', async ({ page, request }) => {
   ]);
 
   await page.reload();
-  await expect(page.locator('.fc-event', { hasText: 'Slot Test B' }).first()).toBeVisible();
+  await expect(page.locator('.fc-event').filter({ hasText: 'Slot Test B' }).first()).toBeVisible();
 
   const updatedFetch = await getAppointment(page, appointmentId);
   expect(updatedFetch.status).toBe(200);
@@ -296,7 +306,7 @@ test('appointments calendar flow', async ({ page, request }) => {
   ]);
 
   await page.reload();
-  await expect(page.locator('.fc-event', { hasText: 'Slot Test B' }).first()).toBeVisible();
+  await expect(page.locator('.fc-event').filter({ hasText: 'Slot Test B' }).first()).toBeVisible();
 
   const movedFetch = await getAppointment(page, appointmentId);
   expect(movedFetch.status).toBe(200);
@@ -310,7 +320,7 @@ test('appointments calendar flow', async ({ page, request }) => {
   await page.getByRole('button', { name: 'Cancel' }).last().click();
 
   await page.reload();
-  await expect(page.locator('.fc-event', { hasText: 'Slot Test B' }).first()).toBeVisible();
+  await expect(page.locator('.fc-event').filter({ hasText: 'Slot Test B' }).first()).toBeVisible();
   const cancelDeleteFetch = await getAppointment(page, appointmentId);
   expect(cancelDeleteFetch.status).toBe(200);
 
@@ -327,7 +337,7 @@ test('appointments calendar flow', async ({ page, request }) => {
   ]);
 
   await page.reload();
-  await expect(page.locator('.fc-event', { hasText: 'Slot Test B' })).toHaveCount(0);
+  await expect(page.locator('.fc-event').filter({ hasText: 'Slot Test B' })).toHaveCount(0);
   const deleteFetch = await getAppointment(page, appointmentId);
   expect(deleteFetch.status).toBe(404);
 });

@@ -20,6 +20,7 @@ class AppointmentProvider implements ProviderInterface
         private EntityManagerInterface $entityManager,
         private RequestStack $requestStack,
         private EmptySlotCreator $emptySlotCreator,
+        private bool $autoCreateSlots = true,
     ) {
     }
 
@@ -68,9 +69,9 @@ class AppointmentProvider implements ProviderInterface
                       ->getQuery()
                       ->getArrayResult();
 
-        // Only create empty slots in weekly view (timeGridWeek)
+        // Only create empty slots in weekly view (timeGridWeek) if enabled
         $isWeeklyView = $view === 'timeGridWeek';
-        $shouldCreateSlots = empty($results) && $start && $end && !$patientId && $isWeeklyView;
+        $shouldCreateSlots = $this->autoCreateSlots && empty($results) && $start && $end && !$patientId && $isWeeklyView;
 
         if ($shouldCreateSlots) {
             try {

@@ -19,6 +19,14 @@ parameters:
     company_web: '%env(COMPANY_WEB)%'
     company_logo_path: '%env(COMPANY_LOGO_PATH)%'
 
+    # Weekly appointment slots configuration
+    calendar_auto_create_slots: '%env(bool:CALENDAR_AUTO_CREATE_SLOTS)%'
+    calendar_slots_monday: '%env(CALENDAR_SLOTS_MONDAY)%'
+    calendar_slots_tuesday: '%env(CALENDAR_SLOTS_TUESDAY)%'
+    calendar_slots_wednesday: '%env(CALENDAR_SLOTS_WEDNESDAY)%'
+    calendar_slots_thursday: '%env(CALENDAR_SLOTS_THURSDAY)%'
+    calendar_slots_friday: '%env(CALENDAR_SLOTS_FRIDAY)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -44,7 +52,19 @@ services:
         arguments:
             $itemsPerPage: '%items_per_page%'
 
-    # AppointmentProvider uses autowiring for all dependencies
+    # AppointmentProvider configuration
+    App\Infrastructure\Api\State\AppointmentProvider:
+        arguments:
+            $autoCreateSlots: '%calendar_auto_create_slots%'
+
+    # WeekGridBuilder configuration
+    App\Domain\Service\WeekGridBuilder:
+        arguments:
+            $slotsMonday: '%calendar_slots_monday%'
+            $slotsTuesday: '%calendar_slots_tuesday%'
+            $slotsWednesday: '%calendar_slots_wednesday%'
+            $slotsThursday: '%calendar_slots_thursday%'
+            $slotsFriday: '%calendar_slots_friday%'
 
     # DDD Repository Bindings
     App\Domain\Repository\PatientRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrinePatientRepository'

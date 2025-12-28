@@ -22,6 +22,12 @@ module.exports = defineConfig({
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://127.0.0.1:8081',
 
+    /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
+    actionTimeout: 15000, // 15 seconds
+
+    /* Maximum time for navigation. Defaults to 0 (no limit). */
+    navigationTimeout: 15000, // 15 seconds
+
     /* Collect screenshot when a test fails. */
     screenshot: 'only-on-failure',
 
@@ -31,6 +37,9 @@ module.exports = defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
   },
+
+  /* Maximum time one test can run for. */
+  timeout: 1200000, // 120 seconds per test
 
   /* Configure projects for major browsers */
   projects: [
