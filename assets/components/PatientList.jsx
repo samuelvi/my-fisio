@@ -298,7 +298,7 @@ export default function PatientList() {
                                         <Link to={`/patients/${patient.id}`} className="text-primary hover:text-primary-dark transition-colors inline-flex items-center">
                                             {t('view')}
                                             <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
-                                        </Link>
+                                            </Link>
                                     </td>
                                 </tr>
                             ))}
@@ -324,7 +324,7 @@ export default function PatientList() {
                         <Link
                             key={patient.id}
                             to={`/patients/${patient.id}`}
-                            className="flex items-center justify-between gap-3 p-4 hover:bg-gray-50 transition-colors"
+                            className="flex items-center justify-between gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
                         >
                             <div className="flex items-center gap-3 min-w-0">
                                 <span className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm border border-primary/10">

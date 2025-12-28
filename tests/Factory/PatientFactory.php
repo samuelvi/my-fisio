@@ -31,6 +31,8 @@ final class PatientFactory extends PersistentObjectFactory
             'lastName' => self::faker()->lastName(),
             'email' => self::faker()->unique()->safeEmail(),
             'phone' => self::faker()->phoneNumber(),
+            'taxId' => self::faker()->regexify('[0-9]{8}[A-Z]'),
+            'address' => self::faker()->address(),
             'status' => PatientStatus::ACTIVE,
         ];
     }

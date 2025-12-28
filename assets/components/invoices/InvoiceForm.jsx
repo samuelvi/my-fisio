@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 
 const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "" }) => (
@@ -21,8 +21,11 @@ export default function InvoiceForm() {
     const { t } = useLanguage();
     const navigate = useNavigate();
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
+    const patientId = searchParams.get('patientId');
     const isEditing = !!id;
     const [loading, setLoading] = useState(false);
+    const [loadingPatient, setLoadingPatient] = useState(false);
     const [error, setError] = useState(null);
     const [numberError, setNumberError] = useState('');
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
@@ -76,6 +79,34 @@ export default function InvoiceForm() {
         };
         fetchInvoice();
     }, [isEditing, id, t]);
+
+    // Fetch pre-filled invoice data from patient if patientId is provided
+    useEffect(() => {
+        if (!patientId || isEditing) return; // Don't fetch if editing existing invoice
+
+        const fetchPrefillData = async () => {
+            setLoadingPatient(true);
+            try {
+                const response = await axios.get(`/api/invoice-prefill?patientId=${patientId}`);
+                const data = response.data;
+
+                // Pre-fill customer fields from backend-mapped data
+                setCustomerName(data.fullName || '');
+                setCustomerTaxId(data.taxId || '');
+                setCustomerAddress(data.address || '');
+                setCustomerPhone(data.phone || '');
+                setCustomerEmail(data.email || '');
+            } catch (err) {
+                console.error('Error loading prefill data:', err);
+                // Don't show error to user, just leave fields empty
+                // User can still manually fill the form
+            } finally {
+                setLoadingPatient(false);
+            }
+        };
+
+        fetchPrefillData();
+    }, [patientId, isEditing]);
 
     const handleAddLine = () => {
         setLines([...lines, { concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
@@ -172,6 +203,20 @@ export default function InvoiceForm() {
                         <h2 className="text-lg font-medium text-gray-900">{t('customer_information')}</h2>
                     </div>
                     <div className="p-6">
+                        {patientId && !isEditing && (
+                            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start">
+                                <svg className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                <div className="text-sm text-blue-800">
+                                    {loadingPatient ? (
+                                        <span className="font-medium">{t('loading')}...</span>
+                                    ) : (
+                                        <span>{t('invoice_prefilled_from_patient')}</span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <InvoiceInput label={t('invoice_date')} value={date} setter={setDate} type="date" required />
                             {isEditing && (
