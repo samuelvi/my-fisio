@@ -31,7 +31,7 @@ export default function Calendar() {
     const [modalOpen, setModalOpen] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [currentEvent, setCurrentEvent] = useState(null);
-    const [calendarRef, setCalendarRef] = useState(null);
+    const calendarRef = useRef(null);
     const titleInputRef = useRef(null);
     const [formData, setFormData] = useState({
         title: '',
@@ -42,6 +42,15 @@ export default function Calendar() {
         allDay: false
     });
     const [validationError, setValidationError] = useState(null);
+    const currentViewDatesRef = useRef({ start: null, end: null });
+    const [hasAppointments, setHasAppointments] = useState(false);
+    const [hasEmptyGaps, setHasEmptyGaps] = useState(false);
+    const [isGeneratingGaps, setIsGeneratingGaps] = useState(false);
+    const [isDeletingGaps, setIsDeletingGaps] = useState(false);
+    const [showDeleteGapsConfirmModal, setShowDeleteGapsConfirmModal] = useState(false);
+    const [showDeleteGapsSuccessModal, setShowDeleteGapsSuccessModal] = useState(false);
+    const [gapsDeletedCount, setGapsDeletedCount] = useState(0);
+    const [showNoTypeConfirmModal, setShowNoTypeConfirmModal] = useState(false);
     const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || 10);
     const DEFAULT_DURATION_MINUTES = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || 60);
     const SLOT_DURATION_MINUTES = parseInt(import.meta.env.VITE_CALENDAR_SLOT_DURATION_MINUTES || 15);
@@ -96,13 +105,13 @@ export default function Calendar() {
             const handleEsc = (event) => {
                 if (event.key === 'Escape') {
                     setModalOpen(false);
-                    calendarRef?.getApi()?.unselect();
+                    calendarRef.current?.getApi()?.unselect();
                 }
             };
             window.addEventListener('keydown', handleEsc);
             return () => window.removeEventListener('keydown', handleEsc);
         }
-    }, [modalOpen, calendarRef]);
+    }, [modalOpen]);
 
     useEffect(() => {
         const media = window.matchMedia('(max-width: 768px)');
@@ -148,17 +157,38 @@ export default function Calendar() {
     const fetchEvents = async (fetchInfo, successCallback, failureCallback) => {
         try {
             // Get the current view type from the calendar instance
-            const currentView = calendarRef?.getApi()?.view?.type || 'timeGridWeek';
+            const currentView = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
+
+            // Remove timezone information from dates (strip +HH:MM or Z suffix)
+            const startStr = fetchInfo.startStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
+            const endStr = fetchInfo.endStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
+
+            // Store current view dates for button state management
+            currentViewDatesRef.current = { start: startStr, end: endStr };
 
             const response = await axios.get('/api/appointments', {
                 params: {
-                    start: fetchInfo.startStr,
-                    end: fetchInfo.endStr,
+                    start: startStr,
+                    end: endStr,
                     view: currentView // Send the current view type (timeGridWeek, dayGridMonth, etc.)
                 }
             });
 
             const data = response.data['member'] || response.data['hydra:member'] || [];
+
+            // Check if we're in weekly view and update button states
+            if (currentView === 'timeGridWeek') {
+                const hasEmptyGaps = data.some(app => app.type === null || app.type === undefined || app.type === '');
+                const hasAppointments = data.length > 0;
+
+                setHasEmptyGaps(hasEmptyGaps);
+                setHasAppointments(hasAppointments);
+            } else {
+                // Disable buttons in non-weekly views
+                setHasEmptyGaps(false);
+                setHasAppointments(true);
+            }
+
             const events = data.map(app => {
                 const colors = getEventColors(app.title, app.type);
                 return {
@@ -169,7 +199,7 @@ export default function Calendar() {
                     allDay: app.allDay,
                     extendedProps: {
                         notes: app.notes,
-                        type: app.type || 'appointment',
+                        type: app.type,
                         patientId: app.patientId ?? null
                     },
                     backgroundColor: colors.bg,
@@ -215,7 +245,7 @@ export default function Calendar() {
         setFormData({
             title: app.title || '',
             notes: app.extendedProps.notes || '',
-            type: app.extendedProps.type || 'appointment',
+            type: app.extendedProps.type || '',
             startsAt: app.startStr,
             endsAt: app.endStr,
             allDay: app.allDay
@@ -224,11 +254,7 @@ export default function Calendar() {
         setModalOpen(true);
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-
-        if (validationError) return;
-
+    const saveAppointment = async () => {
         try {
             const payload = { ...formData, userId: 1 };
             if (currentEvent) {
@@ -237,10 +263,25 @@ export default function Calendar() {
                 await axios.post('/api/appointments', payload);
             }
             setModalOpen(false);
-            if (calendarRef) calendarRef.getApi().refetchEvents();
+            setShowNoTypeConfirmModal(false);
+            if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
         } catch (error) {
             console.error('Error saving appointment:', error);
         }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        if (validationError) return;
+
+        // Check if type is not selected (empty, null, or undefined)
+        if (!formData.type || formData.type === '') {
+            setShowNoTypeConfirmModal(true);
+            return;
+        }
+
+        await saveAppointment();
     };
 
     const handleDeleteConfirmed = async () => {
@@ -249,7 +290,7 @@ export default function Calendar() {
             await axios.delete(`/api/appointments/${currentEvent.id}`);
             setModalOpen(false);
             setIsDeleteConfirmOpen(false);
-            if (calendarRef) calendarRef.getApi().refetchEvents();
+            if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
         } catch (error) {
             console.error('Error deleting appointment:', error);
         }
@@ -297,31 +338,110 @@ export default function Calendar() {
         }
     };
 
+    const handleGenerateGaps = async () => {
+        if (!currentViewDatesRef.current.start || !currentViewDatesRef.current.end) return;
+
+        setIsGeneratingGaps(true);
+        try {
+            await axios.post('/api/appointment-gaps/generate', {
+                start: currentViewDatesRef.current.start,
+                end: currentViewDatesRef.current.end
+            });
+
+            // Refresh calendar to show new gaps
+            calendarRef.current?.getApi()?.refetchEvents();
+        } catch (error) {
+            console.error('Error generating gaps:', error);
+            alert(error.response?.data?.error || 'Failed to generate empty gaps');
+        } finally {
+            setIsGeneratingGaps(false);
+        }
+    };
+
+    const handleDeleteGapsClick = () => {
+        setShowDeleteGapsConfirmModal(true);
+    };
+
+    const handleDeleteEmptyGaps = async () => {
+        if (!currentViewDatesRef.current.start || !currentViewDatesRef.current.end) return;
+
+        setShowDeleteGapsConfirmModal(false);
+        setIsDeletingGaps(true);
+        try {
+            const response = await axios.delete('/api/appointment-gaps/delete-empty', {
+                data: {
+                    start: currentViewDatesRef.current.start,
+                    end: currentViewDatesRef.current.end
+                }
+            });
+
+            // Refresh calendar to reflect deleted gaps
+            calendarRef.current?.getApi()?.refetchEvents();
+
+            // Show success modal with count
+            if (response.data.deletedCount > 0) {
+                setGapsDeletedCount(response.data.deletedCount);
+                setShowDeleteGapsSuccessModal(true);
+            }
+        } catch (error) {
+            console.error('Error deleting empty gaps:', error);
+            alert(error.response?.data?.error || 'Failed to delete empty gaps');
+        } finally {
+            setIsDeletingGaps(false);
+        }
+    };
+
     return (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm h-full overflow-hidden relative border border-gray-200">
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>
-                <button
-                    onClick={() => {
-                        const now = new Date();
-                        // Round to next hour for cleaner start time
-                        now.setMinutes(0, 0, 0);
-                        now.setHours(now.getHours() + 1);
-                        handleDateSelect({
-                            startStr: toSimpleDateTimeString(now),
-                            endStr: toSimpleDateTimeString(new Date(now.getTime() + (DEFAULT_DURATION_MINUTES * 60000))),
-                            allDay: false
-                        });
-                    }}
-                    className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-md font-bold transition shadow-sm"
-                >
-                    + {t('new_appointment')}
-                </button>
+                <div className="flex flex-wrap gap-2 items-center">
+                    <button
+                        onClick={handleGenerateGaps}
+                        disabled={hasAppointments || isGeneratingGaps}
+                        className={`px-4 py-2 rounded-md font-bold transition shadow-sm text-sm ${
+                            hasAppointments || isGeneratingGaps
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-green-600 hover:bg-green-700 text-white'
+                        }`}
+                        title={hasAppointments ? t('week_has_appointments') || 'Week already has appointments' : t('generate_empty_gaps') || 'Generate empty gaps'}
+                    >
+                        {isGeneratingGaps ? t('generating') || 'Generating...' : t('generate_gaps') || 'Generate Gaps'}
+                    </button>
+                    <button
+                        onClick={handleDeleteGapsClick}
+                        disabled={!hasEmptyGaps || isDeletingGaps}
+                        className={`px-4 py-2 rounded-md font-bold transition shadow-sm text-sm ${
+                            !hasEmptyGaps || isDeletingGaps
+                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                : 'bg-red-600 hover:bg-red-700 text-white'
+                        }`}
+                        title={!hasEmptyGaps ? t('no_empty_gaps') || 'No empty gaps to delete' : t('delete_empty_gaps') || 'Delete empty gaps'}
+                    >
+                        {isDeletingGaps ? t('deleting') || 'Deleting...' : t('delete_gaps') || 'Delete Gaps'}
+                    </button>
+                    <button
+                        onClick={() => {
+                            const now = new Date();
+                            // Round to next hour for cleaner start time
+                            now.setMinutes(0, 0, 0);
+                            now.setHours(now.getHours() + 1);
+                            handleDateSelect({
+                                startStr: toSimpleDateTimeString(now),
+                                endStr: toSimpleDateTimeString(new Date(now.getTime() + (DEFAULT_DURATION_MINUTES * 60000))),
+                                allDay: false
+                            });
+                        }}
+                        className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-md font-bold transition shadow-sm"
+                    >
+                        + {t('new_appointment')}
+                    </button>
+                </div>
             </div>
 
             <div className="calendar-container border rounded-lg overflow-hidden border-gray-100 shadow-sm">
                 <FullCalendar
-                    ref={ref => setCalendarRef(ref)}
+                    ref={calendarRef}
                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                     headerToolbar={
                         isMobile
@@ -440,7 +560,7 @@ export default function Calendar() {
                                     </div>
                                 </div>
                                 <div className="bg-gray-50 px-6 py-4 sm:px-8 flex justify-between items-center gap-4">
-                                    <button type="button" onClick={() => { setModalOpen(false); calendarRef?.getApi()?.unselect(); }} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-bold text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition">{t('cancel')}</button>
+                                    <button type="button" onClick={() => { setModalOpen(false); calendarRef.current?.getApi()?.unselect(); }} className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-bold text-gray-700 hover:bg-gray-50 sm:w-auto sm:text-sm transition">{t('cancel')}</button>
                                     <button
                                         type="submit"
                                         disabled={!!validationError}
@@ -491,6 +611,78 @@ export default function Calendar() {
                                     {t('delete')}
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Gaps Confirmation Modal */}
+            {showDeleteGapsConfirmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4">{t('confirm')}</h3>
+                        <p className="text-gray-700 mb-6">
+                            {t('confirm_delete_empty_gaps') || 'Are you sure you want to delete all empty gaps?'}
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowDeleteGapsConfirmModal(false)}
+                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-semibold transition"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={handleDeleteEmptyGaps}
+                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md font-semibold transition"
+                            >
+                                {t('delete')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Gaps Success Modal */}
+            {showDeleteGapsSuccessModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-bold text-green-700 mb-4">✓ {t('confirm')}</h3>
+                        <p className="text-gray-700 mb-6">
+                            {gapsDeletedCount} {t('empty_gaps_deleted') || 'empty gaps deleted'}
+                        </p>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={() => setShowDeleteGapsSuccessModal(false)}
+                                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold transition"
+                            >
+                                {t('close')}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* No Type Selected Confirmation Modal */}
+            {showNoTypeConfirmModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                        <h3 className="text-lg font-bold text-amber-700 mb-4">⚠ {t('confirm')}</h3>
+                        <p className="text-gray-700 mb-6">
+                            {t('no_type_selected_warning') || "You haven't selected 'Appointment' or 'Other'. Do you want to save anyway?"}
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setShowNoTypeConfirmModal(false)}
+                                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-md font-semibold transition"
+                            >
+                                {t('cancel')}
+                            </button>
+                            <button
+                                onClick={saveAppointment}
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-semibold transition"
+                            >
+                                {t('save_anyway') || 'Save Anyway'}
+                            </button>
                         </div>
                     </div>
                 </div>

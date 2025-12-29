@@ -4,6 +4,12 @@ controllers:
         namespace: App\Controller
     type: attribute
 
+api_controllers:
+    resource:
+        path: ../../src/Infrastructure/Api/Controller/
+        namespace: App\Infrastructure\Api\Controller
+    type: attribute
+
 when@test:
     test_controllers:
         resource:

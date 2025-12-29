@@ -48,6 +48,35 @@ NEW_FEATURE_ENABLED=true
 When enabled, users will have access to the new feature in the dashboard. Default: `true`
 ```
 
+## Task Completion Checklist
+
+**CRITICAL**: Before marking any task as complete, you **MUST** verify:
+
+### 1. Translations
+- Check if the new feature adds any UI text (buttons, labels, messages, errors, tooltips, etc.)
+- Add translations for both English (`en`) and Spanish (`es`) in the translation system
+- Ensure all user-facing text is internationalized
+- Test that translations appear correctly in both languages
+
+### 2. Functionality Verification
+- Test that the implementation works as expected
+- Verify that no steps were skipped during implementation
+- Check that all edge cases are handled
+- Ensure error messages are user-friendly and translated
+- Confirm that the feature integrates correctly with existing functionality
+
+### 3. Code Quality
+- Remove debug code (console.log, error_log, etc.) unless intentionally needed
+- Clean up commented-out code
+- Ensure proper error handling
+- Verify that all imports are used
+- Check for any TODO comments that should be addressed
+
+### 4. Documentation
+- Update README.md if new environment variables were added
+- Document any new API endpoints or significant changes
+- Update AGENTS.md if new patterns or guidelines should be followed
+
 ## General Guidelines
 
 - Always maintain consistency between `.env` and documentation
@@ -59,4 +88,7 @@ When enabled, users will have access to the new feature in the dashboard. Defaul
 
 ---
 
-**Remember**: Undocumented variables create confusion and maintenance issues. Always keep the documentation up to date!
+**Remember**:
+- Undocumented variables create confusion and maintenance issues. Always keep the documentation up to date!
+- Untranslated text creates a poor user experience. Always add translations for all user-facing text!
+- Incomplete testing leads to bugs. Always verify functionality before completing a task!

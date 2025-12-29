@@ -6,7 +6,6 @@ namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
-use App\Application\Service\EmptySlotCreator;
 use App\Domain\Entity\Appointment;
 use App\Infrastructure\Api\Resource\AppointmentResource;
 use DateTimeImmutable;
@@ -19,8 +18,6 @@ class AppointmentProvider implements ProviderInterface
     public function __construct(
         private EntityManagerInterface $entityManager,
         private RequestStack $requestStack,
-        private EmptySlotCreator $emptySlotCreator,
-        private bool $autoCreateSlots = true,
     ) {
     }
 
@@ -68,25 +65,6 @@ class AppointmentProvider implements ProviderInterface
         $results = $qb->orderBy('a.startsAt', 'ASC')
                       ->getQuery()
                       ->getArrayResult();
-
-        // Only create empty slots in weekly view (timeGridWeek) if enabled
-        $isWeeklyView = $view === 'timeGridWeek';
-        $shouldCreateSlots = $this->autoCreateSlots && empty($results) && $start && $end && !$patientId && $isWeeklyView;
-
-        if ($shouldCreateSlots) {
-            try {
-                $this->emptySlotCreator->createEmptySlotsIfNeeded(
-                    new DateTimeImmutable($start),
-                    new DateTimeImmutable($end)
-                );
-
-                // Re-fetch appointments after creating empty slots
-                $results = $qb->getQuery()->getArrayResult();
-            } catch (\Exception $e) {
-                // Log error but continue to return empty results instead of failing
-                error_log('Error creating empty slots: ' . $e->getMessage());
-            }
-        }
 
         return array_map([$this, 'mapToResource'], $results);
     }

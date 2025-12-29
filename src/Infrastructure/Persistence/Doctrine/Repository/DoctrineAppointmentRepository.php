@@ -45,4 +45,31 @@ final class DoctrineAppointmentRepository extends ServiceEntityRepository implem
         $this->getEntityManager()->persist($appointment);
         $this->getEntityManager()->flush();
     }
+
+    public function countAppointmentsInDateRange(DateTimeInterface $start, DateTimeInterface $end): int
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->select('COUNT(a.id) as total')
+            ->where('a.startsAt >= :start')
+            ->andWhere('a.endsAt <= :end')
+            ->setParameter('start', $start)
+            ->setParameter('end', $end);
+
+        $result = $qb->getQuery()->getArrayResult();
+
+        return (int) ($result[0]['total'] ?? 0);
+    }
+
+    public function deleteEmptyGapsInDateRange(DateTimeInterface $start, DateTimeInterface $end): int
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->delete()
+            ->where('a.startsAt >= :start')
+            ->andWhere('a.endsAt <= :end')
+            ->andWhere('a.type IS NULL')
+            ->setParameter('start', $start)
+            ->setParameter('end', $end);
+
+        return $qb->getQuery()->execute();
+    }
 }

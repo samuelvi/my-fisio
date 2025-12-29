@@ -20,7 +20,6 @@ parameters:
     company_logo_path: '%env(COMPANY_LOGO_PATH)%'
 
     # Weekly appointment slots configuration
-    calendar_auto_create_slots: '%env(bool:CALENDAR_AUTO_CREATE_SLOTS)%'
     calendar_slots_monday: '%env(CALENDAR_SLOTS_MONDAY)%'
     calendar_slots_tuesday: '%env(CALENDAR_SLOTS_TUESDAY)%'
     calendar_slots_wednesday: '%env(CALENDAR_SLOTS_WEDNESDAY)%'
@@ -51,11 +50,6 @@ services:
     App\Infrastructure\Api\State\PatientProvider:
         arguments:
             $itemsPerPage: '%items_per_page%'
-
-    # AppointmentProvider configuration
-    App\Infrastructure\Api\State\AppointmentProvider:
-        arguments:
-            $autoCreateSlots: '%calendar_auto_create_slots%'
 
     # WeekGridBuilder configuration
     App\Domain\Service\WeekGridBuilder:
