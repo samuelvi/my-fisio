@@ -19,6 +19,7 @@
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^3.3",
         "dompdf/dompdf": "^3.1",
+        "friendsofsymfony/jsrouting-bundle": "^3.6",
         "lexik/jwt-authentication-bundle": "^3.2",
         "nelmio/cors-bundle": "^2.6",
         "pentatrion/vite-bundle": "^8.2",

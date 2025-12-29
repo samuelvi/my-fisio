@@ -31,7 +31,7 @@ class InvoiceExportController extends AbstractController
         $this->messageBus = $this->queryBus;
     }
 
-    #[Route('/api/invoices/{id}/export/{format}', name: 'invoice_export', requirements: ['format' => 'pdf|html'], methods: ['GET'])]
+    #[Route('/api/invoices/{id}/export/{format}', name: 'invoice_export', requirements: ['format' => 'pdf|html'], methods: ['GET'], options: ['expose' => true])]
     public function __invoke(
         int $id,
         string $format,

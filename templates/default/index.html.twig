@@ -6,9 +6,5 @@
     <script>
         window.APP_TRANSLATIONS = {{ get_app_translations()|json_encode|raw }};
     </script>
-    {% set routes = {
-        'invoices_collection': path('_api_/invoices{._format}_get_collection'),
-        'invoices_export': path('invoice_export', {'id': -1, 'format': 'html'})
-    } %}
-    <div id="root" data-routes="{{ routes|json_encode|e('html_attr') }}"></div>
+    <div id="root"></div>
 {% endblock %}

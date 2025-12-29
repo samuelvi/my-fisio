@@ -233,6 +233,10 @@ symfony: ## Run Symfony console command (use: make symfony cmd="cache:clear")
 		$(DOCKER_COMPOSE_DEV) exec php php bin/console $(cmd); \
 	fi
 
+dump-routes: ## Dump FOS JS Routing routes to JSON
+	@echo "$(GREEN)Dumping exposed routes...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec php php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
+
 cache-clear: ## Clear Symfony cache
 	@echo "$(GREEN)Clearing cache...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php php bin/console cache:clear
@@ -436,7 +440,7 @@ test-all: test-unit test-e2e ## Run full test suite (unit + E2E)
 
 ##@ Project Setup
 
-dev-install: dev-build dev-up wait-for-services init-symfony install-all-packages db-setup success-message ## Full project installation (Dev)
+dev-install: dev-build dev-up wait-for-services init-symfony install-all-packages db-setup dump-routes success-message ## Full project installation (Dev)
 
 init-symfony: ## Initialize Symfony application
 	@echo "$(GREEN)Initializing Symfony application...$(NC)"

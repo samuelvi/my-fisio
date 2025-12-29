@@ -157,6 +157,21 @@ src/
     - **Context**: Managed via `LanguageContext` in React using a `t()` helper function.
     - **Config**: Default locale is driven by `VITE_DEFAULT_LOCALE` but persisted in `localStorage`.
 
+### Frontend Routing (FOSJsRoutingBundle)
+To avoid hardcoding API URLs in React and maintain security by not exposing all backend routes, we use `friendsofsymfony/jsrouting-bundle`.
+
+**Strategy:**
+1.  **Expose Routes**: Only specific routes are exposed to the frontend.
+    -   Add `options: ['expose' => true]` to your Route attribute in Controller or YAML.
+    -   For named routes (e.g. API Platform), add the route name to `config/packages/fos_js_routing.yaml` under `routes_to_expose`.
+2.  **Generate JSON**: The frontend consumes a JSON file containing the route definitions.
+    -   Run `make dump-routes` (or `php bin/console fos:js-routing:dump ...`) to regenerate `assets/routing/routes.json`.
+    -   **Important**: You must run this command whenever you change an exposed route or add a new one.
+3.  **Usage in React**:
+    -   Import the initialized router: `import Routing from '../../routing/init';`
+    -   Generate URLs: `Routing.generate('route_name', { param: 'value' })`
+    -   Example: `Routing.generate('invoice_export', { id: 123, format: 'pdf' })`
+
 ### Frontend
 - Functional Components with Hooks
 - Presentational/Container separation

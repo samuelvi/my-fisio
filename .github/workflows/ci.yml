@@ -206,6 +206,11 @@ jobs:
           docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:schema:create
           docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console doctrine:fixtures:load --no-interaction
 
+      - name: Dump exposed routes
+        run: |
+          echo "🗺️ Dumping exposed routes..."
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
+
       - name: Build frontend assets
         run: |
           echo "⚡ Building with Vite..."

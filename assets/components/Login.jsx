@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import Routing from '../routing/init';
 import { useLanguage } from './LanguageContext';
 
-export default function Login({ loginCheckUrl, dashboardUrl }) {
+export default function Login() {
     const { language, t, changeLanguage } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -11,11 +12,16 @@ export default function Login({ loginCheckUrl, dashboardUrl }) {
     const [sessionExpired, setSessionExpired] = useState(false);
     const location = useLocation();
 
+    const dashboardUrl = Routing.generate('app_home', { reactRouting: 'dashboard' });
+
     useEffect(() => {
         // Check for expired session parameter
         const params = new URLSearchParams(location.search);
-        if (params.get('expired')) {
+        const isExpired = params.get('expired');
+        
+        if (isExpired) {
             setSessionExpired(true);
+            localStorage.removeItem('token'); // Ensure token is gone
         }
 
         // Auto-fill credentials in development
@@ -27,10 +33,11 @@ export default function Login({ loginCheckUrl, dashboardUrl }) {
     }, [location.search]);
 
     useEffect(() => {
-        if (localStorage.getItem('token')) {
+        const params = new URLSearchParams(location.search);
+        if (localStorage.getItem('token') && !params.get('expired')) {
             window.location.href = dashboardUrl;
         }
-    }, [dashboardUrl]);
+    }, [dashboardUrl, location.search]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -38,7 +45,7 @@ export default function Login({ loginCheckUrl, dashboardUrl }) {
 
         try {
             const response = await axios.post(
-                loginCheckUrl,
+                Routing.generate('api_login_check'),
                 {
                     username: email,
                     password: password

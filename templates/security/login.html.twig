@@ -28,10 +28,6 @@
         <script>
             window.APP_TRANSLATIONS = {{ get_app_translations()|json_encode|raw }};
         </script>
-        {% set props = {
-            'loginCheckUrl': path('api_login_check'),
-            'dashboardUrl': path('app_home', {'reactRouting': 'dashboard'})
-        } %}
-        <div id="login-app" data-props="{{ props|json_encode|e('html_attr') }}"></div>
+        <div id="login-app"></div>
     </body>
 </html>

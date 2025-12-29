@@ -29,7 +29,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Table(name: 'invoices')]
 #[ApiResource(
     operations: [
-        new GetCollection(),
+        new GetCollection(name: 'api_invoices_collection'),
         new Get(),
         new Post(processor: InvoiceCreateProcessor::class, input: InvoiceInput::class),
         new Put(processor: InvoiceUpdateProcessor::class, input: InvoiceInput::class),

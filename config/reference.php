@@ -2016,6 +2016,19 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         formatter?: scalar|null,
  *     },
  * }
+ * @psalm-type FosJsRoutingConfig = array{
+ *     serializer?: scalar|null,
+ *     routes_to_expose?: list<scalar|null>,
+ *     router?: scalar|null, // Default: "router"
+ *     request_context_base_url?: scalar|null, // Default: null
+ *     cache_control?: array{
+ *         public?: bool, // Default: false
+ *         expires?: scalar|null, // Default: null
+ *         maxage?: scalar|null, // Default: null
+ *         smaxage?: scalar|null, // Default: null
+ *         vary?: list<scalar|null>,
+ *     },
+ * }
  * @psalm-type ConfigType = array{
  *     imports?: ImportsConfig,
  *     parameters?: ParametersConfig,
@@ -2032,6 +2045,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *     pentatrion_vite?: PentatrionViteConfig,
  *     snc_redis?: SncRedisConfig,
+ *     fos_js_routing?: FosJsRoutingConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
  *         parameters?: ParametersConfig,
@@ -2052,6 +2066,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         pentatrion_vite?: PentatrionViteConfig,
  *         zenstruck_foundry?: ZenstruckFoundryConfig,
  *         snc_redis?: SncRedisConfig,
+ *         fos_js_routing?: FosJsRoutingConfig,
  *     },
  *     "when@prod"?: array{
  *         imports?: ImportsConfig,
@@ -2069,6 +2084,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *         pentatrion_vite?: PentatrionViteConfig,
  *         snc_redis?: SncRedisConfig,
+ *         fos_js_routing?: FosJsRoutingConfig,
  *     },
  *     "when@test"?: array{
  *         imports?: ImportsConfig,
@@ -2088,6 +2104,7 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         pentatrion_vite?: PentatrionViteConfig,
  *         zenstruck_foundry?: ZenstruckFoundryConfig,
  *         snc_redis?: SncRedisConfig,
+ *         fos_js_routing?: FosJsRoutingConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias
  *         imports?: ImportsConfig,

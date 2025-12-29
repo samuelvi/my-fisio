@@ -5,6 +5,7 @@ import axios from 'axios';
 import Login from './components/Login';
 import { LanguageProvider } from './components/LanguageContext';
 import './app.css';
+import './routing/init';
 
 // Apply color variables
 const colorVars = {
