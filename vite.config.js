@@ -14,8 +14,8 @@ export default defineConfig({
     build: {
         rollupOptions: {
             input: {
-                app: "./assets/app.jsx",
-                login: "./assets/login.jsx"
+                app: "./assets/app.tsx",
+                login: "./assets/login.tsx"
             },
             output: {
                 manualChunks: {

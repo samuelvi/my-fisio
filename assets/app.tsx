@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import axios from 'axios';
+import axios, { AxiosResponse, AxiosError } from 'axios';
 import './app.css';
-import './routing/init'; // Initialize FOS Routing
+import './routing/init';
 import { LanguageProvider } from './components/LanguageContext';
 
 import Dashboard from './components/Dashboard';
@@ -18,23 +18,22 @@ import InvoiceList from './components/invoices/InvoiceList';
 import InvoiceForm from './components/invoices/InvoiceForm';
 import InvoiceGaps from './components/invoices/InvoiceGaps';
 
-// 1. Configure Basic Axios Defaults
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
 axios.defaults.headers.common['Content-Type'] = 'application/ld+json';
 
-const colorVars = {
-    '--color-primary': import.meta.env.VITE_COLOR_PRIMARY,
-    '--color-primary-light': import.meta.env.VITE_COLOR_PRIMARY_LIGHT,
-    '--color-primary-dark': import.meta.env.VITE_COLOR_PRIMARY_DARK,
-    '--color-primary-darker': import.meta.env.VITE_COLOR_PRIMARY_DARKER,
-    '--color-btn-success': import.meta.env.VITE_COLOR_BTN_SUCCESS,
-    '--color-btn-danger': import.meta.env.VITE_COLOR_BTN_DANGER,
-    '--color-btn-secondary': import.meta.env.VITE_COLOR_BTN_SECONDARY,
-    '--color-btn-info': import.meta.env.VITE_COLOR_BTN_INFO,
-    '--color-calendar-appointment': import.meta.env.VITE_COLOR_CALENDAR_APPOINTMENT,
-    '--color-calendar-other': import.meta.env.VITE_COLOR_CALENDAR_OTHER,
-    '--color-calendar-text-other': import.meta.env.VITE_COLOR_CALENDAR_TEXT_OTHER,
-    '--color-calendar-event-default': import.meta.env.VITE_COLOR_CALENDAR_EVENT_DEFAULT,
+const colorVars: Record<string, string | undefined> = {
+    '--color-primary': import.meta.env.VITE_COLOR_PRIMARY as string,
+    '--color-primary-light': import.meta.env.VITE_COLOR_PRIMARY_LIGHT as string,
+    '--color-primary-dark': import.meta.env.VITE_COLOR_PRIMARY_DARK as string,
+    '--color-primary-darker': import.meta.env.VITE_COLOR_PRIMARY_DARKER as string,
+    '--color-btn-success': import.meta.env.VITE_COLOR_BTN_SUCCESS as string,
+    '--color-btn-danger': import.meta.env.VITE_COLOR_BTN_DANGER as string,
+    '--color-btn-secondary': import.meta.env.VITE_COLOR_BTN_SECONDARY as string,
+    '--color-btn-info': import.meta.env.VITE_COLOR_BTN_INFO as string,
+    '--color-calendar-appointment': import.meta.env.VITE_COLOR_CALENDAR_APPOINTMENT as string,
+    '--color-calendar-other': import.meta.env.VITE_COLOR_CALENDAR_OTHER as string,
+    '--color-calendar-text-other': import.meta.env.VITE_COLOR_CALENDAR_TEXT_OTHER as string,
+    '--color-calendar-event-default': import.meta.env.VITE_COLOR_CALENDAR_EVENT_DEFAULT as string,
 };
 
 Object.entries(colorVars).forEach(([key, value]) => {
@@ -48,10 +47,9 @@ if (token) {
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
-// 2. Global Response Interceptor for Session Expiration
 axios.interceptors.response.use(
-    (response) => {
-        if (response.data && response.data.code === 401) {
+    (response: AxiosResponse) => {
+        if (response.data && (response.data as any).code === 401) {
             localStorage.removeItem('token');
             delete axios.defaults.headers.common['Authorization'];
             window.location.href = '/login?expired=1';
@@ -59,7 +57,7 @@ axios.interceptors.response.use(
         }
         return response;
     },
-    (error) => {
+    (error: AxiosError) => {
         const isUnauthorized = error.response && error.response.status === 401;
         
         if (isUnauthorized && !window.location.pathname.includes('/login')) {
@@ -72,13 +70,13 @@ axios.interceptors.response.use(
     }
 );
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     const isAuthenticated = !!localStorage.getItem('token');
     if (!isAuthenticated) {
         window.location.href = '/login?expired=1';
         return null;
     }
-    return children;
+    return <>{children}</>;
 };
 
 function App() {
@@ -195,7 +193,6 @@ function App() {
                     </ProtectedRoute>
                 } />
 
-                {/* Catch-all for undefined routes */}
                 <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>
         </BrowserRouter>

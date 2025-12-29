@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import Routing from '../routing/init';
@@ -6,27 +6,25 @@ import { useLanguage } from './LanguageContext';
 
 export default function Login() {
     const { language, t, changeLanguage } = useLanguage();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState(null);
-    const [sessionExpired, setSessionExpired] = useState(false);
+    const [email, setEmail] = useState<string>('');
+    const [password, setPassword] = useState<string>('');
+    const [error, setError] = useState<string | null>(null);
+    const [sessionExpired, setSessionExpired] = useState<boolean>(false);
     const location = useLocation();
 
     const dashboardUrl = Routing.generate('app_home', { reactRouting: 'dashboard' });
 
     useEffect(() => {
-        // Check for expired session parameter
         const params = new URLSearchParams(location.search);
         const isExpired = params.get('expired');
         
         if (isExpired) {
             setSessionExpired(true);
-            localStorage.removeItem('token'); // Ensure token is gone
+            localStorage.removeItem('token');
         }
 
-        // Auto-fill credentials in development
-        const envEmail = import.meta.env.VITE_AUTH_EMAIL;
-        const envPassword = import.meta.env.VITE_AUTH_PASSWORD;
+        const envEmail = (import.meta.env.VITE_AUTH_EMAIL as string);
+        const envPassword = (import.meta.env.VITE_AUTH_PASSWORD as string);
         
         if (envEmail) setEmail(envEmail);
         if (envPassword) setPassword(envPassword);
@@ -39,7 +37,7 @@ export default function Login() {
         }
     }, [dashboardUrl, location.search]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError(null);
 

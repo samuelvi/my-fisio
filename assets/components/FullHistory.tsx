@@ -3,18 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
+import { Patient, RecordEntry } from '../types';
 
 export default function FullHistory() {
     const { t } = useLanguage();
-    const { id } = useParams();
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [patient, setPatient] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [patient, setPatient] = useState<Patient | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const fetchHistory = async () => {
+            if (!id) return;
             try {
-                const response = await axios.get(Routing.generate('api_patients_get', { id }));
+                const response = await axios.get<Patient>(Routing.generate('api_patients_get', { id }));
                 setPatient(response.data);
                 setLoading(false);
             } catch (error) {
@@ -28,7 +30,7 @@ export default function FullHistory() {
     if (loading) return <div className="p-4 sm:p-8 text-center font-bold text-gray-500">{t('loading')}...</div>;
     if (!patient) return <div className="p-4 sm:p-8 text-center text-red-600 font-bold">{t('error_could_not_load_patient')}</div>;
 
-    const sortedRecords = [...(patient.records || [])].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const sortedRecords: RecordEntry[] = [...(patient.records || [])].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return (
         <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-12 p-4 sm:p-6">
@@ -54,7 +56,6 @@ export default function FullHistory() {
                 </div>
             </div>
 
-            {/* Comprehensive Patient Info Card */}
             <div className="bg-white shadow-sm rounded-2xl border border-gray-200 p-4 sm:p-8 no-print">
                 <h2 className="text-xl font-black text-gray-800 mb-6 sm:mb-8 border-b border-gray-100 pb-4">{t('personal_information')}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-y-8 gap-x-12 text-sm">
@@ -99,7 +100,6 @@ export default function FullHistory() {
                         <p className="text-gray-900 font-medium">{new Date(patient.createdAt).toLocaleDateString()}</p>
                     </div>
 
-                    {/* Medical Info Section */}
                     <div className="md:col-span-3 mt-6 pt-6 sm:pt-8 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                         <div className="bg-red-50/50 p-5 rounded-2xl border border-red-100">
                             <h4 className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-4">{t('allergies_diseases')}</h4>
@@ -148,7 +148,7 @@ export default function FullHistory() {
                 </div>
             ) : (
                 <div className="space-y-6 sm:space-y-10 print-only">
-                    {sortedRecords.map((record, index) => (
+                    {sortedRecords.map((record) => (
                         <div key={record.id} className="bg-white shadow-sm rounded-2xl border border-gray-200 overflow-hidden page-break-inside-avoid print-card">
                             <div className="bg-gray-50 px-4 sm:px-8 py-4 border-b border-gray-200 flex justify-between items-center print-header">
                                 <span className="text-xs font-black text-primary uppercase tracking-widest">

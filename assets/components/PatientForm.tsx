@@ -1,21 +1,46 @@
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Dialog, Transition } from '@headlessui/react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
+import { Patient, PatientStatus } from '../types';
+
+interface PatientFormData {
+    firstName: string;
+    lastName: string;
+    taxId: string;
+    dateOfBirth: string;
+    phone: string;
+    email: string;
+    address: string;
+    profession: string;
+    sportsActivity: string;
+    rate: string;
+    allergies: string;
+    systemicDiseases: string;
+    medication: string;
+    surgeries: string;
+    accidents: string;
+    injuries: string;
+    bruxism: string;
+    insoles: string;
+    others: string;
+    notes: string;
+    status: PatientStatus;
+}
 
 export default function PatientForm() {
     const { t } = useLanguage();
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { id } = useParams<{ id: string }>();
     const isEditing = !!id;
-    const [loading, setLoading] = useState(false);
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-    const [errors, setErrors] = useState({});
+    const [loading, setLoading] = useState<boolean>(false);
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
     
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<PatientFormData>({
         firstName: '',
         lastName: '',
         taxId: '',
@@ -48,9 +73,8 @@ export default function PatientForm() {
     const fetchPatient = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(Routing.generate('api_patients_get', { id }));
+            const response = await axios.get<Patient>(Routing.generate('api_patients_get', { id }));
             const data = response.data;
-            // Format date for input type="date"
             const formattedDate = data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : '';
             
             setFormData({
@@ -84,7 +108,7 @@ export default function PatientForm() {
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -107,13 +131,13 @@ export default function PatientForm() {
         setIsConfirmModalOpen(false);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
 
         try {
-            const payload = { ...formData };
+            const payload: any = { ...formData };
             if (!payload.dateOfBirth) delete payload.dateOfBirth;
 
             if (isEditing) {
@@ -123,12 +147,11 @@ export default function PatientForm() {
                 await axios.post(Routing.generate('api_patients_post'), payload);
                 navigate('/patients');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             if (err.response && err.response.data && err.response.data.violations) {
-                // Handle API Platform validation errors
-                const newErrors = {};
-                err.response.data.violations.forEach(violation => {
+                const newErrors: Record<string, string> = {};
+                err.response.data.violations.forEach((violation: any) => {
                     newErrors[violation.propertyPath] = violation.message;
                 });
                 setErrors(newErrors);
@@ -161,8 +184,6 @@ export default function PatientForm() {
             )}
 
             <form id="patient-form" onSubmit={handleSubmit} className="space-y-6 pb-20">
-                
-                {/* SECTION 1: Personal Information */}
                 <div className="bg-white shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-gray-200">
                     <div className="md:grid md:grid-cols-3 md:gap-6">
                         <div className="md:col-span-1">
@@ -228,13 +249,11 @@ export default function PatientForm() {
                                         className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
                                     />
                                 </div>
-
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* SECTION 2: Contact Information */}
                 <div className="bg-white shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-gray-200">
                     <div className="md:grid md:grid-cols-3 md:gap-6">
                         <div className="md:col-span-1">
@@ -288,7 +307,6 @@ export default function PatientForm() {
                     </div>
                 </div>
 
-                {/* SECTION 3: Administrative Details */}
                 <div className="bg-white shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-gray-200">
                     <div className="md:grid md:grid-cols-3 md:gap-6">
                         <div className="md:col-span-1">
@@ -316,7 +334,6 @@ export default function PatientForm() {
                     </div>
                 </div>
 
-                {/* SECTION 4: Clinical Background */}
                 <div className="bg-white shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-gray-200">
                     <div className="md:grid md:grid-cols-3 md:gap-6">
                         <div className="md:col-span-1">
@@ -487,7 +504,6 @@ export default function PatientForm() {
                     </div>
                 </div>
 
-                {/* SECTION 5: Danger Zone (Status Toggle) */}
                 {isEditing && (
                     <div className="bg-red-50 shadow-sm px-4 py-5 sm:rounded-lg sm:p-6 border border-red-200 mt-12 mb-12">
                         <div className="md:grid md:grid-cols-3 md:gap-6">
@@ -528,7 +544,6 @@ export default function PatientForm() {
                     </div>
                 )}
 
-                {/* Form Footer Buttons */}
                 <div className="flex justify-between items-center bg-white p-4 sm:rounded-lg border border-gray-200 shadow-sm mt-8">
                     <button
                         type="button"
@@ -545,10 +560,8 @@ export default function PatientForm() {
                         {loading ? t('saving') : t('save_patient')}
                     </button>
                 </div>
-
             </form>
 
-            {/* Confirmation Modal */}
             <Transition.Root show={isConfirmModalOpen} as={Fragment}>
                 <Dialog as="div" className="relative z-50" onClose={setIsConfirmModalOpen}>
                     <Transition.Child

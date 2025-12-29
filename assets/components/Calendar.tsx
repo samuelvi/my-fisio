@@ -11,12 +11,12 @@ import { registerLocale } from 'react-datepicker';
 import { enUS, es } from 'date-fns/locale';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
+import { Appointment } from '../types';
 
 registerLocale('en', enUS);
 registerLocale('es', es);
 
-// Convert Date to simple DATETIME format (no timezone)
-function toSimpleDateTimeString(date) {
+function toSimpleDateTimeString(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
@@ -26,15 +26,24 @@ function toSimpleDateTimeString(date) {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
+interface FormData {
+    title: string;
+    notes: string;
+    type: string;
+    startsAt: string;
+    endsAt: string;
+    allDay: boolean;
+}
+
 export default function Calendar() {
     const { t, language } = useLanguage();
-    const [isMobile, setIsMobile] = useState(false);
-    const [modalOpen, setModalOpen] = useState(false);
-    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-    const [currentEvent, setCurrentEvent] = useState(null);
-    const calendarRef = useRef(null);
-    const titleInputRef = useRef(null);
-    const [formData, setFormData] = useState({
+    const [isMobile, setIsMobile] = useState<boolean>(false);
+    const [modalOpen, setModalOpen] = useState<boolean>(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
+    const [currentEvent, setCurrentEvent] = useState<any>(null);
+    const calendarRef = useRef<FullCalendar>(null);
+    const titleInputRef = useRef<HTMLInputElement>(null);
+    const [formData, setFormData] = useState<FormData>({
         title: '',
         notes: '',
         type: 'appointment',
@@ -42,20 +51,21 @@ export default function Calendar() {
         endsAt: '',
         allDay: false
     });
-    const [validationError, setValidationError] = useState(null);
-    const currentViewDatesRef = useRef({ start: null, end: null });
-    const [hasAppointments, setHasAppointments] = useState(false);
-    const [hasEmptyGaps, setHasEmptyGaps] = useState(false);
-    const [isGeneratingGaps, setIsGeneratingGaps] = useState(false);
-    const [isDeletingGaps, setIsDeletingGaps] = useState(false);
-    const [showDeleteGapsConfirmModal, setShowDeleteGapsConfirmModal] = useState(false);
-    const [showDeleteGapsSuccessModal, setShowDeleteGapsSuccessModal] = useState(false);
-    const [gapsDeletedCount, setGapsDeletedCount] = useState(0);
-    const [showNoTypeConfirmModal, setShowNoTypeConfirmModal] = useState(false);
-    const [currentCalendarView, setCurrentCalendarView] = useState('timeGridWeek');
-    const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || 10);
-    const DEFAULT_DURATION_MINUTES = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || 60);
-    const SLOT_DURATION_MINUTES = parseInt(import.meta.env.VITE_CALENDAR_SLOT_DURATION_MINUTES || 15);
+    const [validationError, setValidationError] = useState<string | null>(null);
+    const currentViewDatesRef = useRef<{ start: string | null; end: string | null }>({ start: null, end: null });
+    const [hasAppointments, setHasAppointments] = useState<boolean>(false);
+    const [hasEmptyGaps, setHasEmptyGaps] = useState<boolean>(false);
+    const [isGeneratingGaps, setIsGeneratingGaps] = useState<boolean>(false);
+    const [isDeletingGaps, setIsDeletingGaps] = useState<boolean>(false);
+    const [showDeleteGapsConfirmModal, setShowDeleteGapsConfirmModal] = useState<boolean>(false);
+    const [showDeleteGapsSuccessModal, setShowDeleteGapsSuccessModal] = useState<boolean>(false);
+    const [gapsDeletedCount, setGapsDeletedCount] = useState<number>(0);
+    const [showNoTypeConfirmModal, setShowNoTypeConfirmModal] = useState<boolean>(false);
+    const [_currentCalendarView, setCurrentCalendarView] = useState<string>('timeGridWeek');
+
+    const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || '10');
+    const DEFAULT_DURATION_MINUTES = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || '60');
+    const SLOT_DURATION_MINUTES = parseInt(import.meta.env.VITE_CALENDAR_SLOT_DURATION_MINUTES || '15');
     const calendarFirstDay = parseInt(import.meta.env.VITE_CALENDAR_FIRST_DAY || '0', 10);
     const calendarScrollTime = import.meta.env.VITE_CALENDAR_SCROLL_TIME || '08:00:00';
     const narrowSaturday = import.meta.env.VITE_CALENDAR_NARROW_SATURDAY === 'true';
@@ -63,7 +73,7 @@ export default function Calendar() {
     const weekendWidthPercent = parseFloat(import.meta.env.VITE_CALENDAR_WEEKEND_WIDTH_PERCENT || '50');
     const slotDurationString = `00:${SLOT_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
     const defaultDurationString = `00:${DEFAULT_DURATION_MINUTES.toString().padStart(2, '0')}:00`;
-    const safeFirstDay = Number.isNaN(calendarFirstDay) || calendarFirstDay < 0 || calendarFirstDay > 6 ? 0 : calendarFirstDay;
+    const safeFirstDay = Number.isNaN(calendarFirstDay) || calendarFirstDay < 0 || calendarFirstDay > 6 ? 0 : calendarFirstDay as 0|1|2|3|4|5|6;
     const calendarLocale = language === 'es' ? 'es' : 'en';
     const datePickerFormat = 'Pp';
     const safeWeekendPercent = Number.isNaN(weekendWidthPercent) ? 50 : Math.min(Math.max(weekendWidthPercent, 30), 100);
@@ -99,12 +109,11 @@ export default function Calendar() {
 
     useEffect(() => {
         if (modalOpen) {
-            // Small timeout to ensure DOM is ready
             setTimeout(() => {
                 titleInputRef.current?.focus();
             }, 50);
 
-            const handleEsc = (event) => {
+            const handleEsc = (event: KeyboardEvent) => {
                 if (event.key === 'Escape') {
                     setModalOpen(false);
                     calendarRef.current?.getApi()?.unselect();
@@ -129,8 +138,8 @@ export default function Calendar() {
             return;
         }
 
-        const start = new Date(formData.startsAt);
-        const end = new Date(formData.endsAt);
+        const start = new Date(formData.startsAt).getTime();
+        const end = new Date(formData.endsAt).getTime();
 
         if (end <= start) {
             setValidationError(t('error_end_after_start'));
@@ -146,45 +155,37 @@ export default function Calendar() {
         setValidationError(null);
     }, [formData.startsAt, formData.endsAt, modalOpen, MAX_DURATION, t]);
 
-    const getEventColors = (title, type) => {
+    const getEventColors = (title: string | null, type: string | null) => {
         if (!title || title.trim() === '') {
-            return { bg: 'rgb(245, 239, 224)', text: '#92400e' }; // Yellow background, dark amber text
+            return { bg: 'rgb(245, 239, 224)', text: '#92400e' };
         }
         if (type === 'other') {
-            return { bg: 'rgb(151, 160, 94)', text: '#ffffff' }; // Olive greenish
+            return { bg: 'rgb(151, 160, 94)', text: '#ffffff' };
         }
-        return { bg: 'rgb(160, 112, 94)', text: '#ffffff' }; // Brownish
+        return { bg: 'rgb(160, 112, 94)', text: '#ffffff' };
     };
 
-    const fetchEvents = async (fetchInfo, successCallback, failureCallback) => {
+    const fetchEvents = async (fetchInfo: any, successCallback: any, failureCallback: any) => {
         try {
-            // Get the current view type from the calendar instance
             const currentView = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
-
-            // Update current view state
             setCurrentCalendarView(currentView);
 
-            // Remove timezone information from dates (strip +HH:MM or Z suffix)
             const startStr = fetchInfo.startStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
             const endStr = fetchInfo.endStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
 
-            // Store current view dates for button state management
             currentViewDatesRef.current = { start: startStr, end: endStr };
 
             const response = await axios.get(Routing.generate('api_appointments_collection'), {
                 params: {
                     start: startStr,
                     end: endStr,
-                    view: currentView // Send the current view type (timeGridWeek, dayGridMonth, etc.)
+                    view: currentView
                 }
             });
 
-            const data = response.data['member'] || response.data['hydra:member'] || [];
+            const data: Appointment[] = response.data['member'] || response.data['hydra:member'] || [];
 
-            // Always update button states based on data (view check is in button rendering)
-            // Empty gaps are identified by empty title (matches visual yellow color)
             const hasEmptyGaps = data.some(app => !app.title || app.title.trim() === '');
-            // Any appointments (including gaps) - for disabling "Generate Gaps" button
             const hasAnyAppointments = data.length > 0;
 
             setHasEmptyGaps(hasEmptyGaps);
@@ -193,7 +194,7 @@ export default function Calendar() {
             const events = data.map(app => {
                 const colors = getEventColors(app.title, app.type);
                 return {
-                    id: app.id,
+                    id: String(app.id),
                     title: app.title,
                     start: app.startsAt,
                     end: app.endsAt,
@@ -216,7 +217,7 @@ export default function Calendar() {
         }
     };
 
-    const handleDateClick = (arg) => {
+    const handleDateClick = (arg: any) => {
         const calendarApi = arg.view.calendar;
         const start = arg.date;
         const end = new Date(start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
@@ -228,7 +229,7 @@ export default function Calendar() {
         });
     };
 
-    const handleDateSelect = (selectInfo) => {
+    const handleDateSelect = (selectInfo: any) => {
         setFormData({
             title: '',
             notes: '',
@@ -241,7 +242,7 @@ export default function Calendar() {
         setModalOpen(true);
     };
 
-    const handleEventClick = (clickInfo) => {
+    const handleEventClick = (clickInfo: any) => {
         const app = clickInfo.event;
         setFormData({
             title: app.title || '',
@@ -271,17 +272,13 @@ export default function Calendar() {
         }
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-
         if (validationError) return;
-
-        // Check if type is not selected (empty, null, or undefined)
         if (!formData.type || formData.type === '') {
             setShowNoTypeConfirmModal(true);
             return;
         }
-
         await saveAppointment();
     };
 
@@ -297,7 +294,7 @@ export default function Calendar() {
         }
     };
 
-    const handleEventDrop = async (dropInfo) => {
+    const handleEventDrop = async (dropInfo: any) => {
         const { event } = dropInfo;
         try {
             const safeEnd = event.end ?? new Date(event.start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
@@ -318,7 +315,7 @@ export default function Calendar() {
         }
     };
 
-    const handleEventResize = async (resizeInfo) => {
+    const handleEventResize = async (resizeInfo: any) => {
         const { event } = resizeInfo;
         try {
             const safeEnd = event.end ?? new Date(event.start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
@@ -349,17 +346,12 @@ export default function Calendar() {
                 end: currentViewDatesRef.current.end
             });
 
-            // Refresh calendar to show new gaps
             calendarRef.current?.getApi()?.refetchEvents();
 
-            // Show warning if no slots were generated
             if (response.data.warning) {
                 alert(response.data.warning);
-            } else if (response.data.count > 0) {
-                // Optionally show success message with count
-                console.log(`Generated ${response.data.count} gaps`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error generating gaps:', error);
             alert(error.response?.data?.error || 'Failed to generate empty gaps');
         } finally {
@@ -384,15 +376,13 @@ export default function Calendar() {
                 }
             });
 
-            // Refresh calendar to reflect deleted gaps
             calendarRef.current?.getApi()?.refetchEvents();
 
-            // Show success modal with count
             if (response.data.deletedCount > 0) {
                 setGapsDeletedCount(response.data.deletedCount);
                 setShowDeleteGapsSuccessModal(true);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting empty gaps:', error);
             alert(error.response?.data?.error || 'Failed to delete empty gaps');
         } finally {
@@ -413,9 +403,9 @@ export default function Calendar() {
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
-                        title={hasAppointments ? t('week_has_appointments') || 'Week already has appointments' : t('generate_empty_gaps') || 'Generate empty gaps'}
+                        title={hasAppointments ? t('week_has_appointments') : t('generate_empty_gaps')}
                     >
-                        {isGeneratingGaps ? t('generating') || 'Generating...' : t('generate_gaps') || 'Generate Gaps'}
+                        {isGeneratingGaps ? t('generating') : t('generate_gaps')}
                     </button>
                     <button
                         onClick={handleDeleteGapsClick}
@@ -425,14 +415,13 @@ export default function Calendar() {
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                                 : 'bg-orange-600 hover:bg-orange-700 text-white'
                         }`}
-                        title={!hasEmptyGaps ? t('no_empty_gaps') || 'No empty gaps to delete' : t('delete_empty_gaps') || 'Delete empty gaps'}
+                        title={!hasEmptyGaps ? t('no_empty_gaps') : t('delete_empty_gaps')}
                     >
-                        {isDeletingGaps ? t('deleting') || 'Deleting...' : t('delete_gaps') || 'Delete Gaps'}
+                        {isDeletingGaps ? t('deleting') : t('delete_gaps')}
                     </button>
                     <button
                         onClick={() => {
                             const now = new Date();
-                            // Round to next hour for cleaner start time
                             now.setMinutes(0, 0, 0);
                             now.setHours(now.getHours() + 1);
                             handleDateSelect({
@@ -474,8 +463,7 @@ export default function Calendar() {
                     dateClick={handleDateClick}
                     events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick}
                     eventDrop={handleEventDrop} eventResize={handleEventResize}
-                    datesSet={(dateInfo) => {
-                        // Update current view state when view changes
+                    datesSet={() => {
                         const view = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
                         setCurrentCalendarView(view);
                     }}
@@ -569,7 +557,7 @@ export default function Calendar() {
                                         )}
                                         <div>
                                             <label className="block text-sm font-semibold text-gray-700 mb-1">{t('notes')}</label>
-                                            <textarea rows="3" className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
+                                            <textarea rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
                                         </div>
                                     </div>
                                 </div>
@@ -630,7 +618,6 @@ export default function Calendar() {
                 </div>
             )}
 
-            {/* Delete Gaps Confirmation Modal */}
             {showDeleteGapsConfirmModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -656,7 +643,6 @@ export default function Calendar() {
                 </div>
             )}
 
-            {/* Delete Gaps Success Modal */}
             {showDeleteGapsSuccessModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
@@ -676,7 +662,6 @@ export default function Calendar() {
                 </div>
             )}
 
-            {/* No Type Selected Confirmation Modal */}
             {showNoTypeConfirmModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">

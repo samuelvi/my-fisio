@@ -4,27 +4,30 @@ import axios from 'axios';
 import RecordTimeline from './RecordTimeline';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
+import { Patient, Appointment } from '../types';
 
 export default function PatientDetail() {
     const { t } = useLanguage();
-    const { id } = useParams();
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [patient, setPatient] = useState(null);
-    const [appointments, setAppointments] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [patient, setPatient] = useState<Patient | null>(null);
+    const [appointments, setAppointments] = useState<Appointment[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const fetchData = async () => {
+            if (!id) return;
             try {
                 const [patientRes, appointmentsRes] = await Promise.all([
-                    axios.get(Routing.generate('api_patients_get', { id })),
+                    axios.get<Patient>(Routing.generate('api_patients_get', { id })),
                     axios.get(Routing.generate('api_appointments_collection'), {
                         params: { patientId: id }
                     })
                 ]);
                 
                 setPatient(patientRes.data);
-                setAppointments(appointmentsRes.data['member'] || appointmentsRes.data['hydra:member'] || []);
+                const appData = appointmentsRes.data['member'] || appointmentsRes.data['hydra:member'] || [];
+                setAppointments(appData);
                 setLoading(false);
             } catch (error) {
                 console.error("Error fetching patient data:", error);
@@ -52,7 +55,6 @@ export default function PatientDetail() {
                 ← {t('back_to_list')}
             </button>
 
-            {/* Top Section: Patient 360 Card */}
             <div className="bg-white shadow-sm rounded-2xl overflow-hidden border border-gray-200">
                 <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 border-b border-gray-100 bg-gray-50/50 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <h3 className="text-xl font-black text-gray-900 tracking-tight">
@@ -76,14 +78,12 @@ export default function PatientDetail() {
                 </div>
                 <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                     <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-8 space-y-6 sm:space-y-0">
-                        {/* Avatar */}
                         <div className="flex-shrink-0">
                             <span className="h-20 w-20 sm:h-28 sm:w-28 rounded-2xl bg-primary/10 flex items-center justify-center text-primary text-3xl sm:text-4xl font-black border border-primary/10 shadow-inner">
                                 {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
                             </span>
                         </div>
                         
-                        {/* Details Grid */}
                         <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 text-sm">
                             <div>
                                 <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('full_name')}</dt>
@@ -128,19 +128,16 @@ export default function PatientDetail() {
                 </div>
             </div>
 
-            {/* Medical Info Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                {/* Main Content (Records) - Takes up 2/3 space on large screens */}
                 <div className="lg:col-span-2">
                     <RecordTimeline 
-                        records={patient.records} 
+                        records={patient.records || []} 
                         patient={patient}
                         patientId={patient.id}
                         onAddRecord={handleAddRecord} 
                     />
                 </div>
 
-                {/* Side Panel (Medical Alerts & Appointments) - Takes up 1/3 space */}
                 <div className="space-y-6 sm:space-y-8">
                     <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-6 border-l-4 border-primary border border-gray-200">
                         <h4 className="text-sm font-black text-gray-900 mb-4 flex justify-between items-center uppercase tracking-widest">

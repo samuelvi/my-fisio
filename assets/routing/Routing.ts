@@ -1,21 +1,59 @@
 "use strict";
 
+export interface RouteToken {
+    0: string;
+    1: string | number;
+    2?: string;
+    3?: string;
+    4?: boolean;
+    5?: boolean;
+}
+
+export interface RouteDefinition {
+    tokens: RouteToken[][];
+    defaults: Record<string, any>;
+    requirements: Record<string, string>;
+    hosttokens: RouteToken[][];
+    methods: string[];
+    schemes: string[];
+}
+
+export interface RoutingData {
+    base_url: string;
+    routes: Record<string, RouteDefinition>;
+    prefix: string;
+    host: string;
+    port: string | number;
+    scheme: string;
+    locale: string;
+}
+
 export class Router {
-    constructor(context, routes) {
+    private context_: {
+        base_url: string;
+        prefix: string;
+        host: string;
+        port: string | number;
+        scheme: string;
+        locale: string;
+    };
+    private routes_: Record<string, RouteDefinition> = {};
+
+    constructor(context?: any, routes?: Record<string, RouteDefinition>) {
         this.context_ = context || { base_url: '', prefix: '', host: '', port: '', scheme: '', locale: '' };
         this.setRoutes(routes || {});
     }
 
-    static getInstance() {
+    static getInstance(): Router {
         return Routing;
     }
 
-    static setData(data) {
+    static setData(data: RoutingData): void {
         var router = Router.getInstance();
         router.setRoutingData(data);
     }
 
-    setRoutingData(data) {
+    setRoutingData(data: RoutingData): void {
         this.setBaseUrl(data['base_url']);
         this.setRoutes(data['routes']);
         if (typeof data.prefix !== 'undefined') {
@@ -33,59 +71,59 @@ export class Router {
         }
     }
 
-    setRoutes(routes) {
+    setRoutes(routes: Record<string, RouteDefinition>): void {
         this.routes_ = Object.freeze(routes);
     }
 
-    getRoutes() {
+    getRoutes(): Record<string, RouteDefinition> {
         return this.routes_;
     }
 
-    setBaseUrl(baseUrl) {
+    setBaseUrl(baseUrl: string): void {
         this.context_.base_url = baseUrl;
     }
 
-    getBaseUrl() {
+    getBaseUrl(): string {
         return this.context_.base_url;
     }
 
-    setPrefix(prefix) {
+    setPrefix(prefix: string): void {
         this.context_.prefix = prefix;
     }
 
-    setScheme(scheme) {
+    setScheme(scheme: string): void {
         this.context_.scheme = scheme;
     }
 
-    getScheme() {
+    getScheme(): string {
         return this.context_.scheme;
     }
 
-    setHost(host) {
+    setHost(host: string): void {
         this.context_.host = host;
     }
 
-    getHost() {
+    getHost(): string {
         return this.context_.host;
     }
 
-    setPort(port) {
+    setPort(port: string | number): void {
         this.context_.port = port;
     }
 
-    getPort() {
+    getPort(): string | number {
         return this.context_.port;
     }
 
-    setLocale(locale) {
+    setLocale(locale: string): void {
         this.context_.locale = locale;
     }
 
-    getLocale() {
+    getLocale(): string {
         return this.context_.locale;
     }
 
-    buildQueryParams(prefix, params, add) {
+    buildQueryParams(prefix: string, params: any, add: (key: string, value: any) => void): void {
         var _this = this;
         var name;
         var rbracket = new RegExp(/\[\]$/);
@@ -109,7 +147,7 @@ export class Router {
         }
     }
 
-    getRoute(name) {
+    getRoute(name: string): RouteDefinition {
         var prefixedName = this.context_.prefix + name;
         var sf41i18nName = name + '.' + this.context_.locale;
         var prefixedSf41i18nName = this.context_.prefix + name + '.' + this.context_.locale;
@@ -122,7 +160,7 @@ export class Router {
         throw new Error('The route "' + name + '" does not exist.');
     }
 
-    generate(name, opt_params, absolute) {
+    generate(name: string, opt_params?: any, absolute?: boolean): string {
         var route = (this.getRoute(name));
         var params = opt_params || {};
         var unusedParams = Object.assign({}, params);
@@ -130,14 +168,16 @@ export class Router {
         var optional = true;
         var host = '';
         var port = (typeof this.getPort() == 'undefined' || this.getPort() === null) ? '' : this.getPort();
-        route.tokens.forEach(function (token) {
+        
+        // Use any to avoid complex tuple indexing issues in migration
+        (route.tokens as any[]).forEach(function (token: any) {
             if ('text' === token[0] && typeof token[1] === 'string') {
                 url = Router.encodePathComponent(token[1]) + url;
                 optional = false;
                 return;
             }
             if ('variable' === token[0]) {
-                if (token.length === 6 && token[5] === true) { // Sixth part of the token array indicates if it should be included in case of defaults
+                if (token.length === 6 && token[5] === true) {
                     optional = false;
                 }
                 var hasDefault = route.defaults && !Array.isArray(route.defaults) && typeof token[3] === 'string' && (token[3] in route.defaults);
@@ -176,7 +216,8 @@ export class Router {
         if (url === '') {
             url = '/';
         }
-        route.hosttokens.forEach(function (token) {
+        
+        (route.hosttokens as any[]).forEach(function (token: any) {
             var value;
             if ('text' === token[0]) {
                 host = token[1] + host;
@@ -209,8 +250,8 @@ export class Router {
             url = this.getScheme() + '://' + this.getHost() + (this.getHost().indexOf(':' + port) > -1 || '' === port ? '' : ':' + port) + url;
         }
         if (Object.keys(unusedParams).length > 0) {
-            var queryParams_1 = [];
-            var add = function (key, value) {
+            var queryParams_1: string[] = [];
+            var add = function (key: string, value: any) {
                 value = (typeof value === 'function') ? value() : value;
                 value = (value === null) ? '' : value;
                 queryParams_1.push(Router.encodeQueryComponent(key) + '=' + Router.encodeQueryComponent(value));
@@ -225,7 +266,7 @@ export class Router {
         return url;
     }
 
-    static customEncodeURIComponent(value) {
+    static customEncodeURIComponent(value: any): string {
         return encodeURIComponent(value)
             .replace(/%2F/g, '/')
             .replace(/%40/g, '@')
@@ -239,7 +280,7 @@ export class Router {
             .replace(/'/g, '%27');
     }
 
-    static encodePathComponent(value) {
+    static encodePathComponent(value: any): string {
         return Router.customEncodeURIComponent(value)
             .replace(/%3D/g, '=')
             .replace(/%2B/g, '+')
@@ -247,7 +288,7 @@ export class Router {
             .replace(/%7C/g, '|');
     }
 
-    static encodeQueryComponent(value) {
+    static encodeQueryComponent(value: any): string {
         return Router.customEncodeURIComponent(value)
             .replace(/%3F/g, '?');
     }

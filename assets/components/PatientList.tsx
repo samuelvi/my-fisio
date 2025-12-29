@@ -3,22 +3,22 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
+import { Patient, PatientStatus } from '../types';
 
 export default function PatientList() {
     const { t } = useLanguage();
-    const [patients, setPatients] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [searchInput, setSearchInput] = useState(sessionStorage.getItem('patientList_searchInput') || '');
-    const [searchTerm, setSearchTerm] = useState(sessionStorage.getItem('patientList_searchTerm') || '');
-    const [statusFilter, setStatusFilter] = useState(sessionStorage.getItem('patientList_statusFilter') || 'all');
-    const [sortOrder, setSortOrder] = useState(sessionStorage.getItem('patientList_sortOrder') || 'latest');
-    const [useFuzzy, setUseFuzzy] = useState(sessionStorage.getItem('patientList_useFuzzy') === 'true');
-    const [page, setPage] = useState(parseInt(sessionStorage.getItem('patientList_page') || '1', 10));
-    const [hasNextPage, setHasNextPage] = useState(false);
-    const [searchTrigger, setSearchTrigger] = useState(0);
+    const [patients, setPatients] = useState<Patient[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
+    const [searchInput, setSearchInput] = useState<string>(sessionStorage.getItem('patientList_searchInput') || '');
+    const [searchTerm, setSearchTerm] = useState<string>(sessionStorage.getItem('patientList_searchTerm') || '');
+    const [statusFilter, setStatusFilter] = useState<string>(sessionStorage.getItem('patientList_statusFilter') || 'all');
+    const [sortOrder, setSortOrder] = useState<string>(sessionStorage.getItem('patientList_sortOrder') || 'latest');
+    const [useFuzzy, setUseFuzzy] = useState<boolean>(sessionStorage.getItem('patientList_useFuzzy') === 'true');
+    const [page, setPage] = useState<number>(parseInt(sessionStorage.getItem('patientList_page') || '1', 10));
+    const [hasNextPage, setHasNextPage] = useState<boolean>(false);
+    const [searchTrigger, setSearchTrigger] = useState<number>(0);
     const ITEMS_PER_PAGE = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10', 10);
 
-    // Save to sessionStorage whenever values change
     useEffect(() => {
         sessionStorage.setItem('patientList_searchInput', searchInput);
         sessionStorage.setItem('patientList_searchTerm', searchTerm);
@@ -28,16 +28,14 @@ export default function PatientList() {
         sessionStorage.setItem('patientList_page', page.toString());
     }, [searchInput, searchTerm, statusFilter, sortOrder, useFuzzy, page]);
 
-    // Only fetch when searchTrigger or page changes
     useEffect(() => {
         fetchPatients();
     }, [page, searchTrigger]);
 
-    const handleSearch = (e) => {
+    const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setPage(1);
         setSearchTerm(searchInput);
-        // Increment trigger to force search even if term hasn't changed
         setSearchTrigger(prev => prev + 1);
     };
 
@@ -55,13 +53,13 @@ export default function PatientList() {
                     status: statusFilter,
                     order: sortOrder,
                     page: page,
-                    itemsPerPage: ITEMS_PER_PAGE + 1, // Request N+1 to check for next page
+                    itemsPerPage: ITEMS_PER_PAGE + 1,
                     search: searchTerm,
                     fuzzy: useFuzzy
                 }
             });
             
-            let data = [];
+            let data: Patient[] = [];
             if (Array.isArray(response.data)) {
                 data = response.data;
             } else if (response.data && response.data['hydra:member']) {
@@ -141,7 +139,6 @@ export default function PatientList() {
                 </Link>
             </div>
 
-            {/* Search Bar & Status Filter */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <form onSubmit={handleSearch} className="space-y-6">
                     <div className="flex flex-col md:flex-row md:items-center md:space-x-6 space-y-4 md:space-y-0">
@@ -248,7 +245,6 @@ export default function PatientList() {
 
             <Pagination />
 
-            {/* Patients Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
                 <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-100">
@@ -331,7 +327,7 @@ export default function PatientList() {
                             ))}
                             {patients.length === 0 && (
                                 <tr>
-                                    <td colSpan="6" className="px-4 lg:px-8 py-20 text-center">
+                                    <td colSpan={6} className="px-4 lg:px-8 py-20 text-center">
                                         <div className="flex flex-col items-center">
                                             <div className="h-16 w-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 border border-gray-100">
                                                 <svg className="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>

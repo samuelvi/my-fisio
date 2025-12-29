@@ -4,14 +4,21 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
 
+interface GapData {
+    year: number;
+    totalInvoices: number;
+    totalGaps: number;
+    gaps: string[];
+}
+
 export default function InvoiceGaps() {
     const { t } = useLanguage();
-    const [gapYear, setGapYear] = useState(new Date().getFullYear().toString());
-    const [gapData, setGapData] = useState({ year: new Date().getFullYear(), totalInvoices: 0, totalGaps: 0, gaps: [] });
-    const [gapLoading, setGapLoading] = useState(false);
+    const [gapYear, setGapYear] = useState<string>(new Date().getFullYear().toString());
+    const [gapData, setGapData] = useState<GapData>({ year: new Date().getFullYear(), totalInvoices: 0, totalGaps: 0, gaps: [] });
+    const [gapLoading, setGapLoading] = useState<boolean>(false);
 
     const currentYear = new Date().getFullYear();
-    const years = [];
+    const years: number[] = [];
     for (let y = currentYear + 1; y >= 2019; y--) {
         years.push(y);
     }
@@ -20,7 +27,7 @@ export default function InvoiceGaps() {
         const fetchInvoiceGaps = async () => {
             setGapLoading(true);
             try {
-                const response = await axios.get(Routing.generate('invoice_number_gaps'), {
+                const response = await axios.get<GapData>(Routing.generate('invoice_number_gaps'), {
                     params: { year: gapYear }
                 });
                 setGapData(response.data);
@@ -56,7 +63,7 @@ export default function InvoiceGaps() {
                         className="px-4 py-2 border border-gray-200 rounded-xl bg-white text-sm font-semibold text-gray-700"
                     >
                         {years.map((year) => (
-                            <option key={year} value={year}>
+                            <option key={year} value={String(year)}>
                                 {year}
                             </option>
                         ))}

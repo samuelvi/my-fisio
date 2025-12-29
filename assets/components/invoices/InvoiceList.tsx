@@ -3,34 +3,38 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
+import { Invoice } from '../../types';
 
 export default function InvoiceList() {
     const { t, language } = useLanguage();
-    const [invoices, setInvoices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [invoices, setInvoices] = useState<Invoice[]>([]);
+    const [loading, setLoading] = useState<boolean>(true);
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
     
-    // Input States
-    const [nameInput, setNameInput] = useState('');
-    const [numberInput, setNumberInput] = useState('');
-    const [yearInput, setYearInput] = useState(new Date().getFullYear().toString());
-    const [taxIdInput, setTaxIdInput] = useState('');
+    const [nameInput, setNameInput] = useState<string>('');
+    const [numberInput, setNumberInput] = useState<string>('');
+    const [yearInput, setYearInput] = useState<string>(new Date().getFullYear().toString());
+    const [taxIdInput, setTaxIdInput] = useState<string>('');
 
-    // Applied Filter States
-    const [filters, setFilters] = useState({
+    const [filters, setFilters] = useState<{
+        name: string;
+        number: string;
+        year: string;
+        taxId: string;
+    }>({
         name: '',
         number: '',
         year: new Date().getFullYear().toString(),
         taxId: ''
     });
 
-    const [page, setPage] = useState(parseInt(sessionStorage.getItem('invoiceList_page') || '1', 10));
-    const [hasNextPage, setHasNextPage] = useState(false);
+    const [page, setPage] = useState<number>(parseInt(sessionStorage.getItem('invoiceList_page') || '1', 10));
+    const [hasNextPage, setHasNextPage] = useState<boolean>(false);
     
     const ITEMS_PER_PAGE = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10', 10);
 
     const currentYear = new Date().getFullYear();
-    const years = [];
+    const years: number[] = [];
     for (let y = currentYear + 1; y >= 2019; y--) {
         years.push(y);
     }
@@ -44,9 +48,9 @@ export default function InvoiceList() {
     const fetchInvoices = async () => {
         setLoading(true);
         try {
-            const params = {
+            const params: any = {
                 page: page,
-                itemsPerPage: ITEMS_PER_PAGE + 1, // Request N+1 to check for next page
+                itemsPerPage: ITEMS_PER_PAGE + 1,
                 'order[date]': 'desc',
             };
 
@@ -55,8 +59,6 @@ export default function InvoiceList() {
             
             let numberQuery = '';
             if (filters.number) {
-                // If number already includes year (starts with 4 digits), use it as-is
-                // Otherwise, prepend the selected year
                 const startsWithYear = /^\d{4}/.test(filters.number);
                 if (startsWithYear) {
                     numberQuery = filters.number;
@@ -66,7 +68,6 @@ export default function InvoiceList() {
                     numberQuery = filters.number;
                 }
             } else if (filters.year && filters.year !== 'all') {
-                // If only year is selected, search for invoices starting with that year
                 numberQuery = filters.year;
             }
 
@@ -76,7 +77,7 @@ export default function InvoiceList() {
 
             const response = await axios.get(Routing.generate('api_invoices_collection'), { params });
             
-            let data = [];
+            let data: Invoice[] = [];
             if (Array.isArray(response.data)) {
                 data = response.data;
             } else if (response.data && response.data['hydra:member']) {
@@ -100,7 +101,7 @@ export default function InvoiceList() {
         }
     };
 
-    const handleSearch = (e) => {
+    const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setPage(1);
         setFilters({
@@ -126,7 +127,7 @@ export default function InvoiceList() {
         });
     };
 
-    const handleExport = async (id, number, format, mode = 'view') => {
+    const handleExport = async (id: number, number: string, format: 'pdf' | 'html', mode: 'view' | 'download' = 'view') => {
         try {
             const params = {
                 ...(mode === 'download' ? { download: 1 } : {}),
@@ -226,7 +227,6 @@ export default function InvoiceList() {
                 </div>
             </div>
 
-            {/* Filters */}
             <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-200 mb-6">
                 <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 items-end">
                     <div>
@@ -268,7 +268,7 @@ export default function InvoiceList() {
                         >
                             <option value="all">{t('all_years')}</option>
                             {years.map(y => (
-                                <option key={y} value={y}>{y}</option>
+                                <option key={y} value={String(y)}>{y}</option>
                             ))}
                         </select>
                     </div>
@@ -281,7 +281,6 @@ export default function InvoiceList() {
 
             <Pagination />
 
-            {/* Table */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200">
                 <div className="hidden md:block overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-100">
@@ -296,9 +295,9 @@ export default function InvoiceList() {
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-100">
                             {loading ? (
-                                <tr><td colSpan="5" className="px-4 lg:px-8 py-20 text-center text-gray-400 font-bold">{t('loading')}...</td></tr>
+                                <tr><td colSpan={5} className="px-4 lg:px-8 py-20 text-center text-gray-400 font-bold">{t('loading')}...</td></tr>
                             ) : invoices.length === 0 ? (
-                                <tr><td colSpan="5" className="px-4 lg:px-8 py-20 text-center text-gray-400 font-bold">{t('no_invoices_found')}</td></tr>
+                                <tr><td colSpan={5} className="px-4 lg:px-8 py-20 text-center text-gray-400 font-bold">{t('no_invoices_found')}</td></tr>
                             ) : (
                                 invoices.map((invoice) => (
                                     <tr key={invoice.id} className="hover:bg-gray-50 transition-colors group">

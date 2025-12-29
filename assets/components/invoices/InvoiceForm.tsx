@@ -3,8 +3,18 @@ import axios from 'axios';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
+import { Invoice, InvoiceLine } from '../../types';
 
-const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "" }) => (
+interface InvoiceInputProps {
+    label: string;
+    value: string;
+    setter: (val: string) => void;
+    type?: string;
+    required?: boolean;
+    placeholder?: string;
+}
+
+const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "" }: InvoiceInputProps) => (
     <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">{label} {required && "*"}</label>
         <input
@@ -21,25 +31,25 @@ const InvoiceInput = ({ label, value, setter, type = "text", required = false, p
 export default function InvoiceForm() {
     const { t } = useLanguage();
     const navigate = useNavigate();
-    const { id } = useParams();
+    const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
     const patientId = searchParams.get('patientId');
     const isEditing = !!id;
-    const [loading, setLoading] = useState(false);
-    const [loadingPatient, setLoadingPatient] = useState(false);
-    const [error, setError] = useState(null);
-    const [numberError, setNumberError] = useState('');
+    const [loading, setLoading] = useState<boolean>(false);
+    const [loadingPatient, setLoadingPatient] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const [numberError, setNumberError] = useState<string>('');
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
 
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [customerName, setCustomerName] = useState('');
-    const [customerTaxId, setCustomerTaxId] = useState('');
-    const [customerAddress, setCustomerAddress] = useState('');
-    const [customerPhone, setCustomerPhone] = useState('');
-    const [customerEmail, setCustomerEmail] = useState('');
-    const [invoiceNumber, setInvoiceNumber] = useState('');
+    const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const [customerName, setCustomerName] = useState<string>('');
+    const [customerTaxId, setCustomerTaxId] = useState<string>('');
+    const [customerAddress, setCustomerAddress] = useState<string>('');
+    const [customerPhone, setCustomerPhone] = useState<string>('');
+    const [customerEmail, setCustomerEmail] = useState<string>('');
+    const [invoiceNumber, setInvoiceNumber] = useState<string>('');
 
-    const [lines, setLines] = useState([
+    const [lines, setLines] = useState<InvoiceLine[]>([
         { concept: '', description: '', quantity: 1, price: 0, amount: 0 }
     ]);
 
@@ -50,11 +60,11 @@ export default function InvoiceForm() {
     }, [isEditing, editEnabled, navigate]);
 
     useEffect(() => {
-        if (!isEditing) return;
+        if (!isEditing || !id) return;
         const fetchInvoice = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(Routing.generate('api_invoices_get', { id }));
+                const response = await axios.get<Invoice>(Routing.generate('api_invoices_get', { id }));
                 const data = response.data;
                 setDate(data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
                 setCustomerName(data.fullName || '');
@@ -81,9 +91,8 @@ export default function InvoiceForm() {
         fetchInvoice();
     }, [isEditing, id, t]);
 
-    // Fetch pre-filled invoice data from patient if patientId is provided
     useEffect(() => {
-        if (!patientId || isEditing) return; // Don't fetch if editing existing invoice
+        if (!patientId || isEditing) return;
 
         const fetchPrefillData = async () => {
             setLoadingPatient(true);
@@ -93,7 +102,6 @@ export default function InvoiceForm() {
                 });
                 const data = response.data;
 
-                // Pre-fill customer fields from backend-mapped data
                 setCustomerName(data.fullName || '');
                 setCustomerTaxId(data.taxId || '');
                 setCustomerAddress(data.address || '');
@@ -101,8 +109,6 @@ export default function InvoiceForm() {
                 setCustomerEmail(data.email || '');
             } catch (err) {
                 console.error('Error loading prefill data:', err);
-                // Don't show error to user, just leave fields empty
-                // User can still manually fill the form
             } finally {
                 setLoadingPatient(false);
             }
@@ -115,27 +121,27 @@ export default function InvoiceForm() {
         setLines([...lines, { concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
     };
 
-    const handleRemoveLine = (index) => {
+    const handleRemoveLine = (index: number) => {
         const newLines = lines.filter((_, i) => i !== index);
         setLines(newLines);
     };
 
-    const handleLineChange = (index, field, value) => {
+    const handleLineChange = (index: number, field: keyof InvoiceLine, value: string | number) => {
         const newLines = [...lines];
-        newLines[index][field] = value;
+        (newLines[index] as any)[field] = value;
         if (field === 'quantity' || field === 'price') {
-            const qty = parseFloat(newLines[index].quantity) || 0;
-            const price = parseFloat(newLines[index].price) || 0;
+            const qty = parseFloat(String(newLines[index].quantity)) || 0;
+            const price = parseFloat(String(newLines[index].price)) || 0;
             newLines[index].amount = qty * price;
         }
         setLines(newLines);
     };
 
     const calculateTotal = () => {
-        return lines.reduce((sum, line) => sum + (parseFloat(line.amount) || 0), 0);
+        return lines.reduce((sum, line) => sum + (parseFloat(String(line.amount)) || 0), 0);
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
@@ -147,7 +153,7 @@ export default function InvoiceForm() {
             return;
         }
 
-        const payload = {
+        const payload: any = {
             date: new Date(date).toISOString(),
             fullName: customerName,
             taxId: customerTaxId,
@@ -159,9 +165,9 @@ export default function InvoiceForm() {
             lines: lines.map(line => ({
                 concept: line.concept,
                 description: line.description,
-                quantity: parseInt(line.quantity),
-                price: parseFloat(line.price),
-                amount: parseFloat(line.amount)
+                quantity: parseInt(String(line.quantity)),
+                price: parseFloat(String(line.price)),
+                amount: parseFloat(String(line.amount))
             }))
         };
 
@@ -173,7 +179,7 @@ export default function InvoiceForm() {
                 await axios.post(Routing.generate('api_invoices_post'), payload);
             }
             navigate('/invoices');
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error creating invoice:', err);
             const detail = err.response?.data?.detail;
             if (detail && detail.startsWith('invoice_number_')) {
@@ -200,7 +206,6 @@ export default function InvoiceForm() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6 pb-20">
-                {/* Customer Section */}
                 <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                         <h2 className="text-lg font-medium text-gray-900">{t('customer_information')}</h2>
@@ -253,7 +258,6 @@ export default function InvoiceForm() {
                     </div>
                 </div>
 
-                {/* Items Section */}
                 <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                         <h2 className="text-lg font-medium text-gray-900">{t('invoice_items')}</h2>
@@ -287,7 +291,7 @@ export default function InvoiceForm() {
                                         min="1" 
                                         required 
                                         value={line.quantity} 
-                                        onChange={(e) => handleLineChange(index, 'quantity', e.target.value)} 
+                                        onChange={(e) => handleLineChange(index, 'quantity', parseInt(e.target.value))} 
                                         className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center" 
                                     />
                                 </div>
@@ -298,7 +302,7 @@ export default function InvoiceForm() {
                                         step="0.01" 
                                         required 
                                         value={line.price} 
-                                        onChange={(e) => handleLineChange(index, 'price', e.target.value)} 
+                                        onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))} 
                                         className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center" 
                                     />
                                 </div>
@@ -338,7 +342,6 @@ export default function InvoiceForm() {
                     </div>
                 </div>
 
-                {/* Footer Actions */}
                 <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <button 
                         type="button" 

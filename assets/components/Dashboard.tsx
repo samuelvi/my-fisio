@@ -1,27 +1,28 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import Routing from '../routing/init';
+import { DashboardStats, HealthCheck } from '../types';
 
 export default function Dashboard() {
     const { t } = useLanguage();
     const navigate = useNavigate();
-    const [stats, setStats] = useState({
+    const [stats, setStats] = useState<DashboardStats>({
         totalPatients: 0,
         appointmentsToday: 0,
         othersToday: 0,
         invoicesThisYear: 0
     });
-    const [loading, setLoading] = useState(true);
-    const [health, setHealth] = useState({ status: 'loading', checks: {} });
+    const [loading, setLoading] = useState<boolean>(true);
+    const [health, setHealth] = useState<HealthCheck>({ status: 'loading', checks: {} });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 const [statsResponse, healthResponse] = await Promise.all([
-                    axios.get(Routing.generate('api_dashboard_stats')),
-                    axios.get(Routing.generate('api_health'))
+                    axios.get<DashboardStats>(Routing.generate('api_dashboard_stats')),
+                    axios.get<HealthCheck>(Routing.generate('api_health'))
                 ]);
                 setStats(statsResponse.data);
                 setHealth(healthResponse.data);
@@ -36,7 +37,7 @@ export default function Dashboard() {
         fetchStats();
     }, []);
 
-    const StatCard = ({ title, value, colorClass, icon }) => (
+    const StatCard = ({ title, value, colorClass, icon }: { title: string; value: number; colorClass: string; icon: ReactNode }) => (
         <div className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${colorClass}`}>
             <div className="flex items-center justify-between">
                 <div>
@@ -85,7 +86,7 @@ export default function Dashboard() {
                 <div className="flex items-center gap-4 sm:gap-6 mb-6 sm:mb-8">
                     <div className="bg-primary/10 p-3 sm:p-4 rounded-full">
                         <svg className="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
                     </div>
                     <div>

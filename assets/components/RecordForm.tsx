@@ -1,10 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
+import { RecordEntry, Patient } from '../types';
 
-const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange }) => (
+interface RecordFormInputAreaProps {
+    label: string;
+    name: string;
+    required?: boolean;
+    rows?: number;
+    value: string;
+    error?: string;
+    onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+}
+
+const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange }: RecordFormInputAreaProps) => (
     <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
         <label htmlFor={name} className="block text-sm font-bold text-gray-700 mb-1">{label} {required && "*"}</label>
         <textarea
@@ -20,17 +31,30 @@ const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, e
     </div>
 );
 
+interface RecordFormData {
+    physiotherapyTreatment: string;
+    consultationReason: string;
+    onset: string;
+    currentSituation: string;
+    evolution: string;
+    radiologyTests: string;
+    medicalTreatment: string;
+    homeTreatment: string;
+    notes: string;
+    sickLeave: boolean;
+}
+
 export default function RecordForm() {
     const { t } = useLanguage();
-    const { patientId, recordId } = useParams();
+    const { patientId, recordId } = useParams<{ patientId: string; recordId: string }>();
     const navigate = useNavigate();
     const isEditing = !!recordId;
-    const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState({});
-    const [patientName, setPatientName] = useState('');
-    const [recordDate, setRecordDate] = useState(() => new Date().toISOString().slice(0, 10));
+    const [loading, setLoading] = useState<boolean>(false);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [patientName, setPatientName] = useState<string>('');
+    const [recordDate, setRecordDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<RecordFormData>({
         physiotherapyTreatment: '',
         consultationReason: '',
         onset: '',
@@ -45,13 +69,14 @@ export default function RecordForm() {
 
     useEffect(() => {
         const loadInitialData = async () => {
+            if (!patientId) return;
             setLoading(true);
             try {
-                const patientResponse = await axios.get(Routing.generate('api_patients_get', { id: patientId }));
+                const patientResponse = await axios.get<Patient>(Routing.generate('api_patients_get', { id: patientId }));
                 setPatientName(`${patientResponse.data.firstName} ${patientResponse.data.lastName}`);
 
-                if (isEditing) {
-                    const recordResponse = await axios.get(Routing.generate('api_records_get', { id: recordId }));
+                if (isEditing && recordId) {
+                    const recordResponse = await axios.get<RecordEntry>(Routing.generate('api_records_get', { id: recordId }));
                     const data = recordResponse.data;
                     
                     setFormData({
@@ -73,7 +98,7 @@ export default function RecordForm() {
                         setRecordDate(normalizedDate);
                     }
                 }
-            } catch (err) {
+            } catch (err: any) {
                 console.error("Error loading initial data:", err);
                 const msg = err.response?.status === 404 ? t('resource_not_found') : t('error_could_not_load_data');
                 setErrors({ global: msg });
@@ -87,36 +112,37 @@ export default function RecordForm() {
 
     const formattedRecordDate = recordDate ? new Date(recordDate).toLocaleDateString() : '';
 
-    const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+    const handleChange = (e: ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) => {
+        const { name, value, type } = e.target;
+        const checked = (e.target as HTMLInputElement).checked;
         setFormData(prev => ({
             ...prev,
             [name]: type === 'checkbox' ? checked : value
         }));
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setErrors({});
 
         try {
-            const payload = { ...formData, createdAt: recordDate || undefined };
+            const payload: any = { ...formData, createdAt: recordDate || undefined };
             if (!isEditing) {
                 payload.patient = Routing.generate('api_patients_get', { id: patientId });
             }
 
-            if (isEditing) {
+            if (isEditing && recordId) {
                 await axios.put(Routing.generate('api_records_put', { id: recordId }), payload);
             } else {
                 await axios.post(Routing.generate('api_records_post'), payload);
             }
             navigate(`/patients/${patientId}`);
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
             if (err.response && err.response.data && err.response.data.violations) {
-                const newErrors = {};
-                err.response.data.violations.forEach(violation => {
+                const newErrors: Record<string, string> = {};
+                err.response.data.violations.forEach((violation: any) => {
                     newErrors[violation.propertyPath] = violation.message;
                 });
                 setErrors(newErrors);
