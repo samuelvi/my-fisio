@@ -178,7 +178,8 @@ export default function Calendar() {
 
             // Check if we're in weekly view and update button states
             if (currentView === 'timeGridWeek') {
-                const hasEmptyGaps = data.some(app => app.type === null || app.type === undefined || app.type === '');
+                // Empty gaps are identified by empty title (matches visual yellow color)
+                const hasEmptyGaps = data.some(app => !app.title || app.title.trim() === '');
                 const hasAppointments = data.length > 0;
 
                 setHasEmptyGaps(hasEmptyGaps);

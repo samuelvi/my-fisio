@@ -66,9 +66,10 @@ final class DoctrineAppointmentRepository extends ServiceEntityRepository implem
             ->delete()
             ->where('a.startsAt >= :start')
             ->andWhere('a.endsAt <= :end')
-            ->andWhere('a.type IS NULL')
+            ->andWhere('a.title IS NULL OR a.title = :emptyString')
             ->setParameter('start', $start)
-            ->setParameter('end', $end);
+            ->setParameter('end', $end)
+            ->setParameter('emptyString', '');
 
         return $qb->getQuery()->execute();
     }
