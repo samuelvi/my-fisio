@@ -29,15 +29,13 @@ final class PostgreSQLPatientSearchStrategy implements PatientSearchStrategyInte
     {
         $searchOr = $qb->expr()->orX();
 
-        // PostgreSQL: Use LOWER() for case-insensitive
-        // Note: If using pg_trgm extension, you could use similarity operators (%, <->, etc.)
-        $searchOr->add('LOWER(p.fullName) = LOWER(:searchExact)');
-        $searchOr->add('LOWER(p.email) = LOWER(:searchExact)');
-        $searchOr->add('LOWER(p.phone) = LOWER(:searchExact)');
+        $searchOr->add('p.fullName = :searchExact');
+        $searchOr->add('p.email = :searchExact');
+        $searchOr->add('p.phone = :searchExact');
 
-        $searchOr->add('LOWER(p.fullName) LIKE LOWER(:searchFull)');
-        $searchOr->add('LOWER(p.phone) LIKE LOWER(:searchFull)');
-        $searchOr->add('LOWER(p.email) LIKE LOWER(:searchFull)');
+        $searchOr->add('p.fullName LIKE :searchFull');
+        $searchOr->add('p.phone LIKE :searchFull');
+        $searchOr->add('p.email LIKE :searchFull');
 
         $qb->setParameter('searchFull', '%' . $search . '%');
         $qb->setParameter('searchExact', $search);
@@ -48,7 +46,7 @@ final class PostgreSQLPatientSearchStrategy implements PatientSearchStrategyInte
             $tokenAnd = $qb->expr()->andX();
             foreach ($tokens as $index => $token) {
                 $param = 'searchToken' . $index;
-                $tokenAnd->add(sprintf('LOWER(p.fullName) LIKE LOWER(:%s)', $param));
+                $tokenAnd->add(sprintf('p.fullName LIKE :%s', $param));
                 $qb->setParameter($param, '%' . $token . '%');
             }
             $searchOr->add($tokenAnd);
@@ -61,7 +59,7 @@ final class PostgreSQLPatientSearchStrategy implements PatientSearchStrategyInte
                     $patterns = $this->buildFuzzyPatterns($token);
                     foreach ($patterns as $patternIndex => $pattern) {
                         $param = sprintf('fuzzyToken%s_%s', $index, $patternIndex);
-                        $searchOr->add(sprintf('LOWER(p.fullName) LIKE LOWER(:%s)', $param));
+                        $searchOr->add(sprintf('p.fullName LIKE :%s', $param));
                         $qb->setParameter($param, $pattern);
                     }
                 }

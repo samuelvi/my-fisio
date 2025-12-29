@@ -28,10 +28,8 @@ final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
             // Force parameter name to avoid conflicts
             $parameterName = 'invoice_number_ext';
 
-            // Use LOWER() for case-insensitive search
-            // Changed to '%value%' to match anywhere in the number, not just the beginning
             $queryBuilder
-                ->andWhere(sprintf('LOWER(%s.number) LIKE LOWER(:%s)', $rootAlias, $parameterName))
+                ->andWhere(sprintf('%s.number LIKE :%s', $rootAlias, $parameterName))
                 ->setParameter($parameterName, '%'.$value.'%');
         }
 
@@ -49,10 +47,8 @@ final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
             $rootAlias = $queryBuilder->getRootAliases()[0];
             $parameterName = 'invoice_name_ext';
 
-            // Use LOWER() for case-insensitive search
-            // MariaDB collation handles accent-insensitive matching automatically
             $queryBuilder
-                ->andWhere(sprintf('LOWER(%s.fullName) LIKE LOWER(:%s)', $rootAlias, $parameterName))
+                ->andWhere(sprintf('%s.fullName LIKE :%s', $rootAlias, $parameterName))
                 ->setParameter($parameterName, '%'.$value.'%');
         }
 
@@ -62,7 +58,7 @@ final class InvoiceNumberExtension implements QueryCollectionExtensionInterface
             $parameterName = 'invoice_tax_id_ext';
 
             $queryBuilder
-                ->andWhere(sprintf('LOWER(%s.taxId) LIKE LOWER(:%s)', $rootAlias, $parameterName))
+                ->andWhere(sprintf('%s.taxId LIKE :%s', $rootAlias, $parameterName))
                 ->setParameter($parameterName, '%'.$value.'%');
         }
     }
