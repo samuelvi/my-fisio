@@ -33,10 +33,10 @@ class EmptySlotGenerator
         );
 
         foreach ($period as $date) {
-            // Get ISO-8601 day of week (1=Monday, 7=Sunday), convert to 0-based (0=Monday)
+            // Get ISO-8601 day of week (1=Monday, 7=Sunday), convert to 0-based (0=Monday, 6=Sunday)
             $dayOfWeek = ((int) $date->format('N')) - 1;
 
-            // Skip if not a working day (Saturday=5, Sunday=6)
+            // Skip if no slots configured for this day
             if (!isset($weekGrid[$dayOfWeek])) {
                 continue;
             }

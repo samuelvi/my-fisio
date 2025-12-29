@@ -12,12 +12,14 @@ class WeekGridBuilder
         private string $slotsWednesday,
         private string $slotsThursday,
         private string $slotsFriday,
+        private string $slotsSaturday,
+        private string $slotsSunday,
     ) {
     }
 
     /**
      * Build default weekly time slots for each working day.
-     * Keys are day numbers (0=Monday, 1=Tuesday, ..., 4=Friday).
+     * Keys are day numbers (0=Monday, 1=Tuesday, ..., 6=Sunday).
      * Values are arrays of start_time => end_time pairs.
      *
      * @return array<int, array<string, string>>
@@ -30,6 +32,8 @@ class WeekGridBuilder
             2 => $this->parseSlots($this->slotsWednesday), // Wednesday
             3 => $this->parseSlots($this->slotsThursday),  // Thursday
             4 => $this->parseSlots($this->slotsFriday),    // Friday
+            5 => $this->parseSlots($this->slotsSaturday),  // Saturday
+            6 => $this->parseSlots($this->slotsSunday),    // Sunday
         ];
     }
 

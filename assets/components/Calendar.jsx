@@ -51,6 +51,7 @@ export default function Calendar() {
     const [showDeleteGapsSuccessModal, setShowDeleteGapsSuccessModal] = useState(false);
     const [gapsDeletedCount, setGapsDeletedCount] = useState(0);
     const [showNoTypeConfirmModal, setShowNoTypeConfirmModal] = useState(false);
+    const [currentCalendarView, setCurrentCalendarView] = useState('timeGridWeek');
     const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || 10);
     const DEFAULT_DURATION_MINUTES = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || 60);
     const SLOT_DURATION_MINUTES = parseInt(import.meta.env.VITE_CALENDAR_SLOT_DURATION_MINUTES || 15);
@@ -159,6 +160,9 @@ export default function Calendar() {
             // Get the current view type from the calendar instance
             const currentView = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
 
+            // Update current view state
+            setCurrentCalendarView(currentView);
+
             // Remove timezone information from dates (strip +HH:MM or Z suffix)
             const startStr = fetchInfo.startStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
             const endStr = fetchInfo.endStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
@@ -176,19 +180,14 @@ export default function Calendar() {
 
             const data = response.data['member'] || response.data['hydra:member'] || [];
 
-            // Check if we're in weekly view and update button states
-            if (currentView === 'timeGridWeek') {
-                // Empty gaps are identified by empty title (matches visual yellow color)
-                const hasEmptyGaps = data.some(app => !app.title || app.title.trim() === '');
-                const hasAppointments = data.length > 0;
+            // Always update button states based on data (view check is in button rendering)
+            // Empty gaps are identified by empty title (matches visual yellow color)
+            const hasEmptyGaps = data.some(app => !app.title || app.title.trim() === '');
+            // Any appointments (including gaps) - for disabling "Generate Gaps" button
+            const hasAnyAppointments = data.length > 0;
 
-                setHasEmptyGaps(hasEmptyGaps);
-                setHasAppointments(hasAppointments);
-            } else {
-                // Disable buttons in non-weekly views
-                setHasEmptyGaps(false);
-                setHasAppointments(true);
-            }
+            setHasEmptyGaps(hasEmptyGaps);
+            setHasAppointments(hasAnyAppointments);
 
             const events = data.map(app => {
                 const colors = getEventColors(app.title, app.type);
@@ -344,13 +343,21 @@ export default function Calendar() {
 
         setIsGeneratingGaps(true);
         try {
-            await axios.post('/api/appointment-gaps/generate', {
+            const response = await axios.post('/api/appointment-gaps/generate', {
                 start: currentViewDatesRef.current.start,
                 end: currentViewDatesRef.current.end
             });
 
             // Refresh calendar to show new gaps
             calendarRef.current?.getApi()?.refetchEvents();
+
+            // Show warning if no slots were generated
+            if (response.data.warning) {
+                alert(response.data.warning);
+            } else if (response.data.count > 0) {
+                // Optionally show success message with count
+                console.log(`Generated ${response.data.count} gaps`);
+            }
         } catch (error) {
             console.error('Error generating gaps:', error);
             alert(error.response?.data?.error || 'Failed to generate empty gaps');
@@ -403,7 +410,7 @@ export default function Calendar() {
                         className={`px-4 py-2 rounded-md font-bold transition shadow-sm text-sm ${
                             hasAppointments || isGeneratingGaps
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
                         }`}
                         title={hasAppointments ? t('week_has_appointments') || 'Week already has appointments' : t('generate_empty_gaps') || 'Generate empty gaps'}
                     >
@@ -415,7 +422,7 @@ export default function Calendar() {
                         className={`px-4 py-2 rounded-md font-bold transition shadow-sm text-sm ${
                             !hasEmptyGaps || isDeletingGaps
                                 ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-red-600 hover:bg-red-700 text-white'
+                                : 'bg-orange-600 hover:bg-orange-700 text-white'
                         }`}
                         title={!hasEmptyGaps ? t('no_empty_gaps') || 'No empty gaps to delete' : t('delete_empty_gaps') || 'Delete empty gaps'}
                     >
@@ -466,6 +473,11 @@ export default function Calendar() {
                     dateClick={handleDateClick}
                     events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick}
                     eventDrop={handleEventDrop} eventResize={handleEventResize}
+                    datesSet={(dateInfo) => {
+                        // Update current view state when view changes
+                        const view = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
+                        setCurrentCalendarView(view);
+                    }}
                 />
             </div>
 

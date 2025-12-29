@@ -25,6 +25,8 @@ parameters:
     calendar_slots_wednesday: '%env(CALENDAR_SLOTS_WEDNESDAY)%'
     calendar_slots_thursday: '%env(CALENDAR_SLOTS_THURSDAY)%'
     calendar_slots_friday: '%env(CALENDAR_SLOTS_FRIDAY)%'
+    calendar_slots_saturday: '%env(CALENDAR_SLOTS_SATURDAY)%'
+    calendar_slots_sunday: '%env(CALENDAR_SLOTS_SUNDAY)%'
 
 services:
     # default configuration for services in *this* file
@@ -59,6 +61,8 @@ services:
             $slotsWednesday: '%calendar_slots_wednesday%'
             $slotsThursday: '%calendar_slots_thursday%'
             $slotsFriday: '%calendar_slots_friday%'
+            $slotsSaturday: '%calendar_slots_saturday%'
+            $slotsSunday: '%calendar_slots_sunday%'
 
     # DDD Repository Bindings
     App\Domain\Repository\PatientRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrinePatientRepository'

@@ -52,10 +52,17 @@ class AppointmentGapController extends AbstractController
             }
 
             // Generate empty gaps
-            $this->emptySlotCreator->createEmptySlotsIfNeeded($start, $end);
+            $slotsGenerated = $this->emptySlotCreator->createEmptySlotsIfNeeded($start, $end);
+
+            if ($slotsGenerated === 0) {
+                return $this->json(
+                    ['warning' => 'No working hours configured for the selected date range (e.g., weekends)'],
+                    Response::HTTP_OK
+                );
+            }
 
             return $this->json(
-                ['message' => 'Empty gaps generated successfully'],
+                ['message' => 'Empty gaps generated successfully', 'count' => $slotsGenerated],
                 Response::HTTP_CREATED
             );
         } catch (\Exception $e) {

@@ -20,12 +20,13 @@ class EmptySlotCreator
 
     /**
      * Create empty appointment slots for a date range if no appointments exist.
+     * Returns the number of slots generated.
      */
     public function createEmptySlotsIfNeeded(
         DateTimeImmutable $start,
         DateTimeImmutable $end,
         int $userId = 1
-    ): void {
+    ): int {
         // Generate all slots for the date range
         $slots = $this->slotGenerator->generateSlotsForDateRange($start, $end);
 
@@ -39,5 +40,7 @@ class EmptySlotCreator
 
             $this->appointmentRepository->save($appointment);
         }
+
+        return count($slots);
     }
 }

@@ -419,16 +419,32 @@ These `VITE_*` variables control the visual appearance and behavior of the calen
 
 This setting prevents users from creating excessively long appointments that could span multiple days or interfere with the calendar's usability.
 
-#### Backend Calendar Slots Configuration
+#### Appointment Gaps Management
 
-**`CALENDAR_AUTO_CREATE_SLOTS`**: Enable or disable automatic creation of empty appointment slots (`true`/`false`)
+**What are Gaps?**
 
-When enabled (`true`), the system automatically creates empty appointment slots in the weekly calendar view when no appointments exist for that week. This feature helps visualize available time slots. Set to `false` to disable this behavior (useful for testing environments).
+Gaps (or "huecos" in Spanish) are appointments with an **empty title**. They represent available time slots in the calendar and are visually distinguished by a **yellow background color**.
 
-- **Production/Development**: `true` (enabled by default)
-- **Test Environment**: `false` (disabled to prevent interference with tests)
+- **Empty Gap**: `title = null` or `title = ""` → Displayed with yellow background
+- **Real Appointment**: `title` has content → Displayed with brown/olive background (depending on type)
 
-These variables define the **working hours** for each weekday. When `CALENDAR_AUTO_CREATE_SLOTS=true` and viewing the weekly calendar with no appointments, the system creates empty slots based on this configuration.
+**Manual Gap Management**
+
+In all calendar views (weekly, monthly, daily), two buttons allow manual gap management:
+
+1. **"Generate Gaps" (Generar Huecos)**:
+   - **Active when**: The visible date range is completely empty (no appointments of any kind)
+   - **Function**: Creates empty appointment slots based on working hours configuration
+   - **Disabled when**: The visible date range contains any appointments (including existing gaps)
+
+2. **"Delete Gaps" (Eliminar Huecos)**:
+   - **Active when**: There are appointments with empty titles (yellow background) in the visible date range
+   - **Function**: Deletes all appointments with empty titles in the visible date range
+   - **Disabled when**: There are no empty gaps to delete
+
+**Working Hours Configuration**
+
+These variables define the **working hours** for each weekday. When generating gaps, the system creates empty slots based on this configuration.
 
 Format: `"HH:MM-HH:MM,HH:MM-HH:MM,..."` (comma-separated time ranges)
 
@@ -450,11 +466,12 @@ CALENDAR_SLOTS_FRIDAY="09:00-10:00,10:00-11:00,11:00-12:00,12:00-13:00,14:00-15:
 ```
 
 **Notes:**
-- Empty appointment slots are only created when viewing the **weekly calendar** (`timeGridWeek`)
-- Slots are created **only if no appointments exist** for that week
+- Gap management buttons work in **all calendar views** (weekly, monthly, daily)
+- The buttons operate on the currently visible date range in the calendar
 - Each time range represents one appointment slot (e.g., `09:00-10:00` creates a 1-hour slot)
 - You can customize working hours per day to match your clinic's schedule
 - Weekend days (Saturday/Sunday) are not included by default
+- Gaps are identified by empty `title` field, regardless of `type` value
 
 ### PHP
 
