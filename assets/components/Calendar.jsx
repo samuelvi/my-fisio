@@ -10,6 +10,7 @@ import axios from 'axios';
 import { registerLocale } from 'react-datepicker';
 import { enUS, es } from 'date-fns/locale';
 import { useLanguage } from './LanguageContext';
+import Routing from '../routing/init';
 
 registerLocale('en', enUS);
 registerLocale('es', es);
@@ -170,7 +171,7 @@ export default function Calendar() {
             // Store current view dates for button state management
             currentViewDatesRef.current = { start: startStr, end: endStr };
 
-            const response = await axios.get('/api/appointments', {
+            const response = await axios.get(Routing.generate('api_appointments_collection'), {
                 params: {
                     start: startStr,
                     end: endStr,
@@ -258,9 +259,9 @@ export default function Calendar() {
         try {
             const payload = { ...formData, userId: 1 };
             if (currentEvent) {
-                await axios.put(`/api/appointments/${currentEvent.id}`, payload);
+                await axios.put(Routing.generate('api_appointments_put', { id: currentEvent.id }), payload);
             } else {
-                await axios.post('/api/appointments', payload);
+                await axios.post(Routing.generate('api_appointments_post'), payload);
             }
             setModalOpen(false);
             setShowNoTypeConfirmModal(false);
@@ -287,7 +288,7 @@ export default function Calendar() {
     const handleDeleteConfirmed = async () => {
         if (!currentEvent) return;
         try {
-            await axios.delete(`/api/appointments/${currentEvent.id}`);
+            await axios.delete(Routing.generate('api_appointments_delete', { id: currentEvent.id }));
             setModalOpen(false);
             setIsDeleteConfirmOpen(false);
             if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
@@ -310,7 +311,7 @@ export default function Calendar() {
                 allDay: event.allDay,
                 userId: 1
             };
-            await axios.put(`/api/appointments/${event.id}`, payload);
+            await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
         } catch (error) {
             console.error('Error moving appointment:', error);
             dropInfo.revert();
@@ -331,7 +332,7 @@ export default function Calendar() {
                 allDay: event.allDay,
                 userId: 1
             };
-            await axios.put(`/api/appointments/${event.id}`, payload);
+            await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
         } catch (error) {
             console.error('Error resizing appointment:', error);
             resizeInfo.revert();
@@ -343,7 +344,7 @@ export default function Calendar() {
 
         setIsGeneratingGaps(true);
         try {
-            const response = await axios.post('/api/appointment-gaps/generate', {
+            const response = await axios.post(Routing.generate('api_appointment_gaps_generate'), {
                 start: currentViewDatesRef.current.start,
                 end: currentViewDatesRef.current.end
             });
@@ -376,7 +377,7 @@ export default function Calendar() {
         setShowDeleteGapsConfirmModal(false);
         setIsDeletingGaps(true);
         try {
-            const response = await axios.delete('/api/appointment-gaps/delete-empty', {
+            const response = await axios.delete(Routing.generate('api_appointment_gaps_delete_empty'), {
                 data: {
                     start: currentViewDatesRef.current.start,
                     end: currentViewDatesRef.current.end

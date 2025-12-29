@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
+import Routing from '../routing/init';
 
 export default function PatientList() {
     const { t } = useLanguage();
@@ -49,7 +50,7 @@ export default function PatientList() {
     const fetchPatients = async () => {
         setLoading(true);
         try {
-            const response = await axios.get('/api/patients', {
+            const response = await axios.get(Routing.generate('api_patients_collection'), {
                 params: { 
                     status: statusFilter,
                     order: sortOrder,

@@ -4,6 +4,7 @@ import axios from 'axios';
 import { Dialog, Transition } from '@headlessui/react';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from './LanguageContext';
+import Routing from '../routing/init';
 
 export default function PatientForm() {
     const { t } = useLanguage();
@@ -47,7 +48,7 @@ export default function PatientForm() {
     const fetchPatient = async () => {
         setLoading(true);
         try {
-            const response = await axios.get(`/api/patients/${id}`);
+            const response = await axios.get(Routing.generate('api_patients_get', { id }));
             const data = response.data;
             // Format date for input type="date"
             const formattedDate = data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : '';
@@ -116,10 +117,10 @@ export default function PatientForm() {
             if (!payload.dateOfBirth) delete payload.dateOfBirth;
 
             if (isEditing) {
-                await axios.put(`/api/patients/${id}`, payload);
+                await axios.put(Routing.generate('api_patients_put', { id }), payload);
                 navigate(`/patients/${id}`);
             } else {
-                await axios.post('/api/patients', payload);
+                await axios.post(Routing.generate('api_patients_post'), payload);
                 navigate('/patients');
             }
         } catch (err) {

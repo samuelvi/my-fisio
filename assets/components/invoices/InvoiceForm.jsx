@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
+import Routing from '../../routing/init';
 
 const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "" }) => (
     <div>
@@ -53,7 +54,7 @@ export default function InvoiceForm() {
         const fetchInvoice = async () => {
             setLoading(true);
             try {
-                const response = await axios.get(`/api/invoices/${id}`);
+                const response = await axios.get(Routing.generate('api_invoices_get', { id }));
                 const data = response.data;
                 setDate(data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]);
                 setCustomerName(data.fullName || '');
@@ -87,7 +88,9 @@ export default function InvoiceForm() {
         const fetchPrefillData = async () => {
             setLoadingPatient(true);
             try {
-                const response = await axios.get(`/api/invoice-prefill?patientId=${patientId}`);
+                const response = await axios.get(Routing.generate('invoice_prefill'), {
+                    params: { patientId }
+                });
                 const data = response.data;
 
                 // Pre-fill customer fields from backend-mapped data
@@ -164,10 +167,10 @@ export default function InvoiceForm() {
 
         try {
             if (isEditing) {
-                await axios.put(`/api/invoices/${id}`, payload);
+                await axios.put(Routing.generate('api_invoices_put', { id }), payload);
             } else {
                 delete payload.number;
-                await axios.post('/api/invoices', payload);
+                await axios.post(Routing.generate('api_invoices_post'), payload);
             }
             navigate('/invoices');
         } catch (err) {

@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import RecordTimeline from './RecordTimeline';
 import { useLanguage } from './LanguageContext';
+import Routing from '../routing/init';
 
 export default function PatientDetail() {
     const { t } = useLanguage();
@@ -16,8 +17,10 @@ export default function PatientDetail() {
         const fetchData = async () => {
             try {
                 const [patientRes, appointmentsRes] = await Promise.all([
-                    axios.get(`/api/patients/${id}`),
-                    axios.get(`/api/appointments?patientId=${id}`)
+                    axios.get(Routing.generate('api_patients_get', { id })),
+                    axios.get(Routing.generate('api_appointments_collection'), {
+                        params: { patientId: id }
+                    })
                 ]);
                 
                 setPatient(patientRes.data);

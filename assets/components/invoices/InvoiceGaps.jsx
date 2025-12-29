@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
+import Routing from '../../routing/init';
 
 export default function InvoiceGaps() {
     const { t } = useLanguage();
@@ -19,7 +20,7 @@ export default function InvoiceGaps() {
         const fetchInvoiceGaps = async () => {
             setGapLoading(true);
             try {
-                const response = await axios.get('/api/invoice-gaps', {
+                const response = await axios.get(Routing.generate('invoice_number_gaps'), {
                     params: { year: gapYear }
                 });
                 setGapData(response.data);

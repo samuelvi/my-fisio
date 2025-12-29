@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import Routing from '../routing/init';
 
 export default function Dashboard() {
     const { t } = useLanguage();
@@ -19,8 +20,8 @@ export default function Dashboard() {
         const fetchStats = async () => {
             try {
                 const [statsResponse, healthResponse] = await Promise.all([
-                    axios.get('/api/dashboard/stats'),
-                    axios.get('/api/health')
+                    axios.get(Routing.generate('api_dashboard_stats')),
+                    axios.get(Routing.generate('api_health'))
                 ]);
                 setStats(statsResponse.data);
                 setHealth(healthResponse.data);

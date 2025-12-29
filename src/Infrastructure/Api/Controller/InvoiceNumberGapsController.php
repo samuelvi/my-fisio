@@ -22,7 +22,7 @@ final class InvoiceNumberGapsController extends AbstractController
         $this->messageBus = $this->queryBus;
     }
 
-    #[Route('/api/invoice-gaps', name: 'invoice_number_gaps', methods: ['GET'])]
+    #[Route('/api/invoice-gaps', name: 'invoice_number_gaps', methods: ['GET'], options: ['expose' => true])]
     public function __invoke(Request $request): JsonResponse
     {
         $year = (int) $request->query->get('year', date('Y'));

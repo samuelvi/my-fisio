@@ -24,7 +24,7 @@ final class HealthController
     ) {
     }
 
-    #[Route('/api/health', name: 'api_health', methods: ['GET'])]
+    #[Route('/api/health', name: 'api_health', methods: ['GET'], options: ['expose' => true])]
     public function __invoke(): JsonResponse
     {
         $checks = [

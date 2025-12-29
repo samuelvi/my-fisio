@@ -19,10 +19,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     shortName: 'Record',
     operations: [
-        new Get(),
-        new GetCollection(),
-        new Post(processor: RecordProcessor::class),
-        new Put(processor: RecordProcessor::class),
+        new Get(name: 'api_records_get'),
+        new GetCollection(name: 'api_records_collection'),
+        new Post(name: 'api_records_post', processor: RecordProcessor::class),
+        new Put(name: 'api_records_put', processor: RecordProcessor::class),
     ],
     provider: RecordProvider::class,
     normalizationContext: ['groups' => ['record:read']],

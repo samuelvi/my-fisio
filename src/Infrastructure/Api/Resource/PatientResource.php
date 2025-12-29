@@ -23,10 +23,10 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     shortName: 'Patient',
     operations: [
-        new Get(),
-        new GetCollection(),
-        new Post(processor: PatientProcessor::class),
-        new Put(processor: PatientProcessor::class),
+        new Get(name: 'api_patients_get'),
+        new GetCollection(name: 'api_patients_collection'),
+        new Post(name: 'api_patients_post', processor: PatientProcessor::class),
+        new Put(name: 'api_patients_put', processor: PatientProcessor::class),
     ],
     provider: PatientProvider::class,
     normalizationContext: ['groups' => ['patient:read']],

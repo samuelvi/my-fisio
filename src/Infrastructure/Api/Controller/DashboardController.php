@@ -20,7 +20,7 @@ final class DashboardController extends AbstractController
         $this->messageBus = $queryBus;
     }
 
-    #[Route('/api/dashboard/stats', name: 'api_dashboard_stats', methods: ['GET'])]
+    #[Route('/api/dashboard/stats', name: 'api_dashboard_stats', methods: ['GET'], options: ['expose' => true])]
     public function getStats(): JsonResponse
     {
         $stats = $this->handle(GetDashboardStatsQuery::create());

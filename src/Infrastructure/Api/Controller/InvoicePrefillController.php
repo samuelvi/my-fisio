@@ -19,7 +19,7 @@ class InvoicePrefillController extends AbstractController
     ) {
     }
 
-    #[Route('/api/invoice-prefill', name: 'invoice_prefill', methods: ['GET'])]
+    #[Route('/api/invoice-prefill', name: 'invoice_prefill', methods: ['GET'], options: ['expose' => true])]
     public function __invoke(Request $request): JsonResponse
     {
         $patientId = $request->query->get('patientId');

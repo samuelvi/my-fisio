@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import Routing from '../routing/init';
 
 export default function FullHistory() {
     const { t } = useLanguage();
@@ -13,7 +14,7 @@ export default function FullHistory() {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const response = await axios.get(`/api/patients/${id}`);
+                const response = await axios.get(Routing.generate('api_patients_get', { id }));
                 setPatient(response.data);
                 setLoading(false);
             } catch (error) {

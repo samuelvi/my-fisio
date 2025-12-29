@@ -21,11 +21,11 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     shortName: 'Appointment',
     operations: [
-        new Get(),
-        new GetCollection(),
-        new Post(processor: AppointmentProcessor::class),
-        new Put(processor: AppointmentProcessor::class),
-        new Delete(processor: AppointmentProcessor::class),
+        new Get(name: 'api_appointments_get'),
+        new GetCollection(name: 'api_appointments_collection'),
+        new Post(name: 'api_appointments_post', processor: AppointmentProcessor::class),
+        new Put(name: 'api_appointments_put', processor: AppointmentProcessor::class),
+        new Delete(name: 'api_appointments_delete', processor: AppointmentProcessor::class),
     ],
     provider: AppointmentProvider::class,
     normalizationContext: ['groups' => ['appointment:read']],

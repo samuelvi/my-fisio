@@ -1,3 +1,28 @@
 fos_js_routing:
-    routes_to_expose: 
+    routes_to_expose:
         - api_invoices_collection
+        - api_invoices_get
+        - api_invoices_post
+        - api_invoices_put
+        - api_patients_get
+        - api_patients_collection
+        - api_patients_post
+        - api_patients_put
+        - api_appointments_get
+        - api_appointments_collection
+        - api_appointments_post
+        - api_appointments_put
+        - api_appointments_delete
+        - api_records_get
+        - api_records_collection
+        - api_records_post
+        - api_records_put
+        - api_appointment_gaps_generate
+        - api_appointment_gaps_delete_empty
+        - api_dashboard_stats
+        - api_health
+        - invoice_number_gaps
+        - invoice_prefill
+        - invoice_export
+        - api_login_check
+        - app_home

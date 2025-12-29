@@ -30,9 +30,9 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     operations: [
         new GetCollection(name: 'api_invoices_collection'),
-        new Get(),
-        new Post(processor: InvoiceCreateProcessor::class, input: InvoiceInput::class),
-        new Put(processor: InvoiceUpdateProcessor::class, input: InvoiceInput::class),
+        new Get(name: 'api_invoices_get'),
+        new Post(name: 'api_invoices_post', processor: InvoiceCreateProcessor::class, input: InvoiceInput::class),
+        new Put(name: 'api_invoices_put', processor: InvoiceUpdateProcessor::class, input: InvoiceInput::class),
     ],
     normalizationContext: ['groups' => ['invoice:read']],
     denormalizationContext: ['groups' => ['invoice:write']],

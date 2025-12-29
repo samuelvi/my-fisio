@@ -390,6 +390,7 @@ test-e2e: ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests
 	fi
 	$(DOCKER_COMPOSE_TEST) exec -T php_test mkdir -p config/jwt
 	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
+	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console cache:clear
 	make test-reset-db
 	npx playwright test $(file)
 

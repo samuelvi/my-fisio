@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
+import Routing from '../routing/init';
 
 const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange }) => (
     <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
@@ -46,11 +47,11 @@ export default function RecordForm() {
         const loadInitialData = async () => {
             setLoading(true);
             try {
-                const patientResponse = await axios.get(`/api/patients/${patientId}`);
+                const patientResponse = await axios.get(Routing.generate('api_patients_get', { id: patientId }));
                 setPatientName(`${patientResponse.data.firstName} ${patientResponse.data.lastName}`);
 
                 if (isEditing) {
-                    const recordResponse = await axios.get(`/api/records/${recordId}`);
+                    const recordResponse = await axios.get(Routing.generate('api_records_get', { id: recordId }));
                     const data = recordResponse.data;
                     
                     setFormData({
@@ -102,13 +103,13 @@ export default function RecordForm() {
         try {
             const payload = { ...formData, createdAt: recordDate || undefined };
             if (!isEditing) {
-                payload.patient = `/api/patients/${patientId}`;
+                payload.patient = Routing.generate('api_patients_get', { id: patientId });
             }
 
             if (isEditing) {
-                await axios.put(`/api/records/${recordId}`, payload);
+                await axios.put(Routing.generate('api_records_put', { id: recordId }), payload);
             } else {
-                await axios.post('/api/records', payload);
+                await axios.post(Routing.generate('api_records_post'), payload);
             }
             navigate(`/patients/${patientId}`);
         } catch (err) {
