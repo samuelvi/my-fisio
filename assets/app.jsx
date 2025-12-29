@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import axios from 'axios';
 import './app.css';
 import { LanguageProvider } from './components/LanguageContext';
+import { RouteProvider } from './components/RouteContext';
 
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
@@ -203,12 +204,15 @@ function App() {
 
 const rootElement = document.getElementById('root');
 if (rootElement) {
+    const routes = JSON.parse(rootElement.dataset.routes || '{}');
     const root = ReactDOM.createRoot(rootElement);
     root.render(
         <React.StrictMode>
-            <LanguageProvider>
-                <App />
-            </LanguageProvider>
+            <RouteProvider routes={routes}>
+                <LanguageProvider>
+                    <App />
+                </LanguageProvider>
+            </RouteProvider>
         </React.StrictMode>
     );
 }

@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
+import { useRoutes } from '../RouteContext';
 
 export default function InvoiceList() {
     const { t, language } = useLanguage();
+    const routes = useRoutes();
     const [invoices, setInvoices] = useState([]);
     const [loading, setLoading] = useState(true);
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
@@ -73,7 +75,7 @@ export default function InvoiceList() {
                 params['number'] = numberQuery;
             }
 
-            const response = await axios.get('/api/invoices', { params });
+            const response = await axios.get(routes.invoices_collection, { params });
             
             let data = [];
             if (Array.isArray(response.data)) {
@@ -131,7 +133,12 @@ export default function InvoiceList() {
                 ...(mode === 'download' ? { download: 1 } : {}),
                 locale: language
             };
-            const response = await axios.get(`/api/invoices/${id}/export/${format}`, {
+            
+            const exportUrl = routes.invoices_export
+                .replace('-1', id)
+                .replace('html', format);
+
+            const response = await axios.get(exportUrl, {
                 params,
                 responseType: 'blob'
             });
