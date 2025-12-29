@@ -4,7 +4,7 @@
 
 {% block body %}
     <script>
-        window.APP_TRANSLATIONS = {{ translations|json_encode|raw }};
+        window.APP_TRANSLATIONS = {{ get_app_translations()|json_encode|raw }};
     </script>
     <div id="root"></div>
 {% endblock %}

@@ -1,15 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
 
-export default function Login() {
+export default function Login({ loginCheckUrl, dashboardUrl }) {
     const { language, t, changeLanguage } = useLanguage();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState(null);
     const [sessionExpired, setSessionExpired] = useState(false);
-    const navigate = useNavigate();
     const location = useLocation();
 
     useEffect(() => {
@@ -29,9 +28,9 @@ export default function Login() {
 
     useEffect(() => {
         if (localStorage.getItem('token')) {
-            navigate('/dashboard');
+            window.location.href = dashboardUrl;
         }
-    }, [navigate]);
+    }, [dashboardUrl]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -39,7 +38,7 @@ export default function Login() {
 
         try {
             const response = await axios.post(
-                '/api/login_check',
+                loginCheckUrl,
                 {
                     username: email,
                     password: password
@@ -55,7 +54,7 @@ export default function Login() {
             const jwt = response.data.token;
             localStorage.setItem('token', jwt);
             axios.defaults.headers.common['Authorization'] = `Bearer ${jwt}`;
-            navigate('/dashboard');
+            window.location.href = dashboardUrl;
             
         } catch (err) {
             setError(t('invalid_credentials'));

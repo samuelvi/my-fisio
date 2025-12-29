@@ -21,15 +21,17 @@
             }
         </style>
         
-        {% block stylesheets %}
-            {{ vite_entry_link_tags('app') }}
-        {% endblock %}
-
-        {% block javascripts %}
-            {{ vite_entry_script_tags('app', { dependency: 'react' }) }}
-        {% endblock %}
+        {{ vite_entry_link_tags('login') }}
+        {{ vite_entry_script_tags('login', { dependency: 'react' }) }}
     </head>
     <body>
-        {% block body %}{% endblock %}
+        <script>
+            window.APP_TRANSLATIONS = {{ get_app_translations()|json_encode|raw }};
+        </script>
+        {% set props = {
+            'loginCheckUrl': path('api_login_check'),
+            'dashboardUrl': path('app_home', {'reactRouting': 'dashboard'})
+        } %}
+        <div id="login-app" data-props="{{ props|json_encode|e('html_attr') }}"></div>
     </body>
 </html>

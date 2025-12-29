@@ -5,7 +5,6 @@ import axios from 'axios';
 import './app.css';
 import { LanguageProvider } from './components/LanguageContext';
 
-import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
 import PatientList from './components/PatientList';
@@ -74,30 +73,23 @@ axios.interceptors.response.use(
 
 const ProtectedRoute = ({ children }) => {
     const isAuthenticated = !!localStorage.getItem('token');
-    return isAuthenticated ? children : <Navigate to="/login?expired=1" />;
-};
-
-const PublicOnlyRoute = ({ children }) => {
-    const isAuthenticated = !!localStorage.getItem('token');
-    return isAuthenticated ? <Navigate to="/dashboard" /> : children;
+    if (!isAuthenticated) {
+        window.location.href = '/login?expired=1';
+        return null;
+    }
+    return children;
 };
 
 function App() {
+    const isAuthenticated = !!localStorage.getItem('token');
+    if (!isAuthenticated) {
+        window.location.href = '/login';
+        return null;
+    }
+
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/login" element={
-                    <PublicOnlyRoute>
-                        <Login />
-                    </PublicOnlyRoute>
-                } />
-                
-                <Route path="/" element={
-                    <PublicOnlyRoute>
-                        <Login />
-                    </PublicOnlyRoute>
-                } />
-
                 <Route path="/dashboard" element={
                     <ProtectedRoute>
                         <Layout>
