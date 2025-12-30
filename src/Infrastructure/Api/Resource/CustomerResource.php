@@ -16,6 +16,8 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use App\Infrastructure\Api\State\CustomerProcessor;
 use App\Infrastructure\Api\State\CustomerProvider;
+use App\Domain\Entity\Customer;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;

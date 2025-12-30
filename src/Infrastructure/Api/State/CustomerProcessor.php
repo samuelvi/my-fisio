@@ -73,6 +73,12 @@ final class CustomerProcessor implements ProcessorInterface
             $customer->updateTimestamp();
         }
 
+        // Final validation on the Entity (triggers UniqueEntity)
+        $entityViolations = $this->validator->validate($customer);
+        if (count($entityViolations) > 0) {
+            throw new ValidationException($entityViolations);
+        }
+
         $this->entityManager->persist($customer);
         $this->entityManager->flush();
 
