@@ -11,9 +11,9 @@ use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Api\Resource\PatientResource;
 use App\Infrastructure\Search\PatientSearchStrategyFactory;
 use App\Infrastructure\Search\PatientSearchStrategyInterface;
-
 use DateTimeImmutable;
 use DateTimeInterface;
+use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 
 class PatientProvider implements ProviderInterface
@@ -22,6 +22,7 @@ class PatientProvider implements ProviderInterface
 
     public function __construct(
         private readonly Connection $connection,
+        private readonly EntityManagerInterface $entityManager,
         private readonly int $itemsPerPage,
     ) {
         $this->searchStrategy = PatientSearchStrategyFactory::create(connection: $connection);

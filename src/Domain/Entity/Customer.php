@@ -4,15 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
-use ApiPlatform\Metadata\Delete;
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use App\Infrastructure\Api\State\CustomerProcessor;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -23,19 +14,6 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'customers')]
-#[ApiResource(
-    operations: [
-        new GetCollection(name: 'api_customers_get_collection'),
-        new Get(name: 'api_customers_get'),
-        new Post(name: 'api_customers_post', processor: CustomerProcessor::class),
-        new Put(name: 'api_customers_put', processor: CustomerProcessor::class),
-        new Delete(name: 'api_customers_delete', processor: CustomerProcessor::class),
-    ],
-    normalizationContext: ['groups' => ['customer:read']],
-    denormalizationContext: ['groups' => ['customer:write']],
-    order: ['lastName' => 'ASC', 'firstName' => 'ASC'],
-    filters: ['app.filter.customer_search', 'app.filter.customer_order']
-)]
 #[UniqueEntity('taxId', message: 'error_customer_tax_id_duplicate')]
 class Customer
 {
@@ -111,7 +89,14 @@ class Customer
         ?string $phone = null,
         ?string $billingAddress = null,
     ): self {
-        return new self($firstName, $lastName, $taxId, $email, $phone, $billingAddress);
+        return new self(
+            firstName: $firstName, 
+            lastName: $lastName, 
+            taxId: $taxId, 
+            email: $email, 
+            phone: $phone, 
+            billingAddress: $billingAddress
+        );
     }
 
     public function updateFullName(): void
