@@ -84,6 +84,18 @@ export interface Invoice {
     lines: InvoiceLine[];
 }
 
+export interface Customer {
+    id?: number;
+    firstName: string;
+    lastName: string;
+    fullName?: string;
+    taxId: string;
+    email?: string;
+    phone?: string;
+    billingAddress: string;
+    createdAt?: string;
+}
+
 export interface DashboardStats {
     totalPatients: number;
     appointmentsToday: number;

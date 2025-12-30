@@ -17,6 +17,11 @@ fos_js_routing:
         - api_records_collection
         - api_records_post
         - api_records_put
+        - api_customers_get_collection
+        - api_customers_get
+        - api_customers_post
+        - api_customers_put
+        - api_customers_delete
         - api_appointment_gaps_generate
         - api_appointment_gaps_delete_empty
         - api_dashboard_stats

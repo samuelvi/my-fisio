@@ -48,6 +48,29 @@ NEW_FEATURE_ENABLED=true
 When enabled, users will have access to the new feature in the dashboard. Default: `true`
 ```
 
+## Development Conventions
+
+When implementing new modules, listings (CRUD), or actions, adhere strictly to the following technical standards:
+
+### 1. Frontend Language
+- **MANDATORY**: Always use **TypeScript** (`.ts`, `.tsx`) for all new frontend components and logic.
+- Define proper interfaces in `assets/types/index.ts` for all entities and API responses.
+
+### 2. API & Routing Management
+- **Route Exposure**: For all new Symfony routes (including API Platform resources) that need to be accessed from React, you **MUST**:
+    1.  Explicitly name the operations in the entity (e.g., `new GetCollection(name: 'api_entity_collection')`).
+    2.  Add the route name to `config/packages/fos_js_routing.yaml` under `routes_to_expose`.
+    3.  Execute `make dump-routes` to regenerate `assets/routing/routes.json`.
+- **Usage**: Always use the `Routing` helper in React (e.g., `Routing.generate('route_name', { id: 1 })`) instead of hardcoding URLs.
+
+### 3. Best Practices & Quality
+- **Efficiency**: Optimize database queries (avoid N+1) and minimize API payload sizes. Use serialization groups (`#[Groups]`) to control exposed data.
+- **Security**: 
+    - Ensure all new endpoints are protected by appropriate access control in `security.yaml`.
+    - Always validate input data on the backend using Symfony Constraints.
+    - Handle 401/403/422 errors gracefully in the UI.
+- **Style**: Mimic the existing Tailwind CSS patterns. Use localized messages for all user-facing strings including server-side validation messages.
+
 ## Task Completion Checklist
 
 **CRITICAL**: Before marking any task as complete, you **MUST** verify:

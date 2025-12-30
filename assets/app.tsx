@@ -17,6 +17,8 @@ import Calendar from './components/Calendar';
 import InvoiceList from './components/invoices/InvoiceList';
 import InvoiceForm from './components/invoices/InvoiceForm';
 import InvoiceGaps from './components/invoices/InvoiceGaps';
+import CustomerList from './components/customers/CustomerList';
+import CustomerForm from './components/customers/CustomerForm';
 
 axios.defaults.headers.common['Accept'] = 'application/ld+json';
 axios.defaults.headers.common['Content-Type'] = 'application/ld+json';
@@ -190,6 +192,30 @@ function App() {
                     <ProtectedRoute>
                         <Layout>
                             <InvoiceGaps />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/customers" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <CustomerList />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/customers/new" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <CustomerForm />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/customers/:id/edit" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <CustomerForm />
                         </Layout>
                     </ProtectedRoute>
                 } />

@@ -34,9 +34,21 @@ export default function InvoiceForm() {
     const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
     const patientId = searchParams.get('patientId');
+    const customerId = searchParams.get('customerId');
+    
+    // Debug search params on every render to ensure they are captured
+    useEffect(() => {
+        console.log('Current searchParams:', { 
+            patientId, 
+            customerId,
+            raw: window.location.search 
+        });
+    }, [patientId, customerId]);
+
     const isEditing = !!id;
     const [loading, setLoading] = useState<boolean>(false);
     const [loadingPatient, setLoadingPatient] = useState<boolean>(false);
+    const [loadingCustomer, setLoadingCustomer] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [numberError, setNumberError] = useState<string>('');
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
@@ -116,6 +128,41 @@ export default function InvoiceForm() {
 
         fetchPrefillData();
     }, [patientId, isEditing]);
+
+    useEffect(() => {
+        if (!customerId || isEditing) return;
+
+        const fetchCustomerData = async () => {
+            setLoadingCustomer(true);
+            setError(null);
+            try {
+                // Ensure customerId is treated as a clean identifier
+                const cleanId = customerId.toString().trim();
+                const route = Routing.generate('api_customers_get', { id: cleanId });
+                console.log('Fetching customer data from:', route);
+
+                const response = await axios.get(route);
+                const data = response.data;
+                console.log('Received Customer Data API Response:', data);
+
+                if (data) {
+                    setCustomerName(data.fullName || `${data.firstName} ${data.lastName}`);
+                    setCustomerTaxId(data.taxId || data.taxid || '');
+                    // Customer entity uses billingAddress, check both just in case
+                    setCustomerAddress(data.billingAddress || data.address || '');
+                    setCustomerPhone(data.phone || '');
+                    setCustomerEmail(data.email || '');
+                }
+            } catch (err) {
+                console.error('Error loading customer data:', err);
+                setError(t('error_could_not_load_data'));
+            } finally {
+                setLoadingCustomer(false);
+            }
+        };
+
+        fetchCustomerData();
+    }, [customerId, isEditing, t]);
 
     const handleAddLine = () => {
         setLines([...lines, { concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
@@ -221,6 +268,20 @@ export default function InvoiceForm() {
                                         <span className="font-medium">{t('loading')}...</span>
                                     ) : (
                                         <span>{t('invoice_prefilled_from_patient')}</span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+                        {customerId && !isEditing && (
+                            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start">
+                                <svg className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                </svg>
+                                <div className="text-sm text-blue-800">
+                                    {loadingCustomer ? (
+                                        <span className="font-medium">{t('loading')}...</span>
+                                    ) : (
+                                        <span>{t('invoice_prefilled_from_customer')}</span>
                                     )}
                                 </div>
                             </div>
