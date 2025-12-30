@@ -81,6 +81,7 @@ composer.phar
 
 # Custom data
 favicon.ico
+myRsyncTinaFisio.sh
 
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem

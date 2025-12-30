@@ -69,7 +69,7 @@ final class PopulateCustomersCommand extends Command
         foreach ($invoices as $invoice) {
             $taxId = $this->normalizeTaxId($invoice->taxId);
             $fullName = trim($invoice->fullName);
-            
+
             // Deduplication key: tax_id or full_name if tax_id is empty
             $key = $taxId ?: 'NAME_'.$fullName;
 
@@ -110,7 +110,7 @@ final class PopulateCustomersCommand extends Command
         foreach ($patients as $patient) {
             $taxId = $this->normalizeTaxId($patient->taxId);
             $fullName = trim($patient->fullName);
-            
+
             $key = $taxId ?: 'NAME_'.$fullName;
 
             // Only link if the customer already exists (created from invoices)
@@ -146,13 +146,13 @@ final class PopulateCustomersCommand extends Command
     {
         $io->warning('Resetting customers table and links...');
         $connection = $this->entityManager->getConnection();
-        
+
         $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
         $connection->executeStatement('TRUNCATE TABLE customers');
         $connection->executeStatement('UPDATE invoices SET customer_id = NULL');
         $connection->executeStatement('UPDATE patients SET customer_id = NULL');
         $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
-        
+
         $io->success('Reset complete.');
     }
 
@@ -169,7 +169,7 @@ final class PopulateCustomersCommand extends Command
                 $map[$taxId] = $customer;
                 continue;
             }
-            
+
             if ($customer->fullName) {
                 $map['NAME_'.trim($customer->fullName)] = $customer;
             }
@@ -197,7 +197,7 @@ final class PopulateCustomersCommand extends Command
         $customer->fullName = $invoice->fullName;
         $customer->email = $invoice->email;
         $customer->phone = $invoice->phone;
-        $customer->billingAddress = $invoice->address ?? 'Unknown Address';
+        $customer->billingAddress = $invoice->address ?? '';
 
         return $customer;
     }
@@ -206,12 +206,12 @@ final class PopulateCustomersCommand extends Command
     {
         $fullName = trim($fullName);
         if ($fullName === '') {
-            return ['Unknown', 'Unknown'];
+            return ['', ''];
         }
 
         $parts = explode(' ', $fullName);
         $count = count($parts);
-        
+
         if ($count === 1) {
             return [$parts[0], $parts[0]];
         }

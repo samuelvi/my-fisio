@@ -84,5 +84,13 @@ services:
         tags:
             - { name: 'serializer.normalizer', priority: 100 }
 
+    # Filters
+    app.filter.customer_search:
+        parent: 'api_platform.doctrine.orm.search_filter'
+        properties:
+            fullName: 'ipartial'
+            taxId: 'ipartial'
+        tags: [ { name: 'api_platform.filter' } ]
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -33,12 +33,9 @@ use Doctrine\ORM\Mapping as ORM;
     ],
     normalizationContext: ['groups' => ['customer:read']],
     denormalizationContext: ['groups' => ['customer:write']],
-    order: ['lastName' => 'ASC', 'firstName' => 'ASC']
+    order: ['lastName' => 'ASC', 'firstName' => 'ASC'],
+    filters: ['app.filter.customer_search']
 )]
-#[ApiFilter(SearchFilter::class, properties: [
-    'fullName' => 'ipartial',
-    'taxId' => 'partial',
-])]
 #[UniqueEntity('taxId', message: 'error_customer_tax_id_duplicate')]
 class Customer
 {
@@ -97,6 +94,7 @@ class Customer
         $this->lastName = $lastName;
         $this->taxId = $taxId;
         $this->createdAt = new DateTimeImmutable();
+        $this->updateFullName();
     }
 
     public static function create(
@@ -105,6 +103,13 @@ class Customer
         string $taxId,
     ): self {
         return new self($firstName, $lastName, $taxId);
+    }
+
+    #[ORM\PrePersist]
+    #[ORM\PreUpdate]
+    public function updateFullName(): void
+    {
+        $this->fullName = trim($this->firstName . ' ' . $this->lastName);
     }
 
     #[ORM\PreUpdate]
