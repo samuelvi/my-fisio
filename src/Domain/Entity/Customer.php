@@ -28,6 +28,9 @@ class Customer
     #[ORM\Column(type: Types::STRING, length: 100, nullable: false)]
     public string $lastName;
 
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public ?string $fullName = null;
+
     #[ORM\Column(type: Types::STRING, length: 20, nullable: false)]
     public string $taxId; // DNI/NIF/CIF for billing
 

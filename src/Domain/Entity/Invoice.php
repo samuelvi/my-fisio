@@ -65,7 +65,7 @@ class Invoice
     #[Groups(['invoice:read', 'invoice:write'])]
     public float $amount;
 
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: false, name: 'full_name')]
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: false, name: 'full_name')]
     #[Groups(['invoice:read', 'invoice:write'])]
     public string $fullName;
 
