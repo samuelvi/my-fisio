@@ -12,9 +12,10 @@ interface InvoiceInputProps {
     type?: string;
     required?: boolean;
     placeholder?: string;
+    disabled?: boolean;
 }
 
-const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "" }: InvoiceInputProps) => (
+const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "", disabled = false }: InvoiceInputProps) => (
     <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">{label} {required && "*"}</label>
         <input
@@ -23,7 +24,8 @@ const InvoiceInput = ({ label, value, setter, type = "text", required = false, p
             value={value}
             onChange={(e) => setter(e.target.value)}
             placeholder={placeholder}
-            className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+            disabled={disabled}
+            className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
         />
     </div>
 );
@@ -52,6 +54,9 @@ export default function InvoiceForm() {
     const [error, setError] = useState<string | null>(null);
     const [numberError, setNumberError] = useState<string>('');
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
+
+    // Combined loading state to prevent race conditions
+    const isLoading = loading || loadingPatient || loadingCustomer;
 
     const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [customerName, setCustomerName] = useState<string>('');
@@ -287,7 +292,7 @@ export default function InvoiceForm() {
                             </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <InvoiceInput label={t('invoice_date')} value={date} setter={setDate} type="date" required />
+                            <InvoiceInput label={t('invoice_date')} value={date} setter={setDate} type="date" required disabled={isLoading} />
                             {isEditing && (
                                 <InvoiceInput
                                     label={t('number')}
@@ -296,23 +301,25 @@ export default function InvoiceForm() {
                                     required
                                     placeholder="YYYY000001"
                                     type="text"
+                                    disabled={isLoading}
                                 />
                             )}
                             {isEditing && numberError && (
                                 <p className="text-sm text-red-600 font-bold -mt-3">{numberError}</p>
                             )}
-                            <InvoiceInput label={t('customer_name')} value={customerName} setter={setCustomerName} required placeholder={t('customer_name_placeholder')} />
-                            <InvoiceInput label={t('tax_id')} value={customerTaxId} setter={setCustomerTaxId} required placeholder="Ex: 12345678A" />
-                            <InvoiceInput label={t('email')} value={customerEmail} setter={setCustomerEmail} type="email" />
-                            <InvoiceInput label={t('phone')} value={customerPhone} setter={setCustomerPhone} />
+                            <InvoiceInput label={t('customer_name')} value={customerName} setter={setCustomerName} required placeholder={t('customer_name_placeholder')} disabled={isLoading} />
+                            <InvoiceInput label={t('tax_id')} value={customerTaxId} setter={setCustomerTaxId} required placeholder="Ex: 12345678A" disabled={isLoading} />
+                            <InvoiceInput label={t('email')} value={customerEmail} setter={setCustomerEmail} type="email" disabled={isLoading} />
+                            <InvoiceInput label={t('phone')} value={customerPhone} setter={setCustomerPhone} disabled={isLoading} />
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
-                                <input 
-                                    type="text" 
-                                    value={customerAddress} 
-                                    onChange={(e) => setCustomerAddress(e.target.value)} 
-                                    placeholder={t('billing_address_placeholder')} 
-                                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                <input
+                                    type="text"
+                                    value={customerAddress}
+                                    onChange={(e) => setCustomerAddress(e.target.value)}
+                                    placeholder={t('billing_address_placeholder')}
+                                    disabled={isLoading}
+                                    className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
                                 />
                             </div>
                         </div>
@@ -329,42 +336,46 @@ export default function InvoiceForm() {
                             <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 rounded-lg bg-gray-50 border border-gray-100">
                                 <div className="col-span-12 md:col-span-5 space-y-2">
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('concept')}</label>
-                                    <input 
-                                        type="text" 
-                                        required 
-                                        value={line.concept} 
-                                        onChange={(e) => handleLineChange(index, 'concept', e.target.value)} 
-                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" 
-                                        placeholder={t('concept_placeholder')} 
+                                    <input
+                                        type="text"
+                                        required
+                                        value={line.concept}
+                                        onChange={(e) => handleLineChange(index, 'concept', e.target.value)}
+                                        disabled={isLoading}
+                                        className={`w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                        placeholder={t('concept_placeholder')}
                                     />
-                                    <input 
-                                        type="text" 
-                                        value={line.description} 
-                                        onChange={(e) => handleLineChange(index, 'description', e.target.value)} 
-                                        className="w-full border border-gray-200 rounded-md py-1.5 px-3 text-xs text-gray-500" 
-                                        placeholder={t('additional_notes')} 
+                                    <input
+                                        type="text"
+                                        value={line.description}
+                                        onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                                        disabled={isLoading}
+                                        className={`w-full border border-gray-200 rounded-md py-1.5 px-3 text-xs text-gray-500 ${isLoading ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                                        placeholder={t('additional_notes')}
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('qty')}</label>
-                                    <input 
-                                        type="number" 
-                                        min="1" 
-                                        required 
-                                        value={line.quantity} 
-                                        onChange={(e) => handleLineChange(index, 'quantity', parseInt(e.target.value))} 
-                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center" 
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        required
+                                        value={line.quantity}
+                                        onChange={(e) => handleLineChange(index, 'quantity', parseInt(e.target.value))}
+                                        disabled={isLoading}
+                                        className={`w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
                                     />
                                 </div>
                                 <div className="col-span-4 md:col-span-2">
                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('price')}</label>
-                                    <input 
-                                        type="number" 
-                                        step="0.01" 
-                                        required 
-                                        value={line.price} 
-                                        onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))} 
-                                        className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center" 
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        required
+                                        value={line.price}
+                                        onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))}
+                                        disabled={isLoading}
+                                        className={`w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
                                     />
                                 </div>
                                 <div className="col-span-3 md:col-span-2">
@@ -374,10 +385,11 @@ export default function InvoiceForm() {
                                     </div>
                                 </div>
                                 <div className="col-span-1 md:col-span-1 flex justify-end md:pt-7">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleRemoveLine(index)} 
-                                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                                    <button
+                                        type="button"
+                                        onClick={() => handleRemoveLine(index)}
+                                        disabled={isLoading}
+                                        className={`p-2 text-gray-400 hover:text-red-600 transition-colors ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
                                     >
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
@@ -385,10 +397,11 @@ export default function InvoiceForm() {
                             </div>
                         ))}
                         <div className="flex justify-end">
-                            <button 
-                                type="button" 
-                                onClick={handleAddLine} 
-                                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-md text-primary bg-primary/10 hover:bg-primary/20 transition"
+                            <button
+                                type="button"
+                                onClick={handleAddLine}
+                                disabled={isLoading}
+                                className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-md text-primary bg-primary/10 hover:bg-primary/20 transition ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
                             >
                                 + {t('add_item')}
                             </button>
@@ -404,25 +417,26 @@ export default function InvoiceForm() {
                 </div>
 
                 <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-                    <button 
-                        type="button" 
-                        onClick={() => navigate('/invoices')} 
-                        className="inline-flex items-center px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition"
+                    <button
+                        type="button"
+                        onClick={() => navigate('/invoices')}
+                        disabled={isLoading}
+                        className={`inline-flex items-center px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
                     >
                         {t('cancel')}
                     </button>
-                    <button 
-                        type="submit" 
-                        disabled={loading} 
+                    <button
+                        type="submit"
+                        disabled={isLoading}
                         className="inline-flex items-center px-8 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-dark focus:outline-none disabled:opacity-50 transition"
                     >
-                        {loading && (
+                        {isLoading && (
                             <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         )}
-                        {loading ? t('processing') : t('confirm_issuance')}
+                        {isLoading ? t('processing') : t('confirm_issuance')}
                     </button>
                 </div>
             </form>

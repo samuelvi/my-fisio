@@ -21,7 +21,7 @@ class AppFixtures extends Fixture
     public function load(ObjectManager $manager): void
     {
         // 1. Create the main user
-        $user = User::create('tina@tinafisio.com');
+        $user = User::create(email: 'tina@tinafisio.com', password: 'password');
         $user->password = $this->passwordHasher->hashPassword($user, 'password');
         $user->roles = ['ROLE_ADMIN'];
         $manager->persist($user);
@@ -29,24 +29,24 @@ class AppFixtures extends Fixture
         // 2. Create 15 patients for testing pagination (4 per page)
 
         // First patient (will be at the end of the list if sorted by ID DESC)
-        $firstPatient = PatientFactory::createOne(['firstName' => 'AFirst', 'lastName' => 'Patient']);
-        RecordFactory::createMany(2, [
+        $firstPatient = PatientFactory::createOne(attributes: ['firstName' => 'AFirst', 'lastName' => 'Patient']);
+        RecordFactory::createMany(number: 2, attributes: [
             'patient' => $firstPatient,
             'physiotherapyTreatment' => 'Initial physiotherapy treatment notes.',
         ]);
 
         // Patients with accented names for search testing
-        PatientFactory::createOne(['firstName' => 'José', 'lastName' => 'García']);
-        PatientFactory::createOne(['firstName' => 'María', 'lastName' => 'López']);
-        PatientFactory::createOne(['firstName' => 'Ángel', 'lastName' => 'Martínez']);
-        PatientFactory::createOne(['firstName' => 'Inés', 'lastName' => 'Pérez']);
+        PatientFactory::createOne(attributes: ['firstName' => 'José', 'lastName' => 'García']);
+        PatientFactory::createOne(attributes: ['firstName' => 'María', 'lastName' => 'López']);
+        PatientFactory::createOne(attributes: ['firstName' => 'Ángel', 'lastName' => 'Martínez']);
+        PatientFactory::createOne(attributes: ['firstName' => 'Inés', 'lastName' => 'Pérez']);
 
         // 9 middle patients (reduced from 13 to keep total at 15)
-        PatientFactory::createMany(9);
+        PatientFactory::createMany(number: 9);
 
         // Last patient (will be at the beginning of the list if sorted by ID DESC)
-        $lastPatient = PatientFactory::createOne(['firstName' => 'ZLast', 'lastName' => 'Patient']);
-        RecordFactory::createMany(2, [
+        $lastPatient = PatientFactory::createOne(attributes: ['firstName' => 'ZLast', 'lastName' => 'Patient']);
+        RecordFactory::createMany(number: 2, attributes: [
             'patient' => $lastPatient,
             'physiotherapyTreatment' => 'Initial physiotherapy treatment notes.',
         ]);

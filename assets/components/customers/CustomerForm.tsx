@@ -171,9 +171,10 @@ export default function CustomerForm() {
                                 name="firstName"
                                 value={formData.firstName}
                                 onChange={handleChange}
+                                disabled={loading}
                                 className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium ${
                                     formErrors.firstName ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                }`}
+                                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             />
                             {formErrors.firstName && (
                                 <p className="mt-1 text-xs font-bold text-red-500 ml-1">{t(formErrors.firstName)}</p>
@@ -188,9 +189,10 @@ export default function CustomerForm() {
                                 name="lastName"
                                 value={formData.lastName}
                                 onChange={handleChange}
+                                disabled={loading}
                                 className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium ${
                                     formErrors.lastName ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                }`}
+                                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             />
                             {formErrors.lastName && (
                                 <p className="mt-1 text-xs font-bold text-red-500 ml-1">{t(formErrors.lastName)}</p>
@@ -205,9 +207,10 @@ export default function CustomerForm() {
                                 name="taxId"
                                 value={formData.taxId}
                                 onChange={handleChange}
+                                disabled={loading}
                                 className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium ${
                                     formErrors.taxId ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-                                }`}
+                                } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             />
                             {formErrors.taxId && (
                                 <p className="mt-1 text-xs font-bold text-red-500 ml-1">{t(formErrors.taxId)}</p>
@@ -222,7 +225,10 @@ export default function CustomerForm() {
                                 name="email"
                                 value={formData.email}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
+                                disabled={loading}
+                                className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium ${
+                                    loading ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
                             />
                         </div>
                         <div>
@@ -234,7 +240,10 @@ export default function CustomerForm() {
                                 name="phone"
                                 value={formData.phone}
                                 onChange={handleChange}
-                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium"
+                                disabled={loading}
+                                className={`w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium ${
+                                    loading ? 'opacity-50 cursor-not-allowed' : ''
+                                }`}
                             />
                         </div>
                     </div>
@@ -247,10 +256,11 @@ export default function CustomerForm() {
                             name="billingAddress"
                             value={formData.billingAddress}
                             onChange={handleChange}
+                            disabled={loading}
                             rows={3}
                             className={`w-full px-4 py-2.5 bg-gray-50 border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-medium ${
                                 formErrors.billingAddress ? 'border-red-300 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-                            }`}
+                            } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         ></textarea>
                         {formErrors.billingAddress && (
                             <p className="mt-1 text-xs font-bold text-red-500 ml-1">{t(formErrors.billingAddress)}</p>

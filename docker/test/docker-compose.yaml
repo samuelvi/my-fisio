@@ -94,7 +94,7 @@ services:
       - ../../:/var/www/html
     networks:
       - physiotherapy_test_network
-    command: sh -c "npm install && npm run build && tail -f /dev/null" # Build and stay alive
+    command: sh -c "npm install && npm run build --mode test && tail -f /dev/null" # Build and stay alive
 
 networks:
   physiotherapy_test_network:

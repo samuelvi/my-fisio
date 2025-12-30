@@ -78,7 +78,7 @@ When enabled, users will have access to the new feature in the dashboard. Defaul
 
 ### 3. Best Practices & Quality
 - **Efficiency**: Optimize database queries (avoid N+1) and minimize API payload sizes. Use serialization groups (`#[Groups]`) to control exposed data.
-- **Security**: 
+- **Security**:
     - Ensure all new endpoints are protected by appropriate access control in `security.yaml`.
     - Always validate input data on the backend using Symfony Constraints.
     - Handle 401/403/422 errors gracefully in the UI.
@@ -87,6 +87,80 @@ When enabled, users will have access to the new feature in the dashboard. Defaul
     - **Guard Clauses**: Use early returns/guard clauses whenever possible to reduce nesting and improve readability. Avoid large `if` blocks wrapping entire function bodies.
     - **DRY**: Re-use components and logic where appropriate.
     - **Naming**: Use descriptive, intention-revealing names for variables, functions, and classes.
+
+### 4. Race Condition Prevention in Forms
+
+**CRITICAL**: All form components that load data asynchronously **MUST** prevent race conditions by disabling form inputs during data loading.
+
+#### Implementation Requirements:
+
+When creating or modifying form components that fetch data (e.g., edit forms):
+
+1. **Disable all form inputs during loading**:
+   - Add `disabled={loading}` (or combined loading states like `disabled={loading || loadingPatient}`) to all `<input>`, `<textarea>`, and `<select>` elements
+   - This prevents users from modifying fields while data is being fetched or submitted
+
+2. **Add visual feedback for disabled state**:
+   - Append loading CSS classes to input className: `${loading ? 'opacity-50 cursor-not-allowed' : ''}`
+   - This provides clear visual indication that the form is processing
+   - Use consistent styling: `opacity-50` for transparency and `cursor-not-allowed` for cursor feedback
+
+3. **Combine multiple loading states when necessary**:
+   - If your form has multiple async operations (e.g., `loading`, `loadingPatient`, `loadingCustomer`), create a combined state:
+     ```typescript
+     const isLoading = loading || loadingPatient || loadingCustomer;
+     ```
+   - Use this combined state for disabling inputs and buttons
+
+4. **Disable action buttons**:
+   - Submit buttons should use `disabled={loading}` or the combined loading state
+   - Cancel/delete buttons should also be disabled during operations
+   - Show loading spinners or text changes (e.g., "Saving..." instead of "Save")
+
+#### Example Implementation:
+
+```typescript
+// Component with loading state
+const [loading, setLoading] = useState<boolean>(false);
+
+// Input field with disabled state and visual feedback
+<input
+    type="text"
+    name="firstName"
+    value={formData.firstName}
+    onChange={handleChange}
+    disabled={loading}
+    className={`base-classes ${
+        formErrors.firstName ? 'error-classes' : 'normal-classes'
+    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+/>
+
+// Submit button
+<button
+    type="submit"
+    disabled={loading}
+    className="base-button-classes"
+>
+    {loading ? t('saving') : t('save')}
+</button>
+```
+
+#### Why This Matters:
+
+- **Prevents data corruption**: Users can't overwrite data that's being loaded from the server
+- **Prevents duplicate submissions**: Users can't click submit multiple times
+- **Better UX**: Clear visual feedback about form state
+- **Reliable E2E tests**: Playwright tests automatically wait for disabled inputs to become enabled before interacting with them
+
+#### Affected Components:
+
+All form components have been updated to follow this pattern:
+- `CustomerForm.tsx`
+- `PatientForm.tsx`
+- `RecordForm.tsx`
+- `InvoiceForm.tsx`
+
+**When creating new forms**: Always implement this pattern from the start to prevent race conditions.
 
 ## Task Completion Checklist
 

@@ -104,6 +104,9 @@ class PatientResource
     #[Groups(['patient:read', 'patient:write'])]
     public ?string $others = null;
 
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?string $customer = null;
+
     #[Groups(['patient:read'])]
     public ?DateTimeImmutable $createdAt = null;
 

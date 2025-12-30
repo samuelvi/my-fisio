@@ -13,9 +13,10 @@ interface RecordFormInputAreaProps {
     value: string;
     error?: string;
     onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+    disabled?: boolean;
 }
 
-const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange }: RecordFormInputAreaProps) => (
+const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange, disabled = false }: RecordFormInputAreaProps) => (
     <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
         <label htmlFor={name} className="block text-sm font-bold text-gray-700 mb-1">{label} {required && "*"}</label>
         <textarea
@@ -25,7 +26,8 @@ const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, e
             required={required}
             value={value}
             onChange={onChange}
-            className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${error ? 'border-red-500' : ''}`}
+            disabled={disabled}
+            className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${error ? 'border-red-500' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         />
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
@@ -206,6 +208,7 @@ export default function RecordForm() {
                                 value={formData.physiotherapyTreatment}
                                 error={errors.physiotherapyTreatment}
                                 onChange={handleChange}
+                                disabled={loading}
                             />
                             
                             <RecordFormInputArea
@@ -215,6 +218,7 @@ export default function RecordForm() {
                                 value={formData.consultationReason}
                                 error={errors.consultationReason}
                                 onChange={handleChange}
+                                disabled={loading}
                             />
                             <RecordFormInputArea
                                 label={t('onset_details')}
@@ -223,6 +227,7 @@ export default function RecordForm() {
                                 value={formData.onset}
                                 error={errors.onset}
                                 onChange={handleChange}
+                                disabled={loading}
                             />
                             <RecordFormInputArea
                                 label={t('current_situation')}
@@ -231,6 +236,7 @@ export default function RecordForm() {
                                 value={formData.currentSituation}
                                 error={errors.currentSituation}
                                 onChange={handleChange}
+                                disabled={loading}
                             />
                             <RecordFormInputArea
                                 label={t('evolution_progress')}
@@ -239,6 +245,7 @@ export default function RecordForm() {
                                 value={formData.evolution}
                                 error={errors.evolution}
                                 onChange={handleChange}
+                                disabled={loading}
                             />
 
                             <div className="col-span-6 sm:col-span-3">
@@ -257,6 +264,7 @@ export default function RecordForm() {
                                 value={formData.homeTreatment}
                                 error={errors.homeTreatment}
                                 onChange={handleChange}
+                                disabled={loading}
                             />
                             
                             <div className="col-span-6">

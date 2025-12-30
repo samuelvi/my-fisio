@@ -31,12 +31,11 @@ function customerInput(page, label) {
 
 async function setCustomerInputValue(page, label, value) {
   const input = customerInput(page, label);
-  await input.click();
-  await input.press('Control+A');
-  await input.press('Backspace');
-  if (value !== '') {
-    await input.type(value);
-  }
+  // Wait for the input to be enabled (prevents race conditions with data loading)
+  await input.waitFor({ state: 'attached' });
+  await expect(input).toBeEnabled({ timeout: 10000 });
+  // Use fill() which automatically clears the field and waits for it to be ready
+  await input.fill(value);
 }
 
 async function apiFetch(page, url, options = {}) {

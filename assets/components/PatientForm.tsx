@@ -204,7 +204,8 @@ export default function PatientForm() {
                                         placeholder={t('first_name_placeholder')}
                                         value={formData.firstName}
                                         onChange={handleChange}
-                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${errors.firstName ? 'border-red-500' : ''}`}
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${errors.firstName ? 'border-red-500' : ''} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                     {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
                                 </div>
@@ -219,7 +220,8 @@ export default function PatientForm() {
                                         placeholder={t('last_name_placeholder')}
                                         value={formData.lastName}
                                         onChange={handleChange}
-                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${errors.lastName ? 'border-red-500' : ''}`}
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${errors.lastName ? 'border-red-500' : ''} ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                     {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
                                 </div>
@@ -233,7 +235,8 @@ export default function PatientForm() {
                                         placeholder={t('id_document_placeholder')}
                                         value={formData.taxId}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -246,7 +249,8 @@ export default function PatientForm() {
                                         placeholder={t('date_of_birth_placeholder')}
                                         value={formData.dateOfBirth}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                             </div>
@@ -273,7 +277,8 @@ export default function PatientForm() {
                                         placeholder={t('phone_placeholder')}
                                         value={formData.phone}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -286,7 +291,8 @@ export default function PatientForm() {
                                         placeholder={t('email_placeholder')}
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -299,7 +305,8 @@ export default function PatientForm() {
                                         placeholder={t('address_placeholder')}
                                         value={formData.address}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                             </div>
@@ -326,7 +333,8 @@ export default function PatientForm() {
                                         placeholder={t('rate_placeholder')}
                                         value={formData.rate}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                             </div>
@@ -353,7 +361,8 @@ export default function PatientForm() {
                                         placeholder={t('profession_placeholder')}
                                         value={formData.profession}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -366,7 +375,8 @@ export default function PatientForm() {
                                         placeholder={t('sports_activity_placeholder')}
                                         value={formData.sportsActivity}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -379,7 +389,8 @@ export default function PatientForm() {
                                         placeholder={t('allergies_placeholder')}
                                         value={formData.allergies}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-red-500 focus:border-red-500 block w-full px-4 py-2.5 shadow-sm sm:text-sm border-red-300 rounded-md placeholder-gray-300"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-red-500 focus:border-red-500 block w-full px-4 py-2.5 shadow-sm sm:text-sm border-red-300 rounded-md placeholder-gray-300 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -392,7 +403,8 @@ export default function PatientForm() {
                                         placeholder={t('systemic_diseases_placeholder')}
                                         value={formData.systemicDiseases}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -405,7 +417,8 @@ export default function PatientForm() {
                                         placeholder={t('surgeries_placeholder')}
                                         value={formData.surgeries}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -418,7 +431,8 @@ export default function PatientForm() {
                                         placeholder={t('accidents_placeholder')}
                                         value={formData.accidents}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                                 
@@ -431,7 +445,8 @@ export default function PatientForm() {
                                         placeholder={t('medication_placeholder')}
                                         value={formData.medication}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -444,7 +459,8 @@ export default function PatientForm() {
                                         placeholder={t('injuries_placeholder')}
                                         value={formData.injuries}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -457,7 +473,8 @@ export default function PatientForm() {
                                         placeholder={t('bruxism_placeholder')}
                                         value={formData.bruxism}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -470,7 +487,8 @@ export default function PatientForm() {
                                         placeholder={t('insoles_placeholder')}
                                         value={formData.insoles}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -483,7 +501,8 @@ export default function PatientForm() {
                                         placeholder={t('others_placeholder')}
                                         value={formData.others}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
@@ -496,7 +515,8 @@ export default function PatientForm() {
                                         placeholder={t('notes_placeholder')}
                                         value={formData.notes}
                                         onChange={handleChange}
-                                        className="mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md"
+                                        disabled={loading}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
                             </div>
