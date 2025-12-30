@@ -51,7 +51,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 <div className="relative h-full flex flex-col">
                     <button
                         onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                        className="absolute -right-3 top-9 w-6 h-6 bg-primary-selected rounded-full border border-primary-light shadow-sm flex items-center justify-center text-primary-darker hover:text-primary-dark transition-colors z-50 cursor-pointer"
+                        className="absolute -right-3 top-9 w-6 h-6 bg-primary rounded-full border border-primary-selected shadow-sm flex items-center justify-center text-white hover:text-primary-selected transition-colors z-50 cursor-pointer"
                     >
                         <svg className={`w-3 h-3 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
