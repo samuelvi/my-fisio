@@ -8,8 +8,10 @@
             :root {
                 --color-primary: {{ get_env('VITE_COLOR_PRIMARY', '#000000') }};
                 --color-primary-light: {{ get_env('VITE_COLOR_PRIMARY_LIGHT', '#333333') }};
+                --color-primary-hover: {{ get_env('VITE_COLOR_PRIMARY_HOVER', '#B79A8E') }};
                 --color-primary-dark: {{ get_env('VITE_COLOR_PRIMARY_DARK', '#000000') }};
-                --color-primary-darker: {{ get_env('VITE_COLOR_PRIMARY_DARKER', '#000000') }};
+                --color-primary-darker: {{ get_env('VITE_COLOR_PRIMARY_DARKER', '0 0 0') }};
+                --color-primary-selected: {{ get_env('VITE_COLOR_PRIMARY_SELECTED', '245 239 224') }};
                 --color-btn-success: {{ get_env('VITE_COLOR_BTN_SUCCESS', '#00ff00') }};
                 --color-btn-danger: {{ get_env('VITE_COLOR_BTN_DANGER', '#ff0000') }};
                 --color-btn-secondary: {{ get_env('VITE_COLOR_BTN_SECONDARY', '#cccccc') }};

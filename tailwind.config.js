@@ -10,8 +10,10 @@ export default {
         primary: {
           DEFAULT: 'rgb(var(--color-primary) / <alpha-value>)',
           light: 'rgb(var(--color-primary-light) / <alpha-value>)',
+          hover: 'rgb(var(--color-primary-hover) / <alpha-value>)',
           dark: 'rgb(var(--color-primary-dark) / <alpha-value>)',
           darker: 'rgb(var(--color-primary-darker) / <alpha-value>)',
+          selected: 'rgb(var(--color-primary-selected) / <alpha-value>)',
         }
       }
     },

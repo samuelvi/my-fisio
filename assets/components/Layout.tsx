@@ -7,6 +7,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     const location = useLocation();
     const navigate = useNavigate();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
     useEffect(() => {
         setIsMobileMenuOpen(false);
@@ -24,7 +25,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </svg>
         )},
         { name: t('patients'), href: '/patients', icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
         )},
@@ -42,16 +43,31 @@ export default function Layout({ children }: { children: ReactNode }) {
 
     return (
         <div className="min-h-screen bg-[#F8FAFC]">
-            <aside className="fixed inset-y-0 left-0 bg-white w-64 border-r border-gray-200 hidden lg:block z-20">
-                <div className="flex flex-col h-full">
-                    <div className="p-8">
-                        <div className="flex items-center space-x-3 mb-10">
-                            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <aside 
+                className={`fixed inset-y-0 left-0 bg-primary border-r border-primary-dark/20 hidden lg:block z-20 transition-all duration-300 ${
+                    isSidebarCollapsed ? 'w-20' : 'w-64'
+                }`}
+            >
+                <div className="relative h-full flex flex-col">
+                    <button
+                        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                        className="absolute -right-3 top-9 w-6 h-6 bg-primary-selected rounded-full border border-primary-light shadow-sm flex items-center justify-center text-primary-darker hover:text-primary-dark transition-colors z-50 cursor-pointer"
+                    >
+                        <svg className={`w-3 h-3 transition-transform duration-300 ${isSidebarCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                        </svg>
+                    </button>
+
+                    <div className="p-4">
+                        <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'} mb-10 h-10`}>
+                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-black/10 shrink-0">
+                                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
                                 </svg>
                             </div>
-                            <span className="text-xl font-black text-gray-900 tracking-tighter">TinaFisio</span>
+                            {!isSidebarCollapsed && (
+                                <span className="text-xl font-black text-white tracking-tighter whitespace-nowrap overflow-hidden">TinaFisio</span>
+                            )}
                         </div>
 
                         <nav className="space-y-1.5">
@@ -61,35 +77,40 @@ export default function Layout({ children }: { children: ReactNode }) {
                                     <Link
                                         key={item.name}
                                         to={item.href}
-                                        className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                                        title={isSidebarCollapsed ? item.name : ''}
+                                        className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'} py-3 rounded-xl transition-all duration-200 group ${
                                             isActive 
-                                            ? 'bg-primary text-white shadow-md shadow-primary/20' 
-                                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                                            ? 'bg-primary-light text-white shadow-md shadow-black/10' 
+                                            : 'text-white/70 hover:bg-white/10 hover:text-white'
                                         }`}
                                     >
-                                        <span className={isActive ? 'text-white' : 'text-gray-400 group-hover:text-primary transition-colors'}>
+                                        <span className={`${isActive ? 'text-white' : 'text-white/60 group-hover:text-white transition-colors'}`}>
                                             {item.icon}
                                         </span>
-                                        <span className="text-sm font-bold tracking-tight">{item.name}</span>
+                                        {!isSidebarCollapsed && (
+                                            <span className="text-sm font-bold tracking-tight whitespace-nowrap">{item.name}</span>
+                                        )}
                                     </Link>
                                 );
                             })}
                         </nav>
                     </div>
 
-                    <div className="mt-auto p-6 border-t border-gray-100">
-                        <div className="bg-gray-50 rounded-2xl p-4 mb-4">
-                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">{t('language')}</p>
-                            <div className="flex space-x-2">
+                    <div className="mt-auto p-4 border-t border-white/10">
+                        <div className={`bg-primary-dark/30 rounded-2xl ${isSidebarCollapsed ? 'p-2' : 'p-4'} mb-4 overflow-hidden`}>
+                            {!isSidebarCollapsed && (
+                                <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{t('language')}</p>
+                            )}
+                            <div className={`flex ${isSidebarCollapsed ? 'flex-col space-y-2' : 'space-x-2'}`}>
                                 <button 
                                     onClick={() => changeLanguage('en')}
-                                    className={`flex-1 text-[10px] font-black py-2 rounded-lg transition-all ${language === 'en' ? 'bg-white text-primary shadow-sm ring-1 ring-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                                    className={`flex-1 text-[10px] font-black py-2 rounded-lg transition-all ${language === 'en' ? 'bg-white text-primary shadow-sm' : 'text-white/60 hover:text-white'}`}
                                 >
                                     EN
                                 </button>
                                 <button 
                                     onClick={() => changeLanguage('es')}
-                                    className={`flex-1 text-[10px] font-black py-2 rounded-lg transition-all ${language === 'es' ? 'bg-white text-primary shadow-sm ring-1 ring-gray-200' : 'text-gray-400 hover:text-gray-600'}`}
+                                    className={`flex-1 text-[10px] font-black py-2 rounded-lg transition-all ${language === 'es' ? 'bg-white text-primary shadow-sm' : 'text-white/60 hover:text-white'}`}
                                 >
                                     ES
                                 </button>
@@ -97,12 +118,15 @@ export default function Layout({ children }: { children: ReactNode }) {
                         </div>
                         <button
                             onClick={handleLogout}
-                            className="flex items-center space-x-3 px-4 py-3 w-full rounded-xl text-gray-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 group"
+                            className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'} py-3 w-full rounded-xl text-white/70 hover:bg-red-500/20 hover:text-red-200 transition-all duration-200 group`}
+                            title={isSidebarCollapsed ? t('logout') : ''}
                         >
-                            <svg className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-5 h-5 text-white/50 group-hover:text-red-200 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                             </svg>
-                            <span className="text-sm font-bold tracking-tight">{t('logout')}</span>
+                            {!isSidebarCollapsed && (
+                                <span className="text-sm font-bold tracking-tight">{t('logout')}</span>
+                            )}
                         </button>
                     </div>
                 </div>
@@ -137,7 +161,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                                     key={item.name}
                                     to={item.href}
                                     className={`flex items-center space-x-3 px-4 py-3 rounded-xl ${
-                                        isActive ? 'bg-primary text-white' : 'text-gray-500 bg-gray-50'
+                                        isActive ? 'bg-primary-light text-white' : 'text-gray-500 bg-gray-50'
                                     }`}
                                 >
                                     {item.icon}
@@ -156,7 +180,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 )}
             </header>
 
-            <main className="lg:ml-64 min-h-screen">
+            <main className={`min-h-screen transition-all duration-300 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
                 {children}
             </main>
         </div>

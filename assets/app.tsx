@@ -26,6 +26,7 @@ const colorVars: Record<string, string | undefined> = {
     '--color-primary-light': import.meta.env.VITE_COLOR_PRIMARY_LIGHT as string,
     '--color-primary-dark': import.meta.env.VITE_COLOR_PRIMARY_DARK as string,
     '--color-primary-darker': import.meta.env.VITE_COLOR_PRIMARY_DARKER as string,
+    '--color-primary-selected': import.meta.env.VITE_COLOR_PRIMARY_SELECTED as string,
     '--color-btn-success': import.meta.env.VITE_COLOR_BTN_SUCCESS as string,
     '--color-btn-danger': import.meta.env.VITE_COLOR_BTN_DANGER as string,
     '--color-btn-secondary': import.meta.env.VITE_COLOR_BTN_SECONDARY as string,
