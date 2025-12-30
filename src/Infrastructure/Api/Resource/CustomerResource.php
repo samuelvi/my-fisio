@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Api\Resource;
 
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
@@ -11,8 +14,6 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\Infrastructure\Api\State\CustomerProcessor;
 use App\Infrastructure\Api\State\CustomerProvider;
 use DateTimeImmutable;
@@ -22,11 +23,11 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ApiResource(
     shortName: 'Customer',
     operations: [
-        new Get(name: 'api_customers_get'),
-        new GetCollection(name: 'api_customers_get_collection'),
-        new Post(name: 'api_customers_post', processor: CustomerProcessor::class),
-        new Put(name: 'api_customers_put', processor: CustomerProcessor::class),
-        new Delete(name: 'api_customers_delete', processor: CustomerProcessor::class),
+        new Get(name: 'api_customers_item_get', uriTemplate: '/customers/{id}'),
+        new GetCollection(name: 'api_customers_collection', uriTemplate: '/customers'),
+        new Post(name: 'api_customers_post', uriTemplate: '/customers', processor: CustomerProcessor::class),
+        new Put(name: 'api_customers_put', uriTemplate: '/customers/{id}', processor: CustomerProcessor::class),
+        new Delete(name: 'api_customers_delete', uriTemplate: '/customers/{id}', processor: CustomerProcessor::class),
     ],
     provider: CustomerProvider::class,
     normalizationContext: ['groups' => ['customer:read']],
@@ -36,6 +37,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     'fullName' => 'ipartial',
     'taxId' => 'ipartial',
 ])]
+#[ApiFilter(OrderFilter::class, properties: ['lastName', 'firstName'])]
 class CustomerResource
 {
     #[ApiProperty(identifier: true)]

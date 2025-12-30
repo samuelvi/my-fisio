@@ -33,22 +33,23 @@ export default function CustomerList() {
 
 
     const fetchCustomers = async () => {
-        console.log('Fetching customers with filters:', filters, 'page:', page);
+        console.log('[CustomerList] Fetching with filters:', filters, 'page:', page);
         setLoading(true);
         try {
             const params: any = {
                 page: page,
-                itemsPerPage: ITEMS_PER_PAGE, // Use the exact limit
+                itemsPerPage: ITEMS_PER_PAGE,
                 'order[lastName]': 'asc',
                 'order[firstName]': 'asc',
             };
 
-            if (filters.name) params['fullName'] = filters.name;
-            if (filters.taxId) params['taxId'] = filters.taxId;
+            if (filters.name.trim()) params['fullName'] = filters.name.trim();
+            if (filters.taxId.trim()) params['taxId'] = filters.taxId.trim();
             
-            const response = await axios.get(Routing.generate('api_customers_get_collection'), { params });
+            console.log('[CustomerList] API Request Params:', params);
+            const response = await axios.get(Routing.generate('api_customers_collection'), { params });
             const responseData = response.data;
-            console.log('API Response received:', responseData);
+            console.log('[CustomerList] API Response received:', responseData);
             
             let data: Customer[] = [];
             if (Array.isArray(responseData)) {
@@ -59,16 +60,16 @@ export default function CustomerList() {
                 data = responseData['member'];
             }
 
-            // Check for next page
-            const totalItems = responseData['hydra:totalItems'] || responseData['totalItems'] || data.length;
-            setHasNextPage(page * ITEMS_PER_PAGE < totalItems);
+            // Handle N+1 pagination
+            const hasMore = data.length > ITEMS_PER_PAGE;
+            console.log('[CustomerList] hasMore:', hasMore, 'Count:', data.length);
+            if (hasMore) {
+                data.pop(); // Remove the N+1 item
+            }
+            setHasNextPage(hasMore);
             setCustomers(data);
         } catch (error: any) {
-            console.error('Error fetching customers:', error);
-            if (error.response) {
-                console.error('Data:', error.response.data);
-                console.error('Status:', error.response.status);
-            }
+            console.error('[CustomerList] Error fetching customers:', error);
             setCustomers([]);
         } finally {
             setLoading(false);
@@ -77,21 +78,19 @@ export default function CustomerList() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Search Triggered');
-        console.log('Current Name Input:', nameInput);
-        console.log('Current TaxID Input:', taxIdInput);
+        console.log('[CustomerList] handleSearch triggered. nameInput:', nameInput, 'taxIdInput:', taxIdInput);
         
         const newFilters = {
             name: nameInput,
             taxId: taxIdInput
         };
-        console.log('Setting new filters:', newFilters);
         
         setPage(1);
         setFilters(newFilters);
     };
 
     const handleClear = () => {
+        console.log('[CustomerList] handleClear triggered');
         setNameInput('');
         setTaxIdInput('');
         setPage(1);

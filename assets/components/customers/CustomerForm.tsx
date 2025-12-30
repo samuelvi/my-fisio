@@ -31,7 +31,7 @@ export default function CustomerForm() {
     const fetchCustomer = async (customerId: string) => {
         setLoading(true);
         try {
-            const response = await axios.get(Routing.generate('api_customers_get', { id: customerId }));
+            const response = await axios.get(Routing.generate('api_customers_item_get', { id: customerId }));
             const customer = response.data;
             setFormData({
                 firstName: customer.firstName,

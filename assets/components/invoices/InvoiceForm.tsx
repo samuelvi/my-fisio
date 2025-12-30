@@ -138,7 +138,7 @@ export default function InvoiceForm() {
             try {
                 // Ensure customerId is treated as a clean identifier
                 const cleanId = customerId.toString().trim();
-                const route = Routing.generate('api_customers_get', { id: cleanId });
+                const route = Routing.generate('api_customers_item_get', { id: cleanId });
                 console.log('Fetching customer data from:', route);
 
                 const response = await axios.get(route);

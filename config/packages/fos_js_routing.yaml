@@ -17,8 +17,8 @@ fos_js_routing:
         - api_records_collection
         - api_records_post
         - api_records_put
-        - api_customers_get_collection
-        - api_customers_get
+        - api_customers_collection
+        - api_customers_item_get
         - api_customers_post
         - api_customers_put
         - api_customers_delete
