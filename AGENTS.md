@@ -70,6 +70,10 @@ When implementing new modules, listings (CRUD), or actions, adhere strictly to t
     - Always validate input data on the backend using Symfony Constraints.
     - Handle 401/403/422 errors gracefully in the UI.
 - **Style**: Mimic the existing Tailwind CSS patterns. Use localized messages for all user-facing strings including server-side validation messages.
+- **Clean Code**:
+    - **Guard Clauses**: Use early returns/guard clauses whenever possible to reduce nesting and improve readability. Avoid large `if` blocks wrapping entire function bodies.
+    - **DRY**: Re-use components and logic where appropriate.
+    - **Naming**: Use descriptive, intention-revealing names for variables, functions, and classes.
 
 ## Task Completion Checklist
 

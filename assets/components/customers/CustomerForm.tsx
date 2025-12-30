@@ -89,24 +89,30 @@ export default function CustomerForm() {
             navigate('/customers');
         } catch (error: any) {
             console.error('Error saving customer:', error);
-            if (error.response && error.response.status === 422) {
-                const violations = error.response.data.violations;
-                if (violations) {
-                    const serverErrors: Record<string, string> = {};
-                    violations.forEach((violation: any) => {
-                        serverErrors[violation.propertyPath] = violation.message;
-                    });
-                    setFormErrors(serverErrors);
-                    if (serverErrors.taxId) {
-                         // Ensure generic error is also shown if needed, or rely on field error
-                         setError(t('error_validation_failed'));
-                    }
-                } else if (error.response.data['hydra:description']) {
-                     setError(error.response.data['hydra:description']);
-                }
-            } else {
+            
+            const responseData = error.response?.data;
+            if (error.response?.status !== 422 || !responseData) {
                 setError(t('error_saving_customer'));
+                return;
             }
+
+            const violations = responseData.violations;
+            if (violations) {
+                const serverErrors: Record<string, string> = {};
+                violations.forEach((violation: any) => {
+                    serverErrors[violation.propertyPath] = violation.message;
+                });
+                setFormErrors(serverErrors);
+                setError(t('error_validation_failed'));
+                return;
+            }
+
+            if (responseData['hydra:description']) {
+                setError(responseData['hydra:description']);
+                return;
+            }
+
+            setError(t('error_saving_customer'));
         } finally {
             setLoading(false);
         }

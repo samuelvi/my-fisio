@@ -58,22 +58,20 @@ final class PopulateCustomersCommand extends Command
 
         foreach ($invoices as $invoice) {
             $taxId = $this->normalizeTaxId($invoice->taxId);
-
             if (!$taxId) {
-                // Cannot create a customer without Tax ID
                 $skippedCount++;
                 $progressBar->advance();
                 continue;
             }
 
-            // Create new customer
+            if (!isset($customerMap[$taxId])) {
                 $customer = $this->createCustomerFromInvoice($invoice, $taxId);
                 echo sprintf("Creating customer from invoice: %s, address: %s\n", $customer->fullName, $customer->billingAddress);
                 $this->entityManager->persist($customer);
                 $customerMap[$taxId] = $customer;
                 $createdCount++;
+            }
 
-            // Link invoice to customer
             $customer = $customerMap[$taxId];
             if ($invoice->customer !== $customer) {
                 $invoice->customer = $customer;
@@ -105,7 +103,6 @@ final class PopulateCustomersCommand extends Command
 
         foreach ($patients as $patient) {
             $taxId = $this->normalizeTaxId($patient->taxId);
-
             if (!$taxId) {
                 $patientSkippedCount++;
                 $progressBar->advance();
@@ -113,14 +110,12 @@ final class PopulateCustomersCommand extends Command
             }
 
             if (!isset($customerMap[$taxId])) {
-                // Create new customer from Patient
                 $customer = $this->createCustomerFromPatient($patient, $taxId);
                 $this->entityManager->persist($customer);
                 $customerMap[$taxId] = $customer;
                 $patientCreatedCount++;
             }
 
-            // Link patient to customer
             $customer = $customerMap[$taxId];
             if ($patient->customer !== $customer) {
                 $patient->customer = $customer;

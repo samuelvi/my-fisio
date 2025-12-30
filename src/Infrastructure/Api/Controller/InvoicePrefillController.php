@@ -23,13 +23,11 @@ class InvoicePrefillController extends AbstractController
     public function __invoke(Request $request): JsonResponse
     {
         $patientId = $request->query->get('patientId');
-
         if (!$patientId) {
             throw new BadRequestHttpException('patientId parameter is required');
         }
 
         $prefillData = $this->patientRepository->findForInvoicePrefill((int) $patientId);
-
         if (!$prefillData) {
             throw new NotFoundHttpException('Patient not found');
         }

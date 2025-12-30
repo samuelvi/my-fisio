@@ -231,9 +231,9 @@ export default function InvoiceForm() {
             const detail = err.response?.data?.detail;
             if (detail && detail.startsWith('invoice_number_')) {
                 setNumberError(t(detail));
-            } else {
-                setError(t('error_failed_to_create_invoice'));
+                return;
             }
+            setError(t('error_failed_to_create_invoice'));
         } finally {
             setLoading(false);
         }
