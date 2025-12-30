@@ -19,9 +19,6 @@ class Customer
     #[ORM\Column(type: Types::INTEGER)]
     public ?int $id = null;
 
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    public ?int $patientId = null;
-
     #[ORM\Column(type: Types::STRING, length: 100, nullable: false)]
     public string $firstName;
 

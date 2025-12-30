@@ -142,6 +142,7 @@ Stores personal and medical contact information for patients. This is the core e
 | `otros` | `others` | VARCHAR(250) | Other medical info | Translated |
 | `fecha_de_creacion` | `created_at` | DATE | Creation date | Translated |
 | N/A | `status` | VARCHAR(20) | Patient status | Added (default: 'active') |
+| N/A | `customer_id` | INTEGER | Link to customer | Added (nullable) |
 
 ## Table: records
 
@@ -256,9 +257,9 @@ Entities responsible for billing. Can be linked to one or more invoices. Note: T
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | SERIAL PRIMARY KEY | Unique Identifier |
-| `patient_id` | INTEGER | Optional link to a patient |
 | `first_name` | VARCHAR(100) | First Name |
 | `last_name` | VARCHAR(100) | Last Name |
+| `full_name` | VARCHAR(255) | Full Name |
 | `tax_id` | VARCHAR(20) | Tax ID for billing |
 | `email` | VARCHAR(180) | Contact email |
 | `phone` | VARCHAR(50) | Contact phone |

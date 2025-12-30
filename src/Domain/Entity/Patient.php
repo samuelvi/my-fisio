@@ -119,6 +119,11 @@ class Patient
     #[Groups(['patient:read', 'patient:write'])]
     public PatientStatus $status = PatientStatus::ACTIVE;
 
+    #[ORM\ManyToOne(targetEntity: Customer::class)]
+    #[ORM\JoinColumn(name: 'customer_id', referencedColumnName: 'id', nullable: true)]
+    #[Groups(['patient:read', 'patient:write'])]
+    public ?Customer $customer = null;
+
     /**
      * @var Collection<int, Record>
      */
