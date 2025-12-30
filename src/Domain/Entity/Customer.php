@@ -12,6 +12,7 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use App\Infrastructure\Api\State\CustomerProcessor;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -22,19 +23,18 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'customers')]
-#[ORM\HasLifecycleCallbacks]
 #[ApiResource(
     operations: [
         new GetCollection(name: 'api_customers_get_collection'),
         new Get(name: 'api_customers_get'),
-        new Post(name: 'api_customers_post'),
-        new Put(name: 'api_customers_put'),
-        new Delete(name: 'api_customers_delete'),
+        new Post(name: 'api_customers_post', processor: CustomerProcessor::class),
+        new Put(name: 'api_customers_put', processor: CustomerProcessor::class),
+        new Delete(name: 'api_customers_delete', processor: CustomerProcessor::class),
     ],
     normalizationContext: ['groups' => ['customer:read']],
     denormalizationContext: ['groups' => ['customer:write']],
     order: ['lastName' => 'ASC', 'firstName' => 'ASC'],
-    filters: ['app.filter.customer_search']
+    filters: ['app.filter.customer_search', 'app.filter.customer_order']
 )]
 #[UniqueEntity('taxId', message: 'error_customer_tax_id_duplicate')]
 class Customer
@@ -89,10 +89,16 @@ class Customer
         string $firstName,
         string $lastName,
         string $taxId,
+        ?string $email = null,
+        ?string $phone = null,
+        ?string $billingAddress = null,
     ) {
         $this->firstName = $firstName;
         $this->lastName = $lastName;
         $this->taxId = $taxId;
+        $this->email = $email;
+        $this->phone = $phone;
+        $this->billingAddress = $billingAddress;
         $this->createdAt = new DateTimeImmutable();
         $this->updateFullName();
     }
@@ -101,18 +107,18 @@ class Customer
         string $firstName,
         string $lastName,
         string $taxId,
+        ?string $email = null,
+        ?string $phone = null,
+        ?string $billingAddress = null,
     ): self {
-        return new self($firstName, $lastName, $taxId);
+        return new self($firstName, $lastName, $taxId, $email, $phone, $billingAddress);
     }
 
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
     public function updateFullName(): void
     {
         $this->fullName = trim($this->firstName . ' ' . $this->lastName);
     }
 
-    #[ORM\PreUpdate]
     public function updateTimestamp(): void
     {
         $this->updatedAt = new DateTimeImmutable();

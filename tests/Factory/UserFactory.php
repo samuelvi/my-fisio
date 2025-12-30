@@ -39,10 +39,11 @@ final class UserFactory extends PersistentObjectFactory
     {
         return $this
             ->instantiateWith(function (array $attributes) {
-                return User::create($attributes['email']);
+                return User::create($attributes['email'], $attributes['password']);
             })
             ->afterInstantiate(function (User $user, array $attributes): void {
                 $user->roles = $attributes['roles'];
+                // Re-hash if needed, but create already sets raw password
                 $user->password = $this->passwordHasher->hashPassword(
                     $user,
                     $attributes['password'],

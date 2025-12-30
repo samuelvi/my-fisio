@@ -37,13 +37,18 @@ final class AppointmentFactory extends PersistentProxyObjectFactory
 
     protected function initialize(): static
     {
-        return $this->instantiateWith(function (array $attributes): Appointment {
-            return Appointment::create(
-                $attributes['patient'],
-                $attributes['userId'],
-                $attributes['startsAt'],
-                $attributes['endsAt'],
-            );
-        });
+        return $this
+            ->instantiateWith(function(array $attributes): Appointment {
+                return Appointment::create(
+                    $attributes['patient'] ?? null,
+                    $attributes['userId'],
+                    $attributes['startsAt'],
+                    $attributes['endsAt'],
+                    $attributes['title'] ?? null,
+                    $attributes['allDay'] ?? null,
+                    $attributes['type'] ?? null,
+                    $attributes['notes'] ?? null,
+                );
+            });
     }
 }

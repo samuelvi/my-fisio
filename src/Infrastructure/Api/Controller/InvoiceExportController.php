@@ -57,7 +57,7 @@ class InvoiceExportController extends AbstractController
         string $companyLogoPath,
     ): Response {
         // CQRS: Query for the View DTO
-        $invoice = $this->handle(GetInvoiceExportQuery::create($id));
+        $invoice = $this->handle(GetInvoiceExportQuery::create(id: $id));
 
         if (!$invoice) {
             throw new NotFoundHttpException('Invoice not found');

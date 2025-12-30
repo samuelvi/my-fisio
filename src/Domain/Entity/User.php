@@ -32,18 +32,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: false)]
     public string $password;
 
-    private function __construct(string $email)
+    private function __construct(string $email, string $password)
     {
         if ('' === $email) {
             throw new InvalidArgumentException('Email cannot be empty');
         }
         $this->email = $email;
-        $this->password = '';
+        $this->password = $password;
     }
 
-    public static function create(string $email): self
+    public static function create(string $email, string $password): self
     {
-        return new self($email);
+        return new self($email, $password);
     }
 
     /**

@@ -87,9 +87,18 @@ services:
     # Filters
     app.filter.customer_search:
         parent: 'api_platform.doctrine.orm.search_filter'
-        properties:
-            fullName: 'ipartial'
-            taxId: 'ipartial'
+        arguments:
+            $properties:
+                fullName: 'ipartial'
+                taxId: 'ipartial'
+        tags: [ { name: 'api_platform.filter' } ]
+
+    app.filter.customer_order:
+        parent: 'api_platform.doctrine.orm.order_filter'
+        arguments:
+            $properties:
+                lastName: { default_direction: 'ASC' }
+                firstName: { default_direction: 'ASC' }
         tags: [ { name: 'api_platform.filter' } ]
 
     # add more service definitions when explicit configuration is needed

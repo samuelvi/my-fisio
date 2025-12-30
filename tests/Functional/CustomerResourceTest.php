@@ -71,10 +71,6 @@ class CustomerResourceTest extends ApiTestCase
         $totalItems = $data['hydra:totalItems'] ?? $data['totalItems'] ?? null;
         $member = $data['hydra:member'] ?? $data['member'] ?? [];
 
-        if ($totalItems !== 1) {
-            var_dump($data);
-        }
-
         // Should find exactly 1 result
         $this->assertSame(1, $totalItems);
         $this->assertSame('52795346L', $member[0]['taxId']);
@@ -110,10 +106,6 @@ class CustomerResourceTest extends ApiTestCase
         $totalItems = $data['hydra:totalItems'] ?? $data['totalItems'] ?? null;
         $member = $data['hydra:member'] ?? $data['member'] ?? [];
 
-        if ($totalItems !== 1) {
-            var_dump($data);
-        }
-
         $this->assertSame(1, $totalItems);
         $this->assertSame('ABC12345', $member[0]['taxId']);
     }
@@ -145,11 +137,6 @@ class CustomerResourceTest extends ApiTestCase
 
         $totalItems = $data['hydra:totalItems'] ?? $data['totalItems'] ?? null;
         $member = $data['hydra:member'] ?? $data['member'] ?? [];
-
-        if ($totalItems !== 1) {
-            echo "FullName Filter Failed:\n";
-            var_dump($data);
-        }
 
         $this->assertSame(1, $totalItems);
         $this->assertSame('Unique Name', $member[0]['fullName']);

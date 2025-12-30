@@ -110,10 +110,14 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         $totalAmount = 0.0;
         foreach ($data->lines as $line) {
             $lineAmount = $line->quantity * $line->price;
-            $invoiceLine = InvoiceLine::create($line->quantity, $line->price, $lineAmount);
+            $invoiceLine = InvoiceLine::create(
+                invoice: $invoice,
+                quantity: $line->quantity,
+                price: $line->price,
+                amount: $lineAmount
+            );
             $invoiceLine->concept = $line->concept;
             $invoiceLine->description = $line->description;
-            $invoiceLine->invoice = $invoice;
             $invoice->lines->add($invoiceLine);
             $totalAmount += $lineAmount;
         }

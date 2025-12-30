@@ -30,7 +30,7 @@ final class InvoiceNumberGapsController extends AbstractController
             $year = (int) date('Y');
         }
 
-        $result = $this->handle(GetInvoiceNumberGapsQuery::create($year));
+        $result = $this->handle(GetInvoiceNumberGapsQuery::create(year: $year));
 
         return $this->json([
             'year' => $result->year,

@@ -65,35 +65,46 @@ final class InvoiceCreateProcessor implements ProcessorInterface
             throw new ValidationException($violations);
         }
 
-        $invoice = Invoice::create($data->fullName);
-        $invoice->phone = $data->phone;
-        $invoice->address = $data->address;
-        $invoice->email = $data->email;
-        $invoice->taxId = $data->taxId;
-        if ($data->date instanceof DateTimeImmutable) {
-            $invoice->date = $data->date;
+        // 1. Calculate Total Amount First (from DTO)
+        $totalAmount = 0.0;
+        foreach ($data->lines as $line) {
+            $totalAmount += ($line->quantity * $line->price);
         }
 
-        // 1. Atomic Number Generation
-        $year = $invoice->date->format('Y');
+        // 2. Atomic Number Generation
+        $date = $data->date instanceof DateTimeImmutable ? $data->date : new DateTimeImmutable();
+        $year = $date->format('Y');
         $counterKey = 'invoices_'.$year;
         $initialValue = $year.'000001';
 
         // Use the atomic DB update to prevent race conditions
-        $invoice->number = $this->counterRepository->incrementAndGetNext($counterKey, $initialValue);
+        $number = $this->counterRepository->incrementAndGetNext($counterKey, $initialValue);
 
-        // 2. Recalculate totals
-        $totalAmount = 0.0;
+        // 3. Create Invoice with required fields
+        $invoice = Invoice::create(
+            number: $number,
+            amount: $totalAmount,
+            fullName: $data->fullName,
+            date: $date,
+            phone: $data->phone,
+            address: $data->address,
+            email: $data->email,
+            taxId: $data->taxId
+        );
+
+        // 4. Create and Attach Lines
         foreach ($data->lines as $line) {
             $lineAmount = $line->quantity * $line->price;
-            $invoiceLine = InvoiceLine::create($line->quantity, $line->price, $lineAmount);
+            $invoiceLine = InvoiceLine::create(
+                invoice: $invoice,
+                quantity: $line->quantity,
+                price: $line->price,
+                amount: $lineAmount
+            );
             $invoiceLine->concept = $line->concept;
             $invoiceLine->description = $line->description;
-            $invoiceLine->invoice = $invoice;
             $invoice->lines->add($invoiceLine);
-            $totalAmount += $lineAmount;
         }
-        $invoice->amount = $totalAmount;
 
         return $this->persistProcessor->process($invoice, $operation, $uriVariables, $context);
     }

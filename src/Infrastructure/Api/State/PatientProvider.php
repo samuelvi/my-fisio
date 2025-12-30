@@ -21,12 +21,10 @@ class PatientProvider implements ProviderInterface
     private PatientSearchStrategyInterface $searchStrategy;
 
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private int $itemsPerPage,
+        private readonly Connection $connection,
+        private readonly int $itemsPerPage,
     ) {
-        // Auto-detect database platform and use appropriate search strategy
-        $connection = $this->entityManager->getConnection();
-        $this->searchStrategy = PatientSearchStrategyFactory::create($connection);
+        $this->searchStrategy = PatientSearchStrategyFactory::create(connection: $connection);
     }
 
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null

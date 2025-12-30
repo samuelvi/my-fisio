@@ -35,7 +35,10 @@ final class CustomerFactory extends PersistentProxyObjectFactory
                 return Customer::create(
                     $attributes['firstName'],
                     $attributes['lastName'],
-                    $attributes['taxId']
+                    $attributes['taxId'],
+                    $attributes['email'] ?? null,
+                    $attributes['phone'] ?? null,
+                    $attributes['billingAddress'] ?? null,
                 );
             });
     }

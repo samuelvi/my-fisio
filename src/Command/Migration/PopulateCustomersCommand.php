@@ -193,13 +193,14 @@ final class PopulateCustomersCommand extends Command
     {
         [$firstName, $lastName] = $this->splitFullName($invoice->fullName);
 
-        $customer = Customer::create($firstName, $lastName, $taxId);
-        $customer->fullName = $invoice->fullName;
-        $customer->email = $invoice->email;
-        $customer->phone = $invoice->phone;
-        $customer->billingAddress = $invoice->address ?? '';
-
-        return $customer;
+        return Customer::create(
+            firstName: $firstName,
+            lastName: $lastName,
+            taxId: $taxId,
+            email: $invoice->email,
+            phone: $invoice->phone,
+            billingAddress: $invoice->address ?? ''
+        );
     }
 
     private function splitFullName(string $fullName): array

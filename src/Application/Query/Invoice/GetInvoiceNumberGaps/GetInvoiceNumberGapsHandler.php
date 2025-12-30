@@ -27,7 +27,12 @@ final readonly class GetInvoiceNumberGapsHandler
         $sequences = $this->extractSequences($numbers, $query->year);
 
         if (empty($sequences)) {
-            return InvoiceNumberGapsView::create($query->year, 0, 0, []);
+            return InvoiceNumberGapsView::create(
+                year: $query->year,
+                totalInvoices: 0,
+                totalGaps: 0,
+                gaps: []
+            );
         }
 
         sort($sequences);

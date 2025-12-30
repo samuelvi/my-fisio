@@ -66,7 +66,7 @@ final class DoctrineCounterRepository extends ServiceEntityRepository implements
 
             if (!$counter) {
                 // 2. Create if not exists
-                $counter = Counter::create($name, $initialValue);
+                $counter = Counter::create(name: $name, value: $initialValue);
                 $em->persist($counter);
                 $em->flush();
 

@@ -17,7 +17,6 @@ use function sprintf;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
-#[ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: 'patients')]
 class Patient
 {
@@ -131,28 +130,105 @@ class Patient
     #[Groups(['patient:read'])]
     public Collection $records;
 
-    private function __construct(string $firstName, string $lastName)
-    {
+    private function __construct(
+        string $firstName,
+        string $lastName,
+        ?DateTimeInterface $dateOfBirth = null,
+        ?string $taxId = null,
+        ?string $phone = null,
+        ?string $address = null,
+        ?string $email = null,
+        ?string $profession = null,
+        ?string $sportsActivity = null,
+        ?string $notes = null,
+        ?string $rate = null,
+        ?string $allergies = null,
+        ?string $medication = null,
+        ?string $systemicDiseases = null,
+        ?string $surgeries = null,
+        ?string $accidents = null,
+        ?string $injuries = null,
+        ?string $bruxism = null,
+        ?string $insoles = null,
+        ?string $others = null,
+        PatientStatus $status = PatientStatus::ACTIVE,
+    ) {
         $this->firstName = $firstName;
         $this->lastName = $lastName;
+        $this->dateOfBirth = $dateOfBirth;
+        $this->taxId = $taxId;
+        $this->phone = $phone;
+        $this->address = $address;
+        $this->email = $email;
+        $this->profession = $profession;
+        $this->sportsActivity = $sportsActivity;
+        $this->notes = $notes;
+        $this->rate = $rate;
+        $this->allergies = $allergies;
+        $this->medication = $medication;
+        $this->systemicDiseases = $systemicDiseases;
+        $this->surgeries = $surgeries;
+        $this->accidents = $accidents;
+        $this->injuries = $injuries;
+        $this->bruxism = $bruxism;
+        $this->insoles = $insoles;
+        $this->others = $others;
+        $this->status = $status;
+        
         $this->updateFullName();
         $this->createdAt = new DateTimeImmutable();
         $this->records = new ArrayCollection();
     }
 
-    public static function create(string $firstName, string $lastName): self
-    {
-        return new self($firstName, $lastName);
+    public static function create(
+        string $firstName,
+        string $lastName,
+        ?DateTimeInterface $dateOfBirth = null,
+        ?string $taxId = null,
+        ?string $phone = null,
+        ?string $address = null,
+        ?string $email = null,
+        ?string $profession = null,
+        ?string $sportsActivity = null,
+        ?string $notes = null,
+        ?string $rate = null,
+        ?string $allergies = null,
+        ?string $medication = null,
+        ?string $systemicDiseases = null,
+        ?string $surgeries = null,
+        ?string $accidents = null,
+        ?string $injuries = null,
+        ?string $bruxism = null,
+        ?string $insoles = null,
+        ?string $others = null,
+        PatientStatus $status = PatientStatus::ACTIVE,
+    ): self {
+        return new self(
+            $firstName,
+            $lastName,
+            $dateOfBirth,
+            $taxId,
+            $phone,
+            $address,
+            $email,
+            $profession,
+            $sportsActivity,
+            $notes,
+            $rate,
+            $allergies,
+            $medication,
+            $systemicDiseases,
+            $surgeries,
+            $accidents,
+            $injuries,
+            $bruxism,
+            $insoles,
+            $others,
+            $status
+        );
     }
 
-    #[ORM\PrePersist]
-    #[ORM\PreUpdate]
-    public function syncFullName(): void
-    {
-        $this->updateFullName();
-    }
-
-    private function updateFullName(): void
+    public function updateFullName(): void
     {
         $firstName = $this->firstName ?? '';
         $lastName = $this->lastName ?? '';

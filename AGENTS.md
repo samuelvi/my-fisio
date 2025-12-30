@@ -48,9 +48,18 @@ NEW_FEATURE_ENABLED=true
 When enabled, users will have access to the new feature in the dashboard. Default: `true`
 ```
 
-## Development Conventions
+## Entity & Database Management
 
-When implementing new modules, listings (CRUD), or actions, adhere strictly to the following technical standards:
+- **Named Constructors**: Whenever you add, modify, or remove a field in a table/entity, you **MUST** review and update:
+    1.  The named constructors (e.g., `create()`) in the Entity class.
+    2.  The `__construct()` method of the Entity.
+    3.  Ensure they accept **all necessary fields** (typically `NOT NULL` fields without default values) to create a valid entity state.
+- **Named Arguments**: Use **PHP 8+ named arguments** when calling constructors or static factory methods (e.g., `create()`). This improves readability, reduces errors with optional parameters, and makes the code self-documenting.
+    - *Example*: `Customer::create(firstName: $firstName, lastName: $lastName)` instead of `Customer::create($firstName, $lastName)`.
+- **Doctrine Lifecycle Events**: **DO NOT** use Doctrine lifecycle events like `#[ORM\PreUpdate]`, `#[ORM\PrePersist]`, or `#[ORM\HasLifecycleCallbacks]`. All updates to derived fields (like `fullName`) or timestamps (like `updatedAt`) **MUST** be handled manually in the Application layer (e.g., in Processors, Services, or specific Entity methods called by the application).
+- **Default Values**: When a string value is unknown or missing, use an **empty string** `''` instead of placeholders like `'Unknown'`, `'N/A'`, or `'Pending'`, unless `null` is explicitly required and supported by the schema.
+- **Environment Variables**: Follow the "Environment Variables Documentation" section above.
+
 
 ### 1. Frontend Language
 - **MANDATORY**: Always use **TypeScript** (`.ts`, `.tsx`) for all new frontend components and logic.

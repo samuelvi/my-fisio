@@ -29,7 +29,18 @@ class RecordProcessor implements ProcessorInterface
         if (isset($uriVariables['id'])) {
             $record = $this->entityManager->getRepository(Record::class)->find($uriVariables['id']);
         } else {
-            $record = Record::create();
+            $record = Record::create(
+                physiotherapyTreatment: $data->physiotherapyTreatment,
+                consultationReason: $data->consultationReason,
+                onset: $data->onset,
+                radiologyTests: $data->radiologyTests,
+                evolution: $data->evolution,
+                currentSituation: $data->currentSituation,
+                sickLeave: $data->sickLeave,
+                medicalTreatment: $data->medicalTreatment,
+                homeTreatment: $data->homeTreatment,
+                notes: $data->notes
+            );
         }
 
         if (!$record) {

@@ -101,21 +101,41 @@ class Invoice
     #[Groups(['invoice:read'])]
     public DateTimeInterface $createdAt;
 
-    private function __construct()
-    {
-        $this->number = '';
-        $this->amount = 0.0;
-        $this->fullName = '';
-        $this->date = new DateTimeImmutable();
+    private function __construct(
+        string $number,
+        float $amount,
+        string $fullName,
+        DateTimeInterface $date,
+        ?string $phone = null,
+        ?string $address = null,
+        ?string $email = null,
+        ?string $taxId = null,
+        ?Customer $customer = null,
+    ) {
+        $this->number = $number;
+        $this->amount = $amount;
+        $this->fullName = $fullName;
+        $this->date = $date;
+        $this->phone = $phone;
+        $this->address = $address;
+        $this->email = $email;
+        $this->taxId = $taxId;
+        $this->customer = $customer;
         $this->createdAt = new DateTimeImmutable();
         $this->lines = new ArrayCollection();
     }
 
-    public static function create(string $fullName): self
-    {
-        $invoice = new self();
-        $invoice->fullName = $fullName;
-
-        return $invoice;
+    public static function create(
+        string $number,
+        float $amount,
+        string $fullName,
+        DateTimeInterface $date,
+        ?string $phone = null,
+        ?string $address = null,
+        ?string $email = null,
+        ?string $taxId = null,
+        ?Customer $customer = null,
+    ): self {
+        return new self($number, $amount, $fullName, $date, $phone, $address, $email, $taxId, $customer);
     }
 }

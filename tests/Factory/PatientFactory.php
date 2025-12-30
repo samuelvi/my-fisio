@@ -41,20 +41,38 @@ final class PatientFactory extends PersistentObjectFactory
     protected function initialize(): static
     {
         return $this
-            ->instantiateWith(function (array $attributes) {
-                // Assuming Patient::create() exists or we can use constructor if we change it.
-                // Wait, let's check Patient.php again.
-                return Patient::create($attributes['firstName'], $attributes['lastName']);
+            ->instantiateWith(function (array $attributes): Patient {
+                return Patient::create(
+                    $attributes['firstName'],
+                    $attributes['lastName'],
+                    $attributes['dateOfBirth'] ?? null,
+                    $attributes['taxId'] ?? null,
+                    $attributes['phone'] ?? null,
+                    $attributes['address'] ?? null,
+                    $attributes['email'] ?? null,
+                    $attributes['profession'] ?? null,
+                    $attributes['sportsActivity'] ?? null,
+                    $attributes['notes'] ?? null,
+                    $attributes['rate'] ?? null,
+                    $attributes['allergies'] ?? null,
+                    $attributes['medication'] ?? null,
+                    $attributes['systemicDiseases'] ?? null,
+                    $attributes['surgeries'] ?? null,
+                    $attributes['accidents'] ?? null,
+                    $attributes['injuries'] ?? null,
+                    $attributes['bruxism'] ?? null,
+                    $attributes['insoles'] ?? null,
+                    $attributes['others'] ?? null,
+                    $attributes['status'] ?? PatientStatus::ACTIVE
+                );
             })
             ->afterInstantiate(function (Patient $patient, array $attributes): void {
-                if (isset($attributes['email'])) {
-                    $patient->email = $attributes['email'];
+                if (isset($attributes['customer'])) {
+                    $patient->customer = $attributes['customer'];
                 }
-                if (isset($attributes['phone'])) {
-                    $patient->phone = $attributes['phone'];
-                }
-                if (isset($attributes['status'])) {
-                    $patient->status = $attributes['status'];
+                // createdAt is set in constructor but can be overridden
+                if (isset($attributes['createdAt'])) {
+                    $patient->createdAt = $attributes['createdAt'];
                 }
             })
         ;

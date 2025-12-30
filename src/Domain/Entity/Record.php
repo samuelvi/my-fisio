@@ -69,14 +69,54 @@ class Record
     #[Groups(['record:read', 'record:write'])]
     public ?string $notes = null;
 
-    private function __construct()
-    {
+    private function __construct(
+        string $physiotherapyTreatment,
+        ?string $consultationReason = null,
+        ?string $onset = null,
+        ?string $radiologyTests = null,
+        ?string $evolution = null,
+        ?string $currentSituation = null,
+        ?bool $sickLeave = null,
+        ?string $medicalTreatment = null,
+        ?string $homeTreatment = null,
+        ?string $notes = null,
+    ) {
         $this->createdAt = new DateTimeImmutable();
-        $this->physiotherapyTreatment = '';
+        $this->physiotherapyTreatment = $physiotherapyTreatment;
+        $this->consultationReason = $consultationReason;
+        $this->onset = $onset;
+        $this->radiologyTests = $radiologyTests;
+        $this->evolution = $evolution;
+        $this->currentSituation = $currentSituation;
+        $this->sickLeave = $sickLeave;
+        $this->medicalTreatment = $medicalTreatment;
+        $this->homeTreatment = $homeTreatment;
+        $this->notes = $notes;
     }
 
-    public static function create(): self
-    {
-        return new self();
+    public static function create(
+        string $physiotherapyTreatment,
+        ?string $consultationReason = null,
+        ?string $onset = null,
+        ?string $radiologyTests = null,
+        ?string $evolution = null,
+        ?string $currentSituation = null,
+        ?bool $sickLeave = null,
+        ?string $medicalTreatment = null,
+        ?string $homeTreatment = null,
+        ?string $notes = null,
+    ): self {
+        return new self(
+            $physiotherapyTreatment,
+            $consultationReason,
+            $onset,
+            $radiologyTests,
+            $evolution,
+            $currentSituation,
+            $sickLeave,
+            $medicalTreatment,
+            $homeTreatment,
+            $notes
+        );
     }
 }

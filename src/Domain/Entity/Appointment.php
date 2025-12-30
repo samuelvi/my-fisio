@@ -9,7 +9,6 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'appointments')]
-#[ORM\HasLifecycleCallbacks]
 class Appointment
 {
     #[ORM\Id]
@@ -53,11 +52,19 @@ class Appointment
         int $userId,
         DateTimeImmutable $startsAt,
         DateTimeImmutable $endsAt,
+        ?string $title = null,
+        ?bool $allDay = null,
+        ?string $type = null,
+        ?string $notes = null,
     ) {
         $this->patient = $patient;
         $this->userId = $userId;
         $this->startsAt = $startsAt;
         $this->endsAt = $endsAt;
+        $this->title = $title;
+        $this->allDay = $allDay;
+        $this->type = $type;
+        $this->notes = $notes;
         $this->createdAt = new DateTimeImmutable();
     }
 
@@ -66,11 +73,14 @@ class Appointment
         int $userId,
         DateTimeImmutable $startsAt,
         DateTimeImmutable $endsAt,
+        ?string $title = null,
+        ?bool $allDay = null,
+        ?string $type = null,
+        ?string $notes = null,
     ): self {
-        return new self($patient, $userId, $startsAt, $endsAt);
+        return new self($patient, $userId, $startsAt, $endsAt, $title, $allDay, $type, $notes);
     }
 
-    #[ORM\PreUpdate]
     public function updateTimestamp(): void
     {
         $this->updatedAt = new DateTimeImmutable();

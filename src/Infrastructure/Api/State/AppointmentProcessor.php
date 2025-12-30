@@ -37,23 +37,16 @@ class AppointmentProcessor implements ProcessorInterface
 
         if (isset($uriVariables['id'])) {
             $appointment = $this->entityManager->getRepository(Appointment::class)->find($uriVariables['id']);
-            if (!$appointment) {
-                throw new NotFoundHttpException('Appointment not found');
-            }
         } else {
-            $patient = null;
-            if ($data->patientId) {
-                $patient = $this->entityManager->getRepository(Patient::class)->find($data->patientId);
-                if (!$patient) {
-                    throw new NotFoundHttpException('Patient not found');
-                }
-            }
-
             $appointment = Appointment::create(
-                $patient,
-                $data->userId,
-                $data->startsAt,
-                $data->endsAt,
+                patient: null, // Patient set below
+                userId: $data->userId,
+                startsAt: $data->startsAt,
+                endsAt: $data->endsAt,
+                title: $data->title,
+                allDay: $data->allDay,
+                type: $data->type,
+                notes: $data->notes
             );
         }
 
@@ -75,6 +68,8 @@ class AppointmentProcessor implements ProcessorInterface
         $appointment->endsAt = $data->endsAt;
         $appointment->notes = $data->notes;
         $appointment->type = $data->type;
+
+        $appointment->updateTimestamp();
 
         $this->entityManager->persist($appointment);
         $this->entityManager->flush();
