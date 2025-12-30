@@ -8,6 +8,8 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
 use App\Domain\Entity\Patient;
+use App\Domain\Entity\Customer;
+use App\Domain\Repository\CustomerRepositoryInterface;
 use App\Infrastructure\Api\Resource\PatientResource;
 
 use function count;
@@ -20,6 +22,7 @@ class PatientProcessor implements ProcessorInterface
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
+        private CustomerRepositoryInterface $customerRepository,
         private ValidatorInterface $validator,
     ) {
     }
@@ -67,12 +70,31 @@ class PatientProcessor implements ProcessorInterface
             return null;
         }
 
-        // Parse patient ID from IRI
-        if (null !== $data->customer && preg_match('#/api/customers/(\\d+)#', $data->customer, $matches)) {
+        // Handle Customer (Link or Create)
+        $customer = null;
+        if (!empty($data->taxId)) {
+            $customer = $this->customerRepository->findOneByTaxId($data->taxId);
+            
+            if (!$customer) {
+                $customer = Customer::create(
+                    firstName: $data->firstName,
+                    lastName: $data->lastName,
+                    taxId: $data->taxId,
+                    email: $data->email,
+                    phone: $data->phone,
+                    billingAddress: $data->address ?? ''
+                );
+                $this->customerRepository->save($customer);
+            }
+        }
+
+        // Parse customer ID from IRI (Explicit override if provided)
+        if (null !== $data->customer && preg_match('#/api/customers/(\d+)#', $data->customer, $matches)) {
             $customerId = (int) $matches[1];
             $customer = $this->entityManager->getRepository(Customer::class)->find($customerId);
-            $patient->customer = $customer;
         }
+        
+        $patient->customer = $customer;
 
         // Update fields (for both new and existing)
         $patient->firstName = $data->firstName;

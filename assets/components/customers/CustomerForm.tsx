@@ -79,40 +79,58 @@ export default function CustomerForm() {
 
         setLoading(true);
         setError(null);
+        setFormErrors({});
 
         try {
             if (id) {
+                console.log('[CustomerForm] PUT Request to:', Routing.generate('api_customers_put', { id }));
                 await axios.put(Routing.generate('api_customers_put', { id }), formData);
             } else {
+                console.log('[CustomerForm] POST Request to:', Routing.generate('api_customers_post'));
                 await axios.post(Routing.generate('api_customers_post'), formData);
             }
-            navigate('/customers');
+            console.log('[CustomerForm] Success! Redirecting to /customers');
+            // Using a short timeout to ensure the user can see if something happened, 
+            // though SPA navigation is usually instant.
+            setTimeout(() => {
+                navigate('/customers', { replace: true });
+            }, 100);
         } catch (error: any) {
-            console.error('Error saving customer:', error);
+            console.error('[CustomerForm] Full Error Object:', error);
             
             const responseData = error.response?.data;
-            if (error.response?.status !== 422 || !responseData) {
-                setError(t('error_saving_customer'));
-                return;
+            const status = error.response?.status;
+
+            if (status === 422 && responseData) {
+                const violations = responseData.violations || responseData['hydra:violations'];
+                if (violations && Array.isArray(violations)) {
+                    const serverErrors: Record<string, string> = {};
+                    const unmatchedViolations: string[] = [];
+                    
+                    violations.forEach((violation: any) => {
+                        const path = violation.propertyPath || violation.property_path;
+                        if (path && (formData as any).hasOwnProperty(path)) {
+                            serverErrors[path] = violation.message;
+                        } else {
+                            unmatchedViolations.push(violation.message);
+                        }
+                    });
+                    
+                    console.log('[CustomerForm] Server Violations:', serverErrors);
+                    setFormErrors(serverErrors);
+                    
+                    if (unmatchedViolations.length > 0) {
+                        setError(unmatchedViolations.join(', '));
+                    } else {
+                        setError(t('error_validation_failed'));
+                    }
+                    return;
+                }
             }
 
-            const violations = responseData.violations;
-            if (violations) {
-                const serverErrors: Record<string, string> = {};
-                violations.forEach((violation: any) => {
-                    serverErrors[violation.propertyPath] = violation.message;
-                });
-                setFormErrors(serverErrors);
-                setError(t('error_validation_failed'));
-                return;
-            }
-
-            if (responseData['hydra:description']) {
-                setError(responseData['hydra:description']);
-                return;
-            }
-
-            setError(t('error_saving_customer'));
+            // If we are here, it's an unexpected error
+            const errorMsg = responseData?.['hydra:description'] || responseData?.detail || error.message || t('error_saving_customer');
+            setError(`Error (${status}): ${errorMsg}`);
         } finally {
             setLoading(false);
         }

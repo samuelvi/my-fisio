@@ -9,7 +9,9 @@ use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
 use App\Domain\Entity\Invoice;
 use App\Domain\Entity\InvoiceLine;
+use App\Domain\Entity\Customer;
 use App\Domain\Repository\CounterRepositoryInterface;
+use App\Domain\Repository\CustomerRepositoryInterface;
 use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\Resource\InvoiceLineInput;
 use DateTimeImmutable;
@@ -30,6 +32,7 @@ final class InvoiceCreateProcessor implements ProcessorInterface
         #[Autowire(service: 'api_platform.doctrine.orm.state.persist_processor')]
         private readonly ProcessorInterface $persistProcessor,
         private readonly CounterRepositoryInterface $counterRepository,
+        private readonly CustomerRepositoryInterface $customerRepository,
         private readonly ValidatorInterface $validator,
     ) {
     }
@@ -80,7 +83,24 @@ final class InvoiceCreateProcessor implements ProcessorInterface
         // Use the atomic DB update to prevent race conditions
         $number = $this->counterRepository->incrementAndGetNext($counterKey, $initialValue);
 
-        // 3. Create Invoice with required fields
+        // 3. Handle Customer (Link or Create)
+        $customer = null;
+        if (!empty($data->taxId)) {
+            $customer = $this->customerRepository->findOneByTaxId($data->taxId);
+            
+            if (!$customer) {
+                $customer = Customer::createFromFullName(
+                    fullName: $data->fullName,
+                    taxId: $data->taxId,
+                    email: $data->email,
+                    phone: $data->phone,
+                    billingAddress: $data->address ?? ''
+                );
+                $this->customerRepository->save($customer);
+            }
+        }
+
+        // 4. Create Invoice with required fields
         $invoice = Invoice::create(
             number: $number,
             amount: $totalAmount,
@@ -89,10 +109,11 @@ final class InvoiceCreateProcessor implements ProcessorInterface
             phone: $data->phone,
             address: $data->address,
             email: $data->email,
-            taxId: $data->taxId
+            taxId: $data->taxId,
+            customer: $customer
         );
 
-        // 4. Create and Attach Lines
+        // 5. Create and Attach Lines
         foreach ($data->lines as $line) {
             $lineAmount = $line->quantity * $line->price;
             $invoiceLine = InvoiceLine::create(

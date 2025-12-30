@@ -69,6 +69,7 @@ services:
     App\Domain\Repository\AppointmentRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineAppointmentRepository'
     App\Domain\Repository\InvoiceRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineInvoiceRepository'
     App\Domain\Repository\CounterRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineCounterRepository'
+    App\Domain\Repository\CustomerRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineCustomerRepository'
 
     App\Command\Migration\MigrateLegacyDataCommand:
         arguments:

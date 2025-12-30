@@ -10,7 +10,9 @@ use ApiPlatform\Validator\Exception\ValidationException;
 use App\Application\Service\InvoiceNumberValidator;
 use App\Domain\Entity\Invoice;
 use App\Domain\Entity\InvoiceLine;
+use App\Domain\Entity\Customer;
 use App\Domain\Repository\InvoiceRepositoryInterface;
+use App\Domain\Repository\CustomerRepositoryInterface;
 use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\Resource\InvoiceLineInput;
 use DateTimeImmutable;
@@ -28,6 +30,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
     public function __construct(
         private EntityManagerInterface $entityManager,
         private InvoiceRepositoryInterface $invoiceRepository,
+        private CustomerRepositoryInterface $customerRepository,
         private ValidatorInterface $validator,
     ) {
     }
@@ -90,6 +93,23 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
             throw new BadRequestHttpException($validationResult->reason ?? 'invoice_number_invalid');
         }
 
+        // Handle Customer (Link or Create)
+        $customer = null;
+        if (!empty($data->taxId)) {
+            $customer = $this->customerRepository->findOneByTaxId($data->taxId);
+            
+            if (!$customer) {
+                $customer = Customer::createFromFullName(
+                    fullName: $data->fullName,
+                    taxId: $data->taxId,
+                    email: $data->email,
+                    phone: $data->phone,
+                    billingAddress: $data->address ?? ''
+                );
+                $this->customerRepository->save($customer);
+            }
+        }
+
         if (null !== $data->number) {
             $invoice->number = $data->number;
         }
@@ -98,6 +118,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         $invoice->address = $data->address;
         $invoice->email = $data->email;
         $invoice->taxId = $data->taxId;
+        $invoice->customer = $customer;
         if ($data->date instanceof DateTimeImmutable) {
             $invoice->date = $data->date;
         }

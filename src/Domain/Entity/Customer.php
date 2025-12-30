@@ -37,7 +37,7 @@ class Customer
     #[Groups(['customer:read', 'customer:write', 'invoice:read'])]
     public ?string $fullName = null;
 
-    #[ORM\Column(type: Types::STRING, length: 20, nullable: false)]
+    #[ORM\Column(type: Types::STRING, length: 20, nullable: false, unique: true)]
     #[Groups(['customer:read', 'customer:write', 'invoice:read'])]
     #[Assert\NotBlank]
     public string $taxId; // DNI/NIF/CIF for billing
@@ -95,6 +95,33 @@ class Customer
             taxId: $taxId, 
             email: $email, 
             phone: $phone, 
+            billingAddress: $billingAddress
+        );
+    }
+
+    public static function createFromFullName(
+        string $fullName,
+        string $taxId,
+        ?string $email = null,
+        ?string $phone = null,
+        ?string $billingAddress = null,
+    ): self {
+        $fullName = trim($fullName);
+        $parts = explode(' ', $fullName);
+        if (count($parts) === 1) {
+            $firstName = $parts[0];
+            $lastName = '';
+        } else {
+            $firstName = array_shift($parts);
+            $lastName = implode(' ', $parts);
+        }
+
+        return self::create(
+            firstName: $firstName,
+            lastName: $lastName,
+            taxId: $taxId,
+            email: $email,
+            phone: $phone,
             billingAddress: $billingAddress
         );
     }
