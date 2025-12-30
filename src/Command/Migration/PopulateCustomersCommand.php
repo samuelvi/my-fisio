@@ -12,6 +12,7 @@ use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
@@ -25,7 +26,7 @@ use function sprintf;
 
 #[AsCommand(
     name: 'app:migration:populate-customers',
-    description: 'Creates customers from existing patients and invoices data based on Tax ID.',
+    description: 'Creates customers from existing patients and invoices data.',
 )]
 final class PopulateCustomersCommand extends Command
 {
@@ -37,42 +38,49 @@ final class PopulateCustomersCommand extends Command
         parent::__construct();
     }
 
+    protected function configure(): void
+    {
+        $this->addOption('reset', null, InputOption::VALUE_OPTIONAL, 'Reset customers table and links before populating', '0');
+    }
+
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
         $io->title('Populating Customers from Existing Data');
 
+        $reset = $input->getOption('reset') === '1';
+        if ($reset) {
+            $this->performReset($io);
+        }
+
         $customerMap = $this->loadExistingCustomers();
         $io->note(sprintf('Loaded %d existing customers.', count($customerMap)));
 
-        // 1. Process Invoices
+        // 1. Process Invoices (Order by Number DESC to get most recent data first)
         $io->section('Processing Invoices...');
-        $invoices = $this->entityManager->getRepository(Invoice::class)->findAll();
+        $invoices = $this->entityManager->getRepository(Invoice::class)->findBy([], ['number' => 'DESC']);
         $progressBar = new ProgressBar($output, count($invoices));
         $progressBar->start();
 
         $createdCount = 0;
         $linkedCount = 0;
-        $skippedCount = 0;
         $batchCount = 0;
 
         foreach ($invoices as $invoice) {
             $taxId = $this->normalizeTaxId($invoice->taxId);
-            if (!$taxId) {
-                $skippedCount++;
-                $progressBar->advance();
-                continue;
-            }
+            $fullName = trim($invoice->fullName);
+            
+            // Deduplication key: tax_id or full_name if tax_id is empty
+            $key = $taxId ?: 'NAME_'.$fullName;
 
-            if (!isset($customerMap[$taxId])) {
-                $customer = $this->createCustomerFromInvoice($invoice, $taxId);
-                echo sprintf("Creating customer from invoice: %s, address: %s\n", $customer->fullName, $customer->billingAddress);
+            if (!isset($customerMap[$key])) {
+                $customer = $this->createCustomerFromInvoice($invoice, $taxId ?: '');
                 $this->entityManager->persist($customer);
-                $customerMap[$taxId] = $customer;
+                $customerMap[$key] = $customer;
                 $createdCount++;
             }
 
-            $customer = $customerMap[$taxId];
+            $customer = $customerMap[$key];
             if ($invoice->customer !== $customer) {
                 $invoice->customer = $customer;
                 $linkedCount++;
@@ -88,35 +96,30 @@ final class PopulateCustomersCommand extends Command
         $this->entityManager->flush();
         $progressBar->finish();
         $io->newLine(2);
-        $io->text(sprintf('Created: %d, Linked: %d, Skipped (no Tax ID): %d', $createdCount, $linkedCount, $skippedCount));
+        $io->text(sprintf('Created from Invoices: %d, Linked: %d', $createdCount, $linkedCount));
 
-        // 2. Process Patients
+        // 2. Process Patients (LINKING ONLY, never create)
         $io->section('Processing Patients...');
         $patients = $this->entityManager->getRepository(Patient::class)->findAll();
         $progressBar = new ProgressBar($output, count($patients));
         $progressBar->start();
 
         $patientLinkedCount = 0;
-        $patientCreatedCount = 0;
-        $patientSkippedCount = 0;
         $batchCount = 0;
 
         foreach ($patients as $patient) {
             $taxId = $this->normalizeTaxId($patient->taxId);
-            if (!$taxId) {
-                $patientSkippedCount++;
+            $fullName = trim($patient->fullName);
+            
+            $key = $taxId ?: 'NAME_'.$fullName;
+
+            // Only link if the customer already exists (created from invoices)
+            if (!isset($customerMap[$key])) {
                 $progressBar->advance();
                 continue;
             }
 
-            if (!isset($customerMap[$taxId])) {
-                $customer = $this->createCustomerFromPatient($patient, $taxId);
-                $this->entityManager->persist($customer);
-                $customerMap[$taxId] = $customer;
-                $patientCreatedCount++;
-            }
-
-            $customer = $customerMap[$taxId];
+            $customer = $customerMap[$key];
             if ($patient->customer !== $customer) {
                 $patient->customer = $customer;
                 $patientLinkedCount++;
@@ -132,11 +135,25 @@ final class PopulateCustomersCommand extends Command
         $this->entityManager->flush();
         $progressBar->finish();
         $io->newLine(2);
-        $io->text(sprintf('Created: %d, Linked: %d, Skipped (no Tax ID): %d', $patientCreatedCount, $patientLinkedCount, $patientSkippedCount));
+        $io->text(sprintf('Linked Patients: %d', $patientLinkedCount));
 
         $io->success('Customers population completed successfully.');
 
         return Command::SUCCESS;
+    }
+
+    private function performReset(SymfonyStyle $io): void
+    {
+        $io->warning('Resetting customers table and links...');
+        $connection = $this->entityManager->getConnection();
+        
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+        $connection->executeStatement('TRUNCATE TABLE customers');
+        $connection->executeStatement('UPDATE invoices SET customer_id = NULL');
+        $connection->executeStatement('UPDATE patients SET customer_id = NULL');
+        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+        
+        $io->success('Reset complete.');
     }
 
     /**
@@ -150,6 +167,11 @@ final class PopulateCustomersCommand extends Command
             $taxId = $this->normalizeTaxId($customer->taxId);
             if ($taxId) {
                 $map[$taxId] = $customer;
+                continue;
+            }
+            
+            if ($customer->fullName) {
+                $map['NAME_'.trim($customer->fullName)] = $customer;
             }
         }
 
@@ -171,32 +193,11 @@ final class PopulateCustomersCommand extends Command
     {
         [$firstName, $lastName] = $this->splitFullName($invoice->fullName);
 
-        $customer = Customer::create(
-            $firstName,
-            $lastName,
-            $taxId
-        );
-
+        $customer = Customer::create($firstName, $lastName, $taxId);
         $customer->fullName = $invoice->fullName;
         $customer->email = $invoice->email;
         $customer->phone = $invoice->phone;
         $customer->billingAddress = $invoice->address ?? 'Unknown Address';
-
-        return $customer;
-    }
-
-    private function createCustomerFromPatient(Patient $patient, string $taxId): Customer
-    {
-        $customer = Customer::create(
-            $patient->firstName,
-            $patient->lastName,
-            $taxId
-        );
-
-        $customer->fullName = $patient->fullName;
-        $customer->email = $patient->email;
-        $customer->phone = $patient->phone;
-        $customer->billingAddress = $patient->address ?? 'Unknown Address';
 
         return $customer;
     }
@@ -212,10 +213,9 @@ final class PopulateCustomersCommand extends Command
         $count = count($parts);
         
         if ($count === 1) {
-            return [$parts[0], $parts[0]]; // Repeat if only one name
+            return [$parts[0], $parts[0]];
         }
 
-        // Logic for first name and last name
         $firstName = array_shift($parts);
         $lastName = implode(' ', $parts);
 

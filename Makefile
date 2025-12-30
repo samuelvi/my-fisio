@@ -278,6 +278,10 @@ db-fixtures: ## Load database fixtures
 	@echo "$(GREEN)Loading fixtures...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:fixtures:load --no-interaction
 
+db-populate-customers: ## Populate customers from existing data (use reset=1 to restart)
+	@echo "$(GREEN)Populating customers...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec php bin/console app:migration:populate-customers --reset=$(reset)
+
 db-reset: db-drop db-create db-migrate db-fixtures ## Reset database (drop, create, migrate, fixtures)
 
 db-validate: ## Validate doctrine mapping

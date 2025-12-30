@@ -214,6 +214,16 @@ make db-validate
 make db-fixtures
 ```
 
+### Customer Population
+
+```bash
+# Intelligent script to create customers from existing patients and invoices data
+make db-populate-customers
+
+# Restart the process by truncating customers table and resetting links
+make db-populate-customers reset=1
+```
+
 ### Complete Reset
 
 ```bash
