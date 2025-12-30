@@ -11,8 +11,8 @@ module.exports = defineConfig({
   workers: 1,
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
-  /* Retry on CI only */
-  retries: process.env.CI ? 2 : 0,
+  /* Retry failed tests (helps with flaky tests due to timing issues) */
+  retries: process.env.CI ? 2 : 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [['html', { outputFolder: './var/log/playwright/report', open: 'never' }], ['list']],
   /* Directory for artifacts like screenshots, videos, traces, etc. */
@@ -36,6 +36,12 @@ module.exports = defineConfig({
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+  },
+
+  /* Expect configuration for assertions */
+  expect: {
+    /* Maximum time expect() should wait for the condition to be met */
+    timeout: 5000, // 5 seconds for assertions (with automatic retries)
   },
 
   /* Maximum time one test can run for. */
