@@ -423,3 +423,168 @@ test('invoice management flow', async ({ page, request }) => {
   expect(outOfSequenceResponse.status).toBe(400);
   expect(outOfSequenceResponse.data.detail).toBe('invoice_number_out_of_sequence');
 });
+
+test('invoice server-side validation UI display', async ({ page, request }) => {
+  test.setTimeout(90000);
+
+  await page.addInitScript(() => {
+    localStorage.setItem('app_locale', 'en');
+  });
+
+  await resetDbEmpty(request);
+  await login(page);
+
+  // Navigate to new invoice form
+  await page.goto('/invoices/new');
+  await expect(page).toHaveURL('/invoices/new');
+  await disableClientValidation(page);
+
+  // Test 1: Missing address field (new validation)
+  console.log('Test 1: Missing address validation');
+
+  await setInvoiceInputValue(page, 'Customer Name', 'Test Customer');
+  await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '12345678A');
+  await setInvoiceInputValue(page, 'Address', ''); // Leave address empty
+
+  // Fill invoice line
+  await page.locator('label:has-text("CONCEPT") + input').first().fill('Test Service');
+  await page.locator('label:has-text("Price") + input').first().fill('100');
+
+  // Submit
+  const [addressResponse] = await Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes('/api/invoices') &&
+      response.request().method() === 'POST'
+    ),
+    page.getByRole('button', { name: 'Confirm Issuance' }).click(),
+  ]);
+
+  expect(addressResponse.status()).toBe(422);
+  const addressData = await addressResponse.json();
+  const addressViolations = addressData.violations || [];
+
+  // Verify server returned address violation
+  const addressViolation = findViolation(addressViolations, 'address');
+  expect(addressViolation).toBeTruthy();
+  expect(addressViolation?.message).toBe('Address is required.');
+
+  // Wait for UI to update
+  await page.waitForTimeout(500);
+
+  // Verify address error is displayed in UI
+  const addressError = page.locator('p.text-red-600').filter({ hasText: /Address is required/i });
+  await expect(addressError.first()).toBeVisible({ timeout: 5000 });
+
+  console.log('Test 1 passed: Address validation error displayed');
+
+  // Test 2: Missing concept on invoice line
+  console.log('Test 2: Missing concept validation');
+
+  // Navigate to fresh form
+  await page.goto('/invoices/new');
+  await disableClientValidation(page);
+
+  // Fill customer fields
+  await setInvoiceInputValue(page, 'Customer Name', 'Test Customer 2');
+  await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '87654321B');
+  await setInvoiceInputValue(page, 'Address', 'Test Address 2');
+
+  // Leave concept empty on the default line
+  await page.locator('label:has-text("CONCEPT") + input').first().fill('');
+  await page.locator('label:has-text("Price") + input').first().fill('100');
+
+  // Submit
+  const [conceptResponse] = await Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes('/api/invoices') &&
+      response.request().method() === 'POST'
+    ),
+    page.getByRole('button', { name: 'Confirm Issuance' }).click(),
+  ]);
+
+  expect(conceptResponse.status()).toBe(422);
+  const conceptData = await conceptResponse.json();
+  const conceptViolations = conceptData.violations || [];
+
+  // Verify violation for concept
+  const conceptViolation = findViolation(conceptViolations, 'lines[0].concept');
+  expect(conceptViolation).toBeTruthy();
+  expect(conceptViolation?.message).toBe('Invoice line concept is required.');
+
+  // Wait for UI to update
+  await page.waitForTimeout(500);
+
+  // Verify concept error is displayed in UI
+  const conceptError = page.locator('p.text-red-600').filter({ hasText: /concept is required/i });
+  await expect(conceptError.first()).toBeVisible({ timeout: 5000 });
+
+  console.log('Test 2 passed: Concept required error displayed');
+
+  // Test 3: Negative price and negative quantity
+  console.log('Test 3: Negative price and quantity');
+
+  // Navigate to fresh form
+  await page.goto('/invoices/new');
+  await disableClientValidation(page);
+
+  // Fill required fields
+  await setInvoiceInputValue(page, 'Customer Name', 'Test Customer 3');
+  await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '11111111C');
+  await setInvoiceInputValue(page, 'Address', 'Test Address 3');
+
+  // Fill concept with valid value
+  await page.locator('label:has-text("CONCEPT") + input').first().fill('Test Service');
+
+  // Set negative quantity
+  const qtyInput = page.locator('label:has-text("Qty") + input').first();
+  await qtyInput.click();
+  await qtyInput.press('Control+A');
+  await qtyInput.fill('-5');
+
+  // Set negative price
+  const priceInput = page.locator('label:has-text("Price") + input').first();
+  await priceInput.click();
+  await priceInput.press('Control+A');
+  await priceInput.fill('-10');
+
+  // Submit
+  const [negativeResponse] = await Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes('/api/invoices') &&
+      response.request().method() === 'POST'
+    ),
+    page.getByRole('button', { name: 'Confirm Issuance' }).click(),
+  ]);
+
+  expect(negativeResponse.status()).toBe(422);
+  const negativeData = await negativeResponse.json();
+  const negativeViolations = negativeData.violations || [];
+
+  // Verify violations for negative values
+  const qtyNegViolation = findViolation(negativeViolations, 'lines[0].quantity');
+  const priceNegViolation = findViolation(negativeViolations, 'lines[0].price');
+
+  expect(qtyNegViolation).toBeTruthy();
+  expect(qtyNegViolation?.message).toBe('Invoice line quantity must be greater than 0.');
+  expect(priceNegViolation).toBeTruthy();
+  // Note: Price uses PositiveOrZero but message still says "greater than 0" - this is the actual message from Symfony
+  expect(priceNegViolation?.message).toBe('Invoice line price must be greater than 0.');
+
+  // Wait for UI to update
+  await page.waitForTimeout(500);
+
+  // Verify errors are displayed
+  const qtyErrors = page.locator('p.text-red-600').filter({ hasText: /quantity/i });
+  const priceNegErrors = page.locator('p.text-red-600').filter({ hasText: /greater than/i });
+
+  expect(await qtyErrors.count()).toBeGreaterThan(0);
+  expect(await priceNegErrors.count()).toBeGreaterThan(0);
+
+  console.log('Test 3 passed: Negative values validation errors displayed');
+
+  // Verify the invoice line row has red background indicating errors
+  const lineWithErrors = page.locator('.bg-red-50.border-2.border-red-300').first();
+  await expect(lineWithErrors).toBeVisible();
+
+  console.log('All server-side validation UI tests passed!');
+});

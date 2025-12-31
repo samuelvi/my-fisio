@@ -13,9 +13,10 @@ interface InvoiceInputProps {
     required?: boolean;
     placeholder?: string;
     disabled?: boolean;
+    error?: string;
 }
 
-const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "", disabled = false }: InvoiceInputProps) => (
+const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "", disabled = false, error }: InvoiceInputProps) => (
     <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">{label} {required && "*"}</label>
         <input
@@ -25,10 +26,33 @@ const InvoiceInput = ({ label, value, setter, type = "text", required = false, p
             onChange={(e) => setter(e.target.value)}
             placeholder={placeholder}
             disabled={disabled}
-            className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+            className={`block w-full border ${error ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
         />
+        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
 );
+
+// Type for validation errors from Symfony
+interface ValidationErrors {
+    [key: string]: string;
+}
+
+// Helper function to parse Symfony violations into a flat error object
+function parseValidationViolations(violations: Array<{ propertyPath: string; message: string }>): ValidationErrors {
+    const errors: ValidationErrors = {};
+
+    violations.forEach(violation => {
+        // propertyPath can be like "lines[0].price" or "fullName"
+        errors[violation.propertyPath] = violation.message;
+    });
+
+    return errors;
+}
+
+// Helper to get error for a specific line field
+function getLineError(validationErrors: ValidationErrors, lineIndex: number, field: string): string | undefined {
+    return validationErrors[`lines[${lineIndex}].${field}`];
+}
 
 export default function InvoiceForm() {
     const { t } = useLanguage();
@@ -37,13 +61,13 @@ export default function InvoiceForm() {
     const [searchParams] = useSearchParams();
     const patientId = searchParams.get('patientId');
     const customerId = searchParams.get('customerId');
-    
+
     // Debug search params on every render to ensure they are captured
     useEffect(() => {
-        console.log('Current searchParams:', { 
-            patientId, 
+        console.log('Current searchParams:', {
+            patientId,
             customerId,
-            raw: window.location.search 
+            raw: window.location.search
         });
     }, [patientId, customerId]);
 
@@ -53,6 +77,7 @@ export default function InvoiceForm() {
     const [loadingCustomer, setLoadingCustomer] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [numberError, setNumberError] = useState<string>('');
+    const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
 
     // Combined loading state to prevent race conditions
@@ -65,6 +90,52 @@ export default function InvoiceForm() {
     const [customerPhone, setCustomerPhone] = useState<string>('');
     const [customerEmail, setCustomerEmail] = useState<string>('');
     const [invoiceNumber, setInvoiceNumber] = useState<string>('');
+
+    // Helper function to clear validation error for a specific field
+    const clearFieldError = (fieldName: string) => {
+        if (validationErrors[fieldName]) {
+            const newErrors = { ...validationErrors };
+            delete newErrors[fieldName];
+            setValidationErrors(newErrors);
+        }
+    };
+
+    // Wrapped setters that clear validation errors
+    const setDateWithClearError = (value: string) => {
+        setDate(value);
+        clearFieldError('date');
+    };
+
+    const setCustomerNameWithClearError = (value: string) => {
+        setCustomerName(value);
+        clearFieldError('fullName');
+    };
+
+    const setCustomerTaxIdWithClearError = (value: string) => {
+        setCustomerTaxId(value);
+        clearFieldError('taxId');
+    };
+
+    const setCustomerAddressWithClearError = (value: string) => {
+        setCustomerAddress(value);
+        clearFieldError('address');
+    };
+
+    const setCustomerPhoneWithClearError = (value: string) => {
+        setCustomerPhone(value);
+        clearFieldError('phone');
+    };
+
+    const setCustomerEmailWithClearError = (value: string) => {
+        setCustomerEmail(value);
+        clearFieldError('email');
+    };
+
+    const setInvoiceNumberWithClearError = (value: string) => {
+        setInvoiceNumber(value);
+        setNumberError('');
+        clearFieldError('number');
+    };
 
     const [lines, setLines] = useState<InvoiceLine[]>([
         { concept: '', description: '', quantity: 1, price: 0, amount: 0 }
@@ -187,6 +258,14 @@ export default function InvoiceForm() {
             newLines[index].amount = qty * price;
         }
         setLines(newLines);
+
+        // Clear validation error for this specific field when user makes changes
+        const errorKey = `lines[${index}].${field}`;
+        if (validationErrors[errorKey]) {
+            const newErrors = { ...validationErrors };
+            delete newErrors[errorKey];
+            setValidationErrors(newErrors);
+        }
     };
 
     const calculateTotal = () => {
@@ -198,6 +277,7 @@ export default function InvoiceForm() {
         setLoading(true);
         setError(null);
         setNumberError('');
+        setValidationErrors({});
 
         if (!customerName || !customerTaxId) {
             setError(t('error_required_fields_missing'));
@@ -233,11 +313,28 @@ export default function InvoiceForm() {
             navigate('/invoices');
         } catch (err: any) {
             console.error('Error creating invoice:', err);
+
+            // Handle Symfony validation errors (422 status)
+            if (err.response?.status === 422 && err.response?.data?.violations) {
+                const violations = err.response.data.violations;
+                const parsedErrors = parseValidationViolations(violations);
+                setValidationErrors(parsedErrors);
+
+                // Set a general error message
+                setError(t('error_validation_failed') || 'Please correct the errors below');
+                setLoading(false);
+                return;
+            }
+
+            // Handle specific invoice number errors
             const detail = err.response?.data?.detail;
             if (detail && detail.startsWith('invoice_number_')) {
                 setNumberError(t(detail));
+                setLoading(false);
                 return;
             }
+
+            // Generic error
             setError(t('error_failed_to_create_invoice'));
         } finally {
             setLoading(false);
@@ -292,35 +389,71 @@ export default function InvoiceForm() {
                             </div>
                         )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <InvoiceInput label={t('invoice_date')} value={date} setter={setDate} type="date" required disabled={isLoading} />
+                            <InvoiceInput
+                                label={t('invoice_date')}
+                                value={date}
+                                setter={setDateWithClearError}
+                                type="date"
+                                required
+                                disabled={isLoading}
+                                error={validationErrors['date']}
+                            />
                             {isEditing && (
                                 <InvoiceInput
                                     label={t('number')}
                                     value={invoiceNumber}
-                                    setter={setInvoiceNumber}
+                                    setter={setInvoiceNumberWithClearError}
                                     required
                                     placeholder="YYYY000001"
                                     type="text"
                                     disabled={isLoading}
+                                    error={numberError || validationErrors['number']}
                                 />
                             )}
-                            {isEditing && numberError && (
-                                <p className="text-sm text-red-600 font-bold -mt-3">{numberError}</p>
-                            )}
-                            <InvoiceInput label={t('customer_name')} value={customerName} setter={setCustomerName} required placeholder={t('customer_name_placeholder')} disabled={isLoading} />
-                            <InvoiceInput label={t('tax_id')} value={customerTaxId} setter={setCustomerTaxId} required placeholder="Ex: 12345678A" disabled={isLoading} />
-                            <InvoiceInput label={t('email')} value={customerEmail} setter={setCustomerEmail} type="email" disabled={isLoading} />
-                            <InvoiceInput label={t('phone')} value={customerPhone} setter={setCustomerPhone} disabled={isLoading} />
+                            <InvoiceInput
+                                label={t('customer_name')}
+                                value={customerName}
+                                setter={setCustomerNameWithClearError}
+                                required
+                                placeholder={t('customer_name_placeholder')}
+                                disabled={isLoading}
+                                error={validationErrors['fullName']}
+                            />
+                            <InvoiceInput
+                                label={t('tax_id')}
+                                value={customerTaxId}
+                                setter={setCustomerTaxIdWithClearError}
+                                required
+                                placeholder="Ex: 12345678A"
+                                disabled={isLoading}
+                                error={validationErrors['taxId']}
+                            />
+                            <InvoiceInput
+                                label={t('email')}
+                                value={customerEmail}
+                                setter={setCustomerEmailWithClearError}
+                                type="email"
+                                disabled={isLoading}
+                                error={validationErrors['email']}
+                            />
+                            <InvoiceInput
+                                label={t('phone')}
+                                value={customerPhone}
+                                setter={setCustomerPhoneWithClearError}
+                                disabled={isLoading}
+                                error={validationErrors['phone']}
+                            />
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')} *</label>
                                 <input
                                     type="text"
                                     value={customerAddress}
-                                    onChange={(e) => setCustomerAddress(e.target.value)}
+                                    onChange={(e) => setCustomerAddressWithClearError(e.target.value)}
                                     placeholder={t('billing_address_placeholder')}
                                     disabled={isLoading}
-                                    className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                    className={`block w-full border ${validationErrors['address'] ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
                                 />
+                                {validationErrors['address'] && <p className="mt-1 text-sm text-red-600">{validationErrors['address']}</p>}
                             </div>
                         </div>
                     </div>
@@ -332,70 +465,82 @@ export default function InvoiceForm() {
                     </div>
                     
                     <div className="p-6 space-y-4">
-                        {lines.map((line, index) => (
-                            <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 rounded-lg bg-gray-50 border border-gray-100">
-                                <div className="col-span-12 md:col-span-5 space-y-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('concept')}</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={line.concept}
-                                        onChange={(e) => handleLineChange(index, 'concept', e.target.value)}
-                                        disabled={isLoading}
-                                        className={`w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
-                                        placeholder={t('concept_placeholder')}
-                                    />
-                                    <input
-                                        type="text"
-                                        value={line.description}
-                                        onChange={(e) => handleLineChange(index, 'description', e.target.value)}
-                                        disabled={isLoading}
-                                        className={`w-full border border-gray-200 rounded-md py-1.5 px-3 text-xs text-gray-500 ${isLoading ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                                        placeholder={t('additional_notes')}
-                                    />
-                                </div>
-                                <div className="col-span-4 md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('qty')}</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        required
-                                        value={line.quantity}
-                                        onChange={(e) => handleLineChange(index, 'quantity', parseInt(e.target.value))}
-                                        disabled={isLoading}
-                                        className={`w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
-                                    />
-                                </div>
-                                <div className="col-span-4 md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('price')}</label>
-                                    <input
-                                        type="number"
-                                        step="0.01"
-                                        required
-                                        value={line.price}
-                                        onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))}
-                                        disabled={isLoading}
-                                        className={`w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
-                                    />
-                                </div>
-                                <div className="col-span-3 md:col-span-2">
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('total')}</label>
-                                    <div className="py-2 text-sm font-bold text-gray-900">
-                                        {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(line.amount)}
+                        {lines.map((line, index) => {
+                            const conceptError = getLineError(validationErrors, index, 'concept');
+                            const quantityError = getLineError(validationErrors, index, 'quantity');
+                            const priceError = getLineError(validationErrors, index, 'price');
+                            const amountError = getLineError(validationErrors, index, 'amount');
+                            const hasLineError = conceptError || quantityError || priceError || amountError;
+
+                            return (
+                                <div key={index} className={`grid grid-cols-12 gap-4 items-start p-4 rounded-lg ${hasLineError ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50 border border-gray-100'}`}>
+                                    <div className="col-span-12 md:col-span-5 space-y-2">
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('concept')} *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={line.concept}
+                                            onChange={(e) => handleLineChange(index, 'concept', e.target.value)}
+                                            disabled={isLoading}
+                                            className={`w-full border ${conceptError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                            placeholder={t('concept_placeholder')}
+                                        />
+                                        {conceptError && <p className="text-xs text-red-600 font-medium">{conceptError}</p>}
+                                        <input
+                                            type="text"
+                                            value={line.description}
+                                            onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                                            disabled={isLoading}
+                                            className={`w-full border border-gray-200 rounded-md py-1.5 px-3 text-xs text-gray-500 ${isLoading ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
+                                            placeholder={t('additional_notes')}
+                                        />
+                                    </div>
+                                    <div className="col-span-4 md:col-span-2">
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('qty')}</label>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            required
+                                            value={line.quantity}
+                                            onChange={(e) => handleLineChange(index, 'quantity', parseInt(e.target.value))}
+                                            disabled={isLoading}
+                                            className={`w-full border ${quantityError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                        />
+                                        {quantityError && <p className="text-xs text-red-600 font-medium mt-1">{quantityError}</p>}
+                                    </div>
+                                    <div className="col-span-4 md:col-span-2">
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('price')}</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            required
+                                            value={line.price}
+                                            onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))}
+                                            disabled={isLoading}
+                                            className={`w-full border ${priceError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                        />
+                                        {priceError && <p className="text-xs text-red-600 font-medium mt-1">{priceError}</p>}
+                                    </div>
+                                    <div className="col-span-3 md:col-span-2">
+                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('total')}</label>
+                                        <div className="py-2 text-sm font-bold text-gray-900">
+                                            {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(line.amount)}
+                                        </div>
+                                        {amountError && <p className="text-xs text-red-600 font-medium mt-1">{amountError}</p>}
+                                    </div>
+                                    <div className="col-span-1 md:col-span-1 flex justify-end md:pt-7">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveLine(index)}
+                                            disabled={isLoading}
+                                            className={`p-2 text-gray-400 hover:text-red-600 transition-colors ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
+                                        >
+                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="col-span-1 md:col-span-1 flex justify-end md:pt-7">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveLine(index)}
-                                        disabled={isLoading}
-                                        className={`p-2 text-gray-400 hover:text-red-600 transition-colors ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
-                                    >
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                         <div className="flex justify-end">
                             <button
                                 type="button"

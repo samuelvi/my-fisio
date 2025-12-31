@@ -68,6 +68,7 @@ class CustomerResource
     public ?string $phone = null;
 
     #[Groups(['customer:read', 'customer:write'])]
+    #[Assert\NotBlank(message: 'error_customer_billing_address_required')]
     public ?string $billingAddress = null;
 
     #[Groups(['customer:read'])]

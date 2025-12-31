@@ -26,6 +26,7 @@ final class InvoiceInput
     public ?string $phone = null;
 
     #[Groups(['invoice:write'])]
+    #[Assert\NotBlank(message: 'invoice_address_required')]
     public ?string $address = null;
 
     #[Groups(['invoice:write'])]

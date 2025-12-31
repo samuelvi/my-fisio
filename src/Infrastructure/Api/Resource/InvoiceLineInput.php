@@ -23,7 +23,8 @@ final class InvoiceLineInput
     public int $quantity = 1;
 
     #[Groups(['invoice:write'])]
-    #[Assert\Positive(message: 'invoice_line_price_non_negative')]
+    #[Assert\NotNull(message: 'invoice_line_price_required')]
+    #[Assert\PositiveOrZero(message: 'invoice_line_price_non_negative')]
     public float $price = 0.0;
 
     public function __construct()
