@@ -10,7 +10,11 @@ export default function InvoiceList() {
     const [invoices, setInvoices] = useState<Invoice[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
-    
+    const invoicePrefix = import.meta.env.VITE_INVOICE_PREFIX || 'F';
+
+    // Helper function for backwards compatibility
+    const getDisplayNumber = (invoice: Invoice) => invoice.formattedNumber || `${invoicePrefix}${invoice.number}`;
+
     const [nameInput, setNameInput] = useState<string>('');
     const [numberInput, setNumberInput] = useState<string>('');
     const [yearInput, setYearInput] = useState<string>(new Date().getFullYear().toString());
@@ -56,16 +60,22 @@ export default function InvoiceList() {
 
             if (filters.name) params['fullName'] = filters.name;
             if (filters.taxId) params['taxId'] = filters.taxId;
-            
+
             let numberQuery = '';
             if (filters.number) {
-                const startsWithYear = /^\d{4}/.test(filters.number);
+                // Strip the invoice prefix if present (e.g., "F2025000001" -> "2025000001")
+                let cleanNumber = filters.number;
+                if (cleanNumber.toUpperCase().startsWith(invoicePrefix.toUpperCase())) {
+                    cleanNumber = cleanNumber.substring(invoicePrefix.length);
+                }
+
+                const startsWithYear = /^\d{4}/.test(cleanNumber);
                 if (startsWithYear) {
-                    numberQuery = filters.number;
+                    numberQuery = cleanNumber;
                 } else if (filters.year && filters.year !== 'all') {
-                    numberQuery = filters.year + filters.number;
+                    numberQuery = filters.year + cleanNumber;
                 } else {
-                    numberQuery = filters.number;
+                    numberQuery = cleanNumber;
                 }
             } else if (filters.year && filters.year !== 'all') {
                 numberQuery = filters.year;
@@ -302,7 +312,7 @@ export default function InvoiceList() {
                                 invoices.map((invoice) => (
                                     <tr key={invoice.id} className="hover:bg-gray-50 transition-colors group">
                                         <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-sm font-bold text-primary">
-                                            {invoice.number}
+                                            {getDisplayNumber(invoice)}
                                         </td>
                                         <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
                                             {new Date(invoice.date).toLocaleDateString()}
@@ -346,7 +356,7 @@ export default function InvoiceList() {
                     {!loading && invoices.map((invoice) => (
                         <div key={invoice.id} className="p-4 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                                <div className="text-sm font-bold text-primary">{invoice.number}</div>
+                                <div className="text-sm font-bold text-primary">{getDisplayNumber(invoice)}</div>
                                 <div className="text-xs text-gray-500">{new Date(invoice.date).toLocaleDateString()}</div>
                             </div>
                             <div className="text-sm font-semibold text-gray-900 truncate">{invoice.fullName}</div>

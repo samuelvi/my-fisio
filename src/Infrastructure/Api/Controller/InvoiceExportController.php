@@ -55,6 +55,8 @@ class InvoiceExportController extends AbstractController
         string $companyWeb,
         #[Autowire('%company_logo_path%')]
         string $companyLogoPath,
+        #[Autowire('%invoice_prefix%')]
+        string $invoicePrefix,
     ): Response {
         // CQRS: Query for the View DTO
         $invoice = $this->handle(GetInvoiceExportQuery::create(id: $id));
@@ -86,6 +88,7 @@ class InvoiceExportController extends AbstractController
             'invoice' => $invoice,
             'logo_src' => $logoSrc,
             'format' => $format,
+            'invoice_prefix' => $invoicePrefix,
             'company' => [
                 'name' => $companyName,
                 'tax_id' => $companyTaxId,
@@ -111,7 +114,8 @@ class InvoiceExportController extends AbstractController
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
 
-        $filename = sprintf('factura_%s.pdf', $invoice->number);
+        $formattedNumber = $invoicePrefix . $invoice->number;
+        $filename = sprintf('factura_%s.pdf', $formattedNumber);
         $isDownload = $request->query->getBoolean('download', false);
 
         return new Response($dompdf->output(), 200, [

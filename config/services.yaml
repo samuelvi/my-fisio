@@ -28,6 +28,9 @@ parameters:
     calendar_slots_saturday: '%env(CALENDAR_SLOTS_SATURDAY)%'
     calendar_slots_sunday: '%env(CALENDAR_SLOTS_SUNDAY)%'
 
+    # Invoice settings
+    invoice_prefix: '%env(INVOICE_PREFIX)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -52,6 +55,10 @@ services:
     App\Infrastructure\Api\State\PatientProvider:
         arguments:
             $itemsPerPage: '%items_per_page%'
+
+    App\Application\Service\InvoiceFormatter:
+        arguments:
+            $invoicePrefix: '%invoice_prefix%'
 
     # WeekGridBuilder configuration
     App\Domain\Service\WeekGridBuilder:
@@ -84,6 +91,12 @@ services:
     App\Infrastructure\Serializer\DateTimeNormalizer:
         tags:
             - { name: 'serializer.normalizer', priority: 100 }
+
+    # Custom Invoice normalizer to add formattedNumber field
+    # DISABLED: Causing memory issues, replaced with StateProvider pattern
+    #App\Infrastructure\Serializer\InvoiceNormalizer:
+    #    tags:
+    #        - { name: 'serializer.normalizer', priority: 128 }
 
     # Filters
     app.filter.customer_search:

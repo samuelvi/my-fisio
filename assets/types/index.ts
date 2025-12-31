@@ -73,6 +73,7 @@ export interface InvoiceLine {
 export interface Invoice {
     id: number;
     number: string;
+    formattedNumber?: string; // Number with prefix (e.g., "F2025000001")
     date: string;
     fullName: string;
     taxId: string;

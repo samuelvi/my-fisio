@@ -34,7 +34,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new Post(name: 'api_invoices_post', processor: InvoiceCreateProcessor::class, input: InvoiceInput::class),
         new Put(name: 'api_invoices_put', processor: InvoiceUpdateProcessor::class, input: InvoiceInput::class),
     ],
-    normalizationContext: ['groups' => ['invoice:read']],
+    normalizationContext: ['groups' => ['invoice:read'], 'enable_max_depth' => true],
     denormalizationContext: ['groups' => ['invoice:write']],
     order: ['date' => 'DESC', 'number' => 'DESC'],
 )]
@@ -56,6 +56,12 @@ class Invoice
     #[ORM\Column(type: Types::STRING, length: 20, nullable: false)]
     #[Groups(['invoice:read', 'invoice:write'])]
     public string $number;
+
+    /**
+     * Formatted number with prefix (not stored in database)
+     */
+    #[Groups(['invoice:read'])]
+    public ?string $formattedNumber = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: false)]
     #[Groups(['invoice:read', 'invoice:write'])]

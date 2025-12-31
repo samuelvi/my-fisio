@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Factura {{ invoice.number }}</title>
+    <title>Factura {{ invoice_prefix }}{{ invoice.number }}</title>
     <style>
         /* PDF / Global Styles */
         @page {
@@ -208,7 +208,7 @@
                         <table class="meta-table">
                             <tr>
                                 <td class="meta-label">{{ 'number'|trans }}:</td>
-                                <td class="meta-value">{{ invoice.number }}</td>
+                                <td class="meta-value">{{ invoice_prefix }}{{ invoice.number }}</td>
                             </tr>
                             <tr>
                                 <td class="meta-label">{{ 'date'|trans }}:</td>

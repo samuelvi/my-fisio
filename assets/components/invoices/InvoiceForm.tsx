@@ -61,6 +61,7 @@ export default function InvoiceForm() {
     const [searchParams] = useSearchParams();
     const patientId = searchParams.get('patientId');
     const customerId = searchParams.get('customerId');
+    const invoicePrefix = import.meta.env.VITE_INVOICE_PREFIX || 'F';
 
     // Debug search params on every render to ensure they are captured
     useEffect(() => {
@@ -132,7 +133,9 @@ export default function InvoiceForm() {
     };
 
     const setInvoiceNumberWithClearError = (value: string) => {
-        setInvoiceNumber(value);
+        // Only allow digits
+        const digitsOnly = value.replace(/\D/g, '');
+        setInvoiceNumber(digitsOnly);
         setNumberError('');
         clearFieldError('number');
     };
@@ -399,16 +402,28 @@ export default function InvoiceForm() {
                                 error={validationErrors['date']}
                             />
                             {isEditing && (
-                                <InvoiceInput
-                                    label={t('number')}
-                                    value={invoiceNumber}
-                                    setter={setInvoiceNumberWithClearError}
-                                    required
-                                    placeholder="YYYY000001"
-                                    type="text"
-                                    disabled={isLoading}
-                                    error={numberError || validationErrors['number']}
-                                />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('number')} *</label>
+                                    <div className="flex items-center gap-2">
+                                        <span className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-l-md text-sm font-bold text-gray-700">
+                                            {invoicePrefix}
+                                        </span>
+                                        <input
+                                            type="text"
+                                            required
+                                            value={invoiceNumber}
+                                            onChange={(e) => setInvoiceNumberWithClearError(e.target.value)}
+                                            placeholder="2025000001"
+                                            disabled={isLoading}
+                                            className={`flex-1 border ${numberError || validationErrors['number'] ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-r-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                            pattern="[0-9]*"
+                                            inputMode="numeric"
+                                        />
+                                    </div>
+                                    {(numberError || validationErrors['number']) && (
+                                        <p className="mt-1 text-sm text-red-600">{numberError || validationErrors['number']}</p>
+                                    )}
+                                </div>
                             )}
                             <InvoiceInput
                                 label={t('customer_name')}
@@ -445,12 +460,12 @@ export default function InvoiceForm() {
                             />
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')} *</label>
-                                <input
-                                    type="text"
+                                <textarea
                                     value={customerAddress}
                                     onChange={(e) => setCustomerAddressWithClearError(e.target.value)}
                                     placeholder={t('billing_address_placeholder')}
                                     disabled={isLoading}
+                                    rows={2}
                                     className={`block w-full border ${validationErrors['address'] ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
                                 />
                                 {validationErrors['address'] && <p className="mt-1 text-sm text-red-600">{validationErrors['address']}</p>}

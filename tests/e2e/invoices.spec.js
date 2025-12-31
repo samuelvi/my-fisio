@@ -25,7 +25,9 @@ async function disableClientValidation(page) {
 }
 
 function invoiceInput(page, label) {
-  return page.locator('form').locator(`label:has-text("${label}")`).locator('..').locator('input');
+  // Try to find input first, if not found try textarea
+  const parent = page.locator('form').locator(`label:has-text("${label}")`).locator('..');
+  return parent.locator('input, textarea').first();
 }
 
 async function setInvoiceInputValue(page, label, value) {
@@ -159,6 +161,7 @@ test('invoice management flow', async ({ page, request }) => {
     date: new Date().toISOString(),
     fullName: '',
     taxId: '',
+    address: '123 Test St',
     lines: [{ concept: 'Test', quantity: 1, price: 10 }],
   });
   expect(missingName.status).toBe(400);
@@ -168,6 +171,7 @@ test('invoice management flow', async ({ page, request }) => {
     date: new Date().toISOString(),
     fullName: 'Client Minimal',
     taxId: '',
+    address: '123 Test St',
     lines: [],
   });
   expect(missingLines.status).toBe(422);
@@ -246,7 +250,7 @@ test('invoice management flow', async ({ page, request }) => {
   // 5) HTML and PDF exports (accessible + correct data)
   const htmlExport = await getInvoiceExportHtml(page, invoice1Data.id);
   expect(htmlExport.status).toBe(200);
-  expect(htmlExport.data).toContain(invoiceNum1);
+  expect(htmlExport.data).toContain(`F${invoiceNum1}`); // PDF has prefix
   expect(htmlExport.data).toContain('Client One');
   expect(htmlExport.data).toContain('Session 1');
   expect(htmlExport.data).toContain('Material');
@@ -263,6 +267,7 @@ test('invoice management flow', async ({ page, request }) => {
 
   await setInvoiceInputValue(page, 'Customer Name', 'Client Two');
   await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '87654321X');
+  await setInvoiceInputValue(page, 'Address', 'Test Address 2');
 
   const firstLineRow = page.locator('label:has-text("Concept")').first().locator('..').locator('..');
   await firstLineRow.getByRole('button', { name: '' }).click();
@@ -328,11 +333,8 @@ test('invoice management flow', async ({ page, request }) => {
   const qtyNegativeData = await qtyNegativeResponse.json();
   expect(findViolation(qtyNegativeData.violations || [], 'lines[0].quantity')?.message).toBe('Invoice line quantity must be greater than 0.');
 
-  const priceZeroResponse = await submitWithValues(1, 0);
-  expect(priceZeroResponse.status()).toBe(422);
-  const priceZeroData = await priceZeroResponse.json();
-  expect(findViolation(priceZeroData.violations || [], 'lines[0].price')?.message).toBe('Invoice line price must be greater than 0.');
-
+  // Price = 0 is now allowed (for free services), so we skip that test
+  // Test negative price (should still fail)
   const priceNegativeResponse = await submitWithValues(1, -10);
   expect(priceNegativeResponse.status()).toBe(422);
   const priceNegativeData = await priceNegativeResponse.json();
