@@ -54,7 +54,8 @@ final class LegacySqlParser
                         $rows = $this->parseValues($valuesPart);
 
                         foreach ($rows as $row) {
-                            yield [
+                            yield
+                            [
                                 'table' => $tableName,
                                 'values' => $row,
                             ];
