@@ -42,16 +42,6 @@ services:
     App\:
         resource: '../src/'
 
-    # Register Test Fixtures as services
-    App\Tests\DataFixtures\:
-        resource: '../tests/DataFixtures/'
-        tags: ['doctrine.fixture.orm']
-
-    # Register Test Controllers as services
-    App\Tests\Controller\:
-        resource: '../tests/Controller/'
-        tags: ['controller.service_arguments']
-
     App\Infrastructure\Api\State\PatientProvider:
         arguments:
             $itemsPerPage: '%items_per_page%'
@@ -112,3 +102,27 @@ services:
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+when@dev:
+    services:
+        # Register Test Fixtures as services
+        App\Tests\DataFixtures\:
+            resource: '../tests/DataFixtures/'
+            tags: ['doctrine.fixture.orm']
+
+        # Register Test Controllers as services
+        App\Tests\Controller\:
+            resource: '../tests/Controller/'
+            tags: ['controller.service_arguments']
+
+when@test:
+    services:
+        # Register Test Fixtures as services
+        App\Tests\DataFixtures\:
+            resource: '../tests/DataFixtures/'
+            tags: ['doctrine.fixture.orm']
+
+        # Register Test Controllers as services
+        App\Tests\Controller\:
+            resource: '../tests/Controller/'
+            tags: ['controller.service_arguments']

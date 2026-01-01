@@ -1,0 +1,21 @@
+# Production Build Configuration
+# This docker-compose file is used to prepare the application for production deployment
+# Usage: docker-compose -f docker/prod/docker-compose.build.yaml run --rm build
+
+services:
+  # Production Build Container
+  build:
+    build:
+      context: ./build
+      dockerfile: Dockerfile
+    container_name: prod_build_physiotherapy
+    working_dir: /var/www/html
+    volumes:
+      # Mount source code (read-write to allow build artifacts)
+      - ../../:/var/www/html
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=0
+      - COMPOSER_ALLOW_SUPERUSER=1
+    # This container is meant to run commands, not stay running
+    command: /bin/sh -c "echo 'Build container ready. Run build commands manually or use make prod-build'"

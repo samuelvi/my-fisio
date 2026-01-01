@@ -7,6 +7,7 @@
 DOCKER_COMPOSE_DEV = docker-compose -f docker/dev/docker-compose.yaml -f docker/dev/docker-compose.override.yaml
 DOCKER_COMPOSE_TEST = docker-compose -f docker/test/docker-compose.yaml
 DOCKER_COMPOSE_PROD = docker-compose -f docker/prod/docker-compose.yaml
+DOCKER_COMPOSE_BUILD = docker-compose -f docker/prod/docker-compose.build.yaml
 
 # Colors for terminal output
 GREEN  := [0;32m
@@ -161,26 +162,67 @@ prod-cache-warmup: ## Warm up cache (Production)
 
 ##@ Production Build & Deploy
 
-prod-build: ## Prepare assets and build for production deployment
-	@echo "$(GREEN)Building for Production...$(NC)"
+prod-build: ## Build production-ready application using dedicated build container
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo "$(GREEN)Production Build Process$(NC)"
+	@echo "$(GREEN)=========================================$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Installing Composer dependencies...$(NC)"
-	composer install --no-dev --optimize-autoloader --no-interaction
-	@echo "$(YELLOW)Generating FOS JS routes...$(NC)"
-	php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
-	@echo "$(YELLOW)Installing NPM dependencies...$(NC)"
-	npm ci
-	@echo "$(YELLOW)Building React assets with Vite...$(NC)"
-	npm run build
-	@echo "$(YELLOW)Clearing cache...$(NC)"
-	php bin/console cache:clear --env=prod
-	@echo "$(YELLOW)Warming up cache...$(NC)"
-	php bin/console cache:warmup --env=prod
+	@echo "$(YELLOW)Building production container image...$(NC)"
+	$(DOCKER_COMPOSE_BUILD) build
 	@echo ""
-	@echo "$(GREEN)✓ Build completed!$(NC)"
+	@echo "$(YELLOW)Running production build script...$(NC)"
+	$(DOCKER_COMPOSE_BUILD) run --rm build /var/www/html/docker/prod/build/build.sh
 	@echo ""
-	@echo "$(GREEN)Deploy with rsync:$(NC)"
-	@echo "  rsync -avz --exclude='.git' --exclude='node_modules' --exclude='var/cache' --exclude='var/log' --exclude='docker' --exclude='.env.local' ./ user@server:/path/to/app/"
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo "$(GREEN)Production build completed!$(NC)"
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Deploy with:$(NC)"
+	@echo "  make prod-deploy server=user@host:/path/to/app"
+	@echo ""
+	@echo "$(YELLOW)Or manually with rsync:$(NC)"
+	@echo "  rsync -avz --exclude='.git' --exclude='node_modules' --exclude='var/cache' --exclude='var/log' --exclude='docker' --exclude='tests' --exclude='.env.dev' --exclude='.env.test' ./ user@server:/path/to/app/"
+	@echo ""
+	@echo "$(YELLOW)See docs/DEPLOYMENT.md for detailed instructions$(NC)"
+
+prod-build-clean: ## Clean production build artifacts and restore dev environment
+	@echo "$(YELLOW)Cleaning production build artifacts...$(NC)"
+	@if [ -f .env.local.php ]; then rm .env.local.php && echo "$(GREEN)✓ Removed .env.local.php$(NC)"; fi
+	@if [ -d var/cache/prod ]; then rm -rf var/cache/prod && echo "$(GREEN)✓ Removed production cache$(NC)"; fi
+	@echo "$(YELLOW)Restoring development dependencies...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec php composer install --optimize-autoloader --no-interaction
+	@echo "$(GREEN)✓ Development environment restored$(NC)"
+
+prod-deploy: ## Deploy to production server (use: make prod-deploy server=user@host:/path)
+	@if [ -z "$(server)" ]; then \
+		echo "$(RED)Error: server parameter required$(NC)"; \
+		echo "$(YELLOW)Usage: make prod-deploy server=user@host:/path/to/app$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Deploying to $(server)...$(NC)"
+	@echo "$(YELLOW)⚠ This will overwrite files on the server$(NC)"
+	@read -p "Continue? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		rsync -avz --progress \
+			--exclude='.git' \
+			--exclude='node_modules' \
+			--exclude='var/cache' \
+			--exclude='var/log' \
+			--exclude='docker' \
+			--exclude='tests' \
+			--exclude='.env.dev' \
+			--exclude='.env.test' \
+			--exclude='.env.local' \
+			./ $(server)/; \
+		echo "$(GREEN)✓ Deployment completed!$(NC)"; \
+		echo "$(YELLOW)Don't forget to:$(NC)"; \
+		echo "  1. Set APP_ENV=prod on the server"; \
+		echo "  2. Run migrations: php bin/console doctrine:migrations:migrate --env=prod"; \
+		echo "  3. Verify application is working"; \
+	else \
+		echo "$(YELLOW)Deployment cancelled$(NC)"; \
+	fi
 
 ##@ Container Access (Dev)
 
