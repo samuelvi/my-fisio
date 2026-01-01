@@ -4,10 +4,13 @@ framework:
     test: true
 
     # Note that the session will be started ONLY if you read or write from it.
+    # Session handler is dynamically selected based on SESSION_HANDLER env var
+    # See config/services.yaml for handler configuration
     session:
-        handler_id: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
-        cookie_lifetime: 1296000
-        gc_maxlifetime: 1296000
+        handler_id: session.handler.%env(SESSION_HANDLER)%
+        cookie_lifetime: 1296000  # 15 days
+        gc_maxlifetime: 1296000   # 15 days
+        save_path: '%kernel.project_dir%/var/sessions'
 
     #esi: true
     #fragments: true

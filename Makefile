@@ -159,6 +159,29 @@ prod-cache-warmup: ## Warm up cache (Production)
 	@echo "$(GREEN)Warming up cache (Production)...$(NC)"
 	$(DOCKER_COMPOSE_PROD) exec php php bin/console cache:warmup --env=prod
 
+##@ Production Build & Deploy
+
+prod-build: ## Prepare assets and build for production deployment
+	@echo "$(GREEN)Building for Production...$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Installing Composer dependencies...$(NC)"
+	composer install --no-dev --optimize-autoloader --no-interaction
+	@echo "$(YELLOW)Generating FOS JS routes...$(NC)"
+	php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
+	@echo "$(YELLOW)Installing NPM dependencies...$(NC)"
+	npm ci
+	@echo "$(YELLOW)Building React assets with Vite...$(NC)"
+	npm run build
+	@echo "$(YELLOW)Clearing cache...$(NC)"
+	php bin/console cache:clear --env=prod
+	@echo "$(YELLOW)Warming up cache...$(NC)"
+	php bin/console cache:warmup --env=prod
+	@echo ""
+	@echo "$(GREEN)✓ Build completed!$(NC)"
+	@echo ""
+	@echo "$(GREEN)Deploy with rsync:$(NC)"
+	@echo "  rsync -avz --exclude='.git' --exclude='node_modules' --exclude='var/cache' --exclude='var/log' --exclude='docker' --exclude='.env.local' ./ user@server:/path/to/app/"
+
 ##@ Container Access (Dev)
 
 dev-shell-php: ## Access PHP container shell
