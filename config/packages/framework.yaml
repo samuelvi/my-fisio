@@ -3,14 +3,9 @@ framework:
     secret: '%env(APP_SECRET)%'
     test: true
 
-    # Note that the session will be started ONLY if you read or write from it.
-    # Session handler is dynamically selected based on SESSION_HANDLER env var
-    # See config/services.yaml for handler configuration
+    # Sessions disabled - Application uses JWT (stateless authentication)
     session:
-        handler_id: session.handler.%env(SESSION_HANDLER)%
-        cookie_lifetime: 1296000  # 15 days
-        gc_maxlifetime: 1296000   # 15 days
-        save_path: '%kernel.project_dir%/var/sessions'
+        enabled: false
 
     #esi: true
     #fragments: true
@@ -18,5 +13,3 @@ framework:
 when@test:
     framework:
         test: true
-        session:
-            storage_factory_id: session.storage.factory.mock_file

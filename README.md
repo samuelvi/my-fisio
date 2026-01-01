@@ -8,7 +8,7 @@ Comprehensive management system for physiotherapy clinics with modern architectu
 - **Framework**: Symfony 7.4
 - **PHP**: 8.4 (PHP-FPM)
 - **Database**: MariaDB 11
-- **Cache/Sessions**: Redis 7
+- **Cache**: Redis 7
 - **Email Testing**: MailPit
 - **Web Server**: Nginx
 - **API**: RESTful (Symfony Controllers / API Platform)
@@ -82,7 +82,7 @@ Once the containers are started, you will have access to:
 | MailPit UI | http://localhost:8025 | Web interface for development emails |
 | Adminer | http://localhost:8080 | Visual database management |
 | MariaDB | localhost:3306 | Main database |
-| Redis | localhost:6379 | Cache and session storage |
+| Redis | localhost:6379 | Cache storage (future use) |
 
 ### Adminer Login Credentials
 
@@ -488,8 +488,8 @@ CALENDAR_SLOTS_FRIDAY="09:00-10:00,10:00-11:00,11:00-12:00,12:00-13:00,14:00-15:
 Custom PHP configuration is located in `docker/dev/php/php.ini`:
 - Memory limit: 512M
 - Upload max filesize: 100M
-- Session handler: Redis
-- Timezone: Europe/Madrid
+- Authentication: JWT (stateless - no sessions)
+- Timezone: UTC
 
 ## Cleanup and Maintenance
 

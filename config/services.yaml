@@ -82,26 +82,6 @@ services:
         arguments:
             $projectDir: '%kernel.project_dir%'
 
-    # Session Handlers Configuration
-    # Two session handlers are available:
-    # 1. Redis: High performance, requires Redis server
-    # 2. Filesystem: Default, stores in var/sessions/, no external dependencies
-    #
-    # Configure via SESSION_HANDLER environment variable in .env
-
-    # Redis session handler - stores sessions in Redis for better performance
-    session.handler.redis:
-        class: Symfony\Component\HttpFoundation\Session\Storage\Handler\RedisSessionHandler
-        arguments:
-            - '@snc_redis.default'
-            - { prefix: 'session_', ttl: 1296000 }
-
-    # Filesystem session handler - stores sessions in var/sessions/ directory
-    session.handler.filesystem:
-        class: Symfony\Component\HttpFoundation\Session\Storage\Handler\NativeFileSessionHandler
-        arguments:
-            - '%kernel.project_dir%/var/sessions'
-
     # Custom DateTime normalizer to avoid timezone conversion issues
     App\Infrastructure\Serializer\DateTimeNormalizer:
         tags:

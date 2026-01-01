@@ -151,10 +151,11 @@ final class MigrateLegacyDataCommand extends Command
     private array $validPatientIds = [];
 
     public function __construct(
-        private readonly EntityManagerInterface $entityManager,
-        private readonly string $projectDir,
+        private readonly EntityManagerInterface      $entityManager,
+        private readonly string                      $projectDir,
         private readonly UserPasswordHasherInterface $passwordHasher,
-    ) {
+    )
+    {
         parent::__construct();
         $this->parser = LegacySqlParser::create();
     }
@@ -162,7 +163,7 @@ final class MigrateLegacyDataCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dumpFile = $this->projectDir.'/private/tinafisio-2025-12-22.sql';
+        $dumpFile = $this->projectDir . '/private/tinafisio-2025-12-22.sql';
 
         if (!file_exists($dumpFile)) {
             $io->error(sprintf('Dump file not found at "%s"', $dumpFile));
@@ -219,7 +220,7 @@ final class MigrateLegacyDataCommand extends Command
 
                     // Track valid patient IDs for referential integrity
                     if ('paciente' === $tableName) {
-                        $this->validPatientIds[] = (int) $values[0];
+                        $this->validPatientIds[] = (int)$values[0];
                     }
 
                     ++$count;
@@ -241,7 +242,7 @@ final class MigrateLegacyDataCommand extends Command
         $io->success('Migration completed successfully.');
         $io->table(
             ['Table', 'Count'],
-            array_map(fn ($k, $v) => [$k, $v], array_keys($stats), array_values($stats)),
+            array_map(fn($k, $v) => [$k, $v], array_keys($stats), array_values($stats)),
         );
 
         return Command::SUCCESS;
@@ -269,7 +270,7 @@ final class MigrateLegacyDataCommand extends Command
         }
 
         if ('records' === $targetTable) {
-            $patientId = (int) ($row[1] ?? 0);
+            $patientId = (int)($row[1] ?? 0);
             if (!in_array($patientId, $this->validPatientIds, true)) {
                 throw new Exception(sprintf('Inconsistency: Record refers to non-existing patient ID %d', $patientId));
             }
@@ -277,13 +278,13 @@ final class MigrateLegacyDataCommand extends Command
 
         foreach ($columns as $index => $colConfig) {
             $rawValue = $row[$index] ?? null;
-            if ('users' === $targetTable && 'password' === $colConfig['target']) {
-                $rawValue = $this->getDefaultHashedPassword($row[1] ?? null);
-            }
+//            if ('users' === $targetTable && 'password' === $colConfig['target']) {
+//                $rawValue = $this->getDefaultHashedPassword($row[1] ?? null);
+//            }
 
             $targetColumns[] = $colConfig['target'];
             $paramName = $colConfig['target'];
-            $queryValues[] = ':'.$paramName;
+            $queryValues[] = ':' . $paramName;
 
             $value = $this->transformValue($rawValue, $colConfig['type']);
 
@@ -297,7 +298,7 @@ final class MigrateLegacyDataCommand extends Command
 
             if ('counters' === $targetTable && 'name' === $colConfig['target']) {
                 if (is_string($value) && str_starts_with($value, 'invoice_')) {
-                    $value = 'invoices_'.substr($value, 8);
+                    $value = 'invoices_' . substr($value, 8);
                 }
             }
 
@@ -348,14 +349,14 @@ final class MigrateLegacyDataCommand extends Command
         }
 
         return match ($type) {
-            self::TYPE_INT => (int) $value,
-            self::TYPE_FLOAT => (float) $value,
+            self::TYPE_INT => (int)$value,
+            self::TYPE_FLOAT => (float)$value,
             self::TYPE_BOOL => ('' === $value || '0' === $value || 0 === $value || false === $value) ? 0 : 1,
-            self::TYPE_DATE => $this->formatDate((string) $value),
-            self::TYPE_DATETIME => $this->formatDate((string) $value),
-            self::TYPE_JSON => $this->isValidJson((string) $value) ? $value : json_encode([]),
-            self::TYPE_SERIALIZED => $this->convertSerializedToJson((string) $value),
-            default => (string) $value,
+            self::TYPE_DATE,
+            self::TYPE_DATETIME => $this->formatDate((string)$value),
+            self::TYPE_JSON => $this->isValidJson((string)$value) ? $value : json_encode([]),
+            self::TYPE_SERIALIZED => $this->convertSerializedToJson((string)$value),
+            default => (string)$value,
         };
     }
 
@@ -371,11 +372,11 @@ final class MigrateLegacyDataCommand extends Command
     private function convertSerializedToJson(?string $value): string
     {
         if (!$value || 'NULL' === $value) {
-            return (string) json_encode([]);
+            return (string)json_encode([]);
         }
         $data = @unserialize($value);
 
-        return (string) json_encode(false !== $data ? $data : []);
+        return (string)json_encode(false !== $data ? $data : []);
     }
 
     private function isValidJson(string $string): bool
@@ -391,7 +392,7 @@ final class MigrateLegacyDataCommand extends Command
         try {
             $maxId = $connection->fetchOne("SELECT MAX(id) FROM $table");
             if ($maxId !== null && $maxId !== false) {
-                $nextId = (int) $maxId + 1;
+                $nextId = (int)$maxId + 1;
                 $connection->executeStatement("ALTER TABLE $table AUTO_INCREMENT = $nextId");
             }
         } catch (Exception $e) {
