@@ -39,12 +39,6 @@ export default function Calendar() {
     const { t, language } = useLanguage();
     const [isMobile, setIsMobile] = useState<boolean>(false);
     const [modalOpen, setModalOpen] = useState<boolean>(false);
-
-    // Debug: Log component mount
-    useEffect(() => {
-        console.log('[Calendar] Component mounted');
-        return () => console.log('[Calendar] Component unmounted');
-    }, []);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
     const [currentEvent, setCurrentEvent] = useState<any>(null);
     const calendarRef = useRef<FullCalendar>(null);
@@ -171,12 +165,6 @@ export default function Calendar() {
     };
 
     const fetchEvents = useCallback(async (fetchInfo: any, successCallback: any, failureCallback: any) => {
-        console.log('[fetchEvents] Called with:', {
-            start: fetchInfo.startStr,
-            end: fetchInfo.endStr,
-            stack: new Error().stack?.split('\n').slice(1, 4).join('\n')
-        });
-
         try {
             const startStr = fetchInfo.startStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
             const endStr = fetchInfo.endStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');

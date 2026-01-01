@@ -1,19 +1,19 @@
 twig:
     file_name_pattern: '*.twig'
     globals:
-        app_title: '%env(VITE_APP_TITLE)%'
-        color_primary: '%env(VITE_COLOR_PRIMARY)%'
-        color_primary_light: '%env(VITE_COLOR_PRIMARY_LIGHT)%'
-        color_primary_dark: '%env(VITE_COLOR_PRIMARY_DARK)%'
-        color_primary_darker: '%env(VITE_COLOR_PRIMARY_DARKER)%'
-        color_btn_success: '%env(VITE_COLOR_BTN_SUCCESS)%'
-        color_btn_danger: '%env(VITE_COLOR_BTN_DANGER)%'
-        color_btn_secondary: '%env(VITE_COLOR_BTN_SECONDARY)%'
-        color_btn_info: '%env(VITE_COLOR_BTN_INFO)%'
-        color_calendar_appointment: '%env(VITE_COLOR_CALENDAR_APPOINTMENT)%'
-        color_calendar_other: '%env(VITE_COLOR_CALENDAR_OTHER)%'
-        color_calendar_text_other: '%env(VITE_COLOR_CALENDAR_TEXT_OTHER)%'
-        color_calendar_event_default: '%env(VITE_COLOR_CALENDAR_EVENT_DEFAULT)%'
+        app_title: '%env(APP_TITLE)%'
+        color_primary: '%env(COLOR_PRIMARY)%'
+        color_primary_light: '%env(COLOR_PRIMARY_LIGHT)%'
+        color_primary_dark: '%env(COLOR_PRIMARY_DARK)%'
+        color_primary_darker: '%env(COLOR_PRIMARY_DARKER)%'
+        color_btn_success: '%env(COLOR_BTN_SUCCESS)%'
+        color_btn_danger: '%env(COLOR_BTN_DANGER)%'
+        color_btn_secondary: '%env(COLOR_BTN_SECONDARY)%'
+        color_btn_info: '%env(COLOR_BTN_INFO)%'
+        color_calendar_appointment: '%env(COLOR_CALENDAR_APPOINTMENT)%'
+        color_calendar_other: '%env(COLOR_CALENDAR_OTHER)%'
+        color_calendar_text_other: '%env(COLOR_CALENDAR_TEXT_OTHER)%'
+        color_calendar_event_default: '%env(COLOR_CALENDAR_EVENT_DEFAULT)%'
 
 when@test:
     twig:

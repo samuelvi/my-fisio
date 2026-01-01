@@ -596,20 +596,43 @@ Both Symfony and Vite follow this hierarchy (highest priority last):
 - Changes to `VITE_*` variables **require recompilation** (`npm run build`) to take effect
 - Never use `.env.development` or `.env.production` - use `.env.dev` and `.env.prod` instead
 
-**Example:**
+**Variable Referencing Pattern:**
+
+To avoid duplication, define **base values** without the `VITE_` prefix, then reference them in `VITE_*` variables:
 
 ```bash
-# .env (base - default to Sunday)
-VITE_CALENDAR_FIRST_DAY=0
+# .env (base configuration)
+CALENDAR_FIRST_DAY=0                              # Base value (Sunday)
+VITE_CALENDAR_FIRST_DAY="${CALENDAR_FIRST_DAY}"  # References base value
 
-# .env.dev.local (development - override to Monday)
-VITE_CALENDAR_FIRST_DAY=1
+# .env.dev.local (development override)
+CALENDAR_FIRST_DAY=1  # Override to Monday (automatically affects VITE_CALENDAR_FIRST_DAY)
 
-# .env.prod (production - override to Monday)
-VITE_CALENDAR_FIRST_DAY=1
+# .env.prod (production override)
+CALENDAR_FIRST_DAY=1  # Override to Monday (automatically affects VITE_CALENDAR_FIRST_DAY)
 ```
 
-When you run `npm run build`, Vite loads `.env` first, then `.env.prod`, resulting in `VITE_CALENDAR_FIRST_DAY=1` being compiled into the JavaScript bundle.
+**Benefits:**
+- ✅ Single source of truth (no duplication)
+- ✅ Override once, affects both Symfony and Vite
+- ✅ Reduces errors from inconsistent values
+
+**Example with all variables:**
+
+```bash
+# .env
+MAX_APPOINTMENT_DURATION=10
+DEFAULT_APPOINTMENT_DURATION=60
+CALENDAR_FIRST_DAY=0
+APP_TITLE=MyPhysio
+
+VITE_MAX_APPOINTMENT_DURATION="${MAX_APPOINTMENT_DURATION}"
+VITE_DEFAULT_APPOINTMENT_DURATION="${DEFAULT_APPOINTMENT_DURATION}"
+VITE_CALENDAR_FIRST_DAY="${CALENDAR_FIRST_DAY}"
+VITE_APP_TITLE="${APP_TITLE}"
+```
+
+When you run `npm run build --mode prod`, Vite loads `.env`, then `.env.prod`, resolves all variable references, and compiles the final values into the JavaScript bundle.
 
 ### Entity & Database Management
 

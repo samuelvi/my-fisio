@@ -163,7 +163,7 @@ final class MigrateLegacyDataCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dumpFile = $this->projectDir . '/private/tinafisio-1-ene-2026.sql';
+        $dumpFile = $this->projectDir . '/private/2025-01-01-tinafisio.sql';
 
         if (!file_exists($dumpFile)) {
             $io->error(sprintf('Dump file not found at "%s"', $dumpFile));
