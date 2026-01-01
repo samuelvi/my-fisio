@@ -67,13 +67,8 @@ make composer-install
 ### 5. Install Additional Packages
 
 ```bash
-# Install all recommended packages
+# Install all recommended packages (Redis, Event Store, API)
 make install-all-packages
-
-# Or install packages individually
-make install-redis-bundle
-make install-event-store
-make install-api        # API Platform (optional)
 ```
 
 ### 6. Set Up Database
@@ -104,24 +99,19 @@ make rector-install       # Automated refactoring
 
 ## Package Management
 
-### Installing Packages
+### Managing Packages
+
+Use the generic `composer` command to manage your packages:
 
 ```bash
 # Install a production package
-make composer-require pkg="vendor/package-name"
+make composer cmd="require vendor/package-name"
 
 # Install a development package
-make composer-require-dev pkg="vendor/package-name"
+make composer cmd="require --dev vendor/package-name"
 
-# Examples:
-make composer-require pkg="symfony/http-client"
-make composer-require-dev pkg="symfony/debug-bundle"
-```
-
-### Removing Packages
-
-```bash
-make composer-remove pkg="vendor/package-name"
+# Remove a package
+make composer cmd="remove vendor/package-name"
 ```
 
 ### Updating Packages
@@ -132,12 +122,6 @@ make composer-update
 
 # Update composer autoloader
 make composer-dump-autoload
-```
-
-### Validating composer.json
-
-```bash
-make composer-validate
 ```
 
 ## Database Management

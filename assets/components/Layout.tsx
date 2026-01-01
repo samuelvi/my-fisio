@@ -71,7 +71,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                                 </svg>
                             </div>
                             {!isSidebarCollapsed && (
-                                <span className="text-xl font-black text-white tracking-tighter whitespace-nowrap overflow-hidden">TinaFisio</span>
+                                <span className="text-xl font-black text-white whitespace-nowrap">{import.meta.env.VITE_APP_TITLE}</span>
                             )}
                         </div>
 
@@ -145,7 +145,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
                             </svg>
                         </div>
-                        <span className="font-black text-gray-900 tracking-tighter">TinaFisio</span>
+                        <span className="font-black text-gray-900">{import.meta.env.VITE_APP_TITLE}</span>
                     </div>
                     <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

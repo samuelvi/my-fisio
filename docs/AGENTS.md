@@ -558,6 +558,59 @@ Variables should be documented in the following sections:
 - **Database Configuration** → Database-related variables (`DATABASE_*`)
 - Custom sections as needed for specific features
 
+### Vite and Symfony Shared Environment Files
+
+**CRITICAL**: Vite and Symfony share the **same `.env` files** to ensure consistency across frontend and backend configurations.
+
+**Configuration:**
+
+In `package.json`, Vite modes are configured to match Symfony environment names:
+```json
+{
+  "scripts": {
+    "dev": "vite --mode dev",
+    "build": "vite build --mode prod"
+  }
+}
+```
+
+**Environment File Loading Order:**
+
+Both Symfony and Vite follow this hierarchy (highest priority last):
+
+1. `.env` - Base configuration (default values)
+2. `.env.local` - Local overrides (not committed to git)
+3. `.env.dev` - Development environment (Symfony: `APP_ENV=dev`, Vite: `--mode dev`)
+4. `.env.dev.local` - Development local overrides (highest priority for dev)
+5. `.env.prod` - Production environment (Symfony: `APP_ENV=prod`, Vite: `--mode prod`)
+6. `.env.prod.local` - Production local overrides (highest priority for prod)
+7. `.env.test` - Testing environment
+8. `.env.test.local` - Testing local overrides
+
+**Important Rules:**
+
+- **Default values** should always be in `.env` (e.g., `VITE_CALENDAR_FIRST_DAY=0` for Sunday)
+- **Environment-specific values** override defaults in `.env.dev`, `.env.prod`, etc. (e.g., `VITE_CALENDAR_FIRST_DAY=1` for Monday)
+- **Backend variables** (`APP_ENV`, `DATABASE_URL`) are for Symfony only
+- **Frontend variables** (`VITE_*`) are injected into JavaScript at **build time** by Vite
+- Changes to `VITE_*` variables **require recompilation** (`npm run build`) to take effect
+- Never use `.env.development` or `.env.production` - use `.env.dev` and `.env.prod` instead
+
+**Example:**
+
+```bash
+# .env (base - default to Sunday)
+VITE_CALENDAR_FIRST_DAY=0
+
+# .env.dev.local (development - override to Monday)
+VITE_CALENDAR_FIRST_DAY=1
+
+# .env.prod (production - override to Monday)
+VITE_CALENDAR_FIRST_DAY=1
+```
+
+When you run `npm run build`, Vite loads `.env` first, then `.env.prod`, resulting in `VITE_CALENDAR_FIRST_DAY=1` being compiled into the JavaScript bundle.
+
 ### Entity & Database Management
 
 - **Named Constructors**: Whenever you add, modify, or remove a field in a table/entity, you **MUST** review and update:

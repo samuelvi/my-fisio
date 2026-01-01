@@ -170,8 +170,8 @@ make dev-watch-logs
 # Install dependencies
 make composer-install
 
-# Add a package
-make composer-require pkg="symfony/mailer"
+# Add a package (generic command)
+make composer cmd="require symfony/mailer"
 
 # Update dependencies
 make composer-update

@@ -197,18 +197,12 @@ cache-warmup: ## Warmup Symfony cache
 db-create: ## Create database
 	@echo "$(GREEN)Creating database...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php php bin/console doctrine:database:create --if-not-exists
-	@$(MAKE) db-collation
-	@$(MAKE) db-extensions
+	@echo "$(GREEN)MariaDB uses utf8mb4_unicode_ci collation by default$(NC)"
+	@echo "$(GREEN)MariaDB extensions are automatically configured via init scripts$(NC)"
 
 db-drop: ## Drop database
 	@echo "$(YELLOW)Dropping database...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:database:drop --force
-
-db-collation: ## MariaDB uses utf8mb4_unicode_ci by default (Dev)
-	@echo "$(GREEN)MariaDB uses utf8mb4_unicode_ci collation by default$(NC)"
-
-db-extensions: ## MariaDB extensions are configured in init scripts (Dev)
-	@echo "$(GREEN)MariaDB extensions are automatically configured via init scripts$(NC)"
 
 db-migrate: ## Run database migrations
 	@echo "$(GREEN)Running migrations...$(NC)"

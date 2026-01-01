@@ -2,8 +2,8 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "dev": "vite",
-        "build": "vite build"
+        "dev": "vite --mode dev",
+        "build": "vite build --mode prod"
     },
     "dependencies": {
         "@fullcalendar/daygrid": "^6.1.19",
