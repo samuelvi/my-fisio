@@ -292,6 +292,7 @@ docker/
 - `make dev-shell-php`: Access PHP container shell.
 - `make dev-shell-db`: Access PostgreSQL shell.
 - `make dev-shell-redis`: Access Redis CLI.
+- `make build-assets`: Full asset build (Composer + npm + Vite + Routes).
 - `make composer cmd="..."`: Run Composer (e.g., `cmd="require symfony/mailer"`).
 - `make symfony cmd="..."`: Run Symfony Console (e.g., `cmd="make:controller"`).
 - `make cache-clear`: Clear application cache.

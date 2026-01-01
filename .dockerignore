@@ -1,0 +1,15 @@
+.git
+.idea
+.vscode
+node_modules
+vendor
+var
+dist
+# Ignore all docker folder content...
+docker
+# ...but explicitly allow the build script and necessary config if any
+!docker/prod/build/build.sh
+tests
+.env.local
+.env.dev.local
+.env.test.local

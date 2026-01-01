@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -39,6 +39,12 @@ export default function Calendar() {
     const { t, language } = useLanguage();
     const [isMobile, setIsMobile] = useState<boolean>(false);
     const [modalOpen, setModalOpen] = useState<boolean>(false);
+
+    // Debug: Log component mount
+    useEffect(() => {
+        console.log('[Calendar] Component mounted');
+        return () => console.log('[Calendar] Component unmounted');
+    }, []);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
     const [currentEvent, setCurrentEvent] = useState<any>(null);
     const calendarRef = useRef<FullCalendar>(null);
@@ -61,7 +67,6 @@ export default function Calendar() {
     const [showDeleteGapsSuccessModal, setShowDeleteGapsSuccessModal] = useState<boolean>(false);
     const [gapsDeletedCount, setGapsDeletedCount] = useState<number>(0);
     const [showNoTypeConfirmModal, setShowNoTypeConfirmModal] = useState<boolean>(false);
-    const [_currentCalendarView, setCurrentCalendarView] = useState<string>('timeGridWeek');
 
     const MAX_DURATION = parseInt(import.meta.env.VITE_MAX_APPOINTMENT_DURATION || '10');
     const DEFAULT_DURATION_MINUTES = parseInt(import.meta.env.VITE_DEFAULT_APPOINTMENT_DURATION || '60');
@@ -165,13 +170,17 @@ export default function Calendar() {
         return { bg: 'rgb(160, 112, 94)', text: '#ffffff' };
     };
 
-    const fetchEvents = async (fetchInfo: any, successCallback: any, failureCallback: any) => {
-        try {
-            const currentView = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
-            setCurrentCalendarView(currentView);
+    const fetchEvents = useCallback(async (fetchInfo: any, successCallback: any, failureCallback: any) => {
+        console.log('[fetchEvents] Called with:', {
+            start: fetchInfo.startStr,
+            end: fetchInfo.endStr,
+            stack: new Error().stack?.split('\n').slice(1, 4).join('\n')
+        });
 
+        try {
             const startStr = fetchInfo.startStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
             const endStr = fetchInfo.endStr.replace(/[+-]\d{2}:\d{2}|Z$/, '');
+            const currentView = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
 
             currentViewDatesRef.current = { start: startStr, end: endStr };
 
@@ -215,7 +224,7 @@ export default function Calendar() {
             console.error('Error fetching events:', error);
             failureCallback(error);
         }
-    };
+    }, []); // Empty dependencies - function never changes
 
     const handleDateClick = (arg: any) => {
         const calendarApi = arg.view.calendar;
@@ -463,10 +472,6 @@ export default function Calendar() {
                     dateClick={handleDateClick}
                     events={fetchEvents} select={handleDateSelect} eventClick={handleEventClick}
                     eventDrop={handleEventDrop} eventResize={handleEventResize}
-                    datesSet={() => {
-                        const view = calendarRef.current?.getApi()?.view?.type || 'timeGridWeek';
-                        setCurrentCalendarView(view);
-                    }}
                 />
             </div>
 

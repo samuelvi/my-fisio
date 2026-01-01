@@ -199,10 +199,20 @@ make urls
 
 ## Container Access
 
-### Access PHP Container
+### Access PHP container
 
 ```bash
 make dev-shell-php
+```
+
+## Asset Management
+
+### Build All Assets (Dev)
+
+This command installs all dependencies (Composer & npm), generates routes, and builds frontend assets in a single step within the development containers.
+
+```bash
+make build-assets
 ```
 
 ### Access MariaDB Database

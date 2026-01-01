@@ -1,4 +1,4 @@
-.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-require composer-require-dev composer-remove composer-validate composer-dump-autoload symfony cache-clear cache-warmup db-create db-drop db-collation db-migrate db-migration-create db-fixtures db-reset db-validate install-api install-cache install-redis-bundle install-event-store install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-e2e-ui prod-up prod-down prod-restart prod-logs prod-status prod-health prod-db-migrate prod-db-check prod-db-backup prod-db-restore prod-cache-clear prod-cache-warmup
+.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-e2e-ui prod-build prod-deploy
 
 # Default target
 .DEFAULT_GOAL := help
@@ -6,8 +6,6 @@
 # Docker compose file locations
 DOCKER_COMPOSE_DEV = docker-compose -f docker/dev/docker-compose.yaml -f docker/dev/docker-compose.override.yaml
 DOCKER_COMPOSE_TEST = docker-compose -f docker/test/docker-compose.yaml
-DOCKER_COMPOSE_PROD = docker-compose -f docker/prod/docker-compose.yaml
-DOCKER_COMPOSE_BUILD = docker-compose -f docker/prod/docker-compose.build.yaml
 
 # Colors for terminal output
 GREEN  := [0;32m
@@ -36,11 +34,6 @@ dev-down: ## Stop and remove all containers (Dev)
 	$(DOCKER_COMPOSE_DEV) down
 
 dev-restart: dev-down dev-up ## Restart all containers (Dev)
-
-
-dev-stop: ## Stop all containers without removing (Dev)
-	@echo "$(YELLOW)Stopping containers (Dev)...$(NC)"
-	$(DOCKER_COMPOSE_DEV) stop
 
 dev-logs: ## Show logs from all containers (Dev) (use: make dev-logs service=php)
 	@if [ -z "$(service)" ]; then \
@@ -75,123 +68,31 @@ test-shell-php: ## Access PHP container shell (Test)
 test-assets-build: ## Build frontend assets in test environment
 	$(DOCKER_COMPOSE_TEST) run --rm node_test npm run build
 
-##@ Docker Management (Production)
-
-prod-up: ## Start all containers (Production) - SAFE: Starts services
-	@echo "$(GREEN)Starting containers (Production)...$(NC)"
-	@if [ ! -f "docker/prod/.env" ]; then \
-		echo "$(YELLOW)ERROR: docker/prod/.env not found!$(NC)"; \
-		echo "$(YELLOW)Copy docker/prod/.env.example to docker/prod/.env and configure it.$(NC)"; \
-		exit 1; \
-	fi
-	$(DOCKER_COMPOSE_PROD) up -d
-
-prod-down: ## Stop containers (Production) - SAFE: Stops without removing data
-	@echo "$(YELLOW)Stopping containers (Production)...$(NC)"
-	@echo "$(YELLOW)Note: Data volumes are preserved$(NC)"
-	$(DOCKER_COMPOSE_PROD) down
-
-prod-restart: prod-down prod-up ## Restart containers (Production)
-
-prod-logs: ## Show logs (Production) (use: make prod-logs service=php)
-	@if [ -z "$(service)" ]; then \
-		$(DOCKER_COMPOSE_PROD) logs -f; \
-	else \
-		$(DOCKER_COMPOSE_PROD) logs -f $(service); \
-	fi
-
-prod-status: ## Show container status (Production)
-	@echo "$(GREEN)Production container status:$(NC)"
-	$(DOCKER_COMPOSE_PROD) ps
-
-prod-health: ## Check health status (Production)
-	@echo "$(GREEN)Checking health status...$(NC)"
-	@$(DOCKER_COMPOSE_PROD) ps --format json | grep -q "health" && \
-		echo "$(GREEN)Health checks enabled$(NC)" || \
-		echo "$(YELLOW)No health checks configured$(NC)"
-
-##@ Production Database Operations (SAFE - No destructive commands)
-
-prod-db-migrate: ## Apply migrations (Production)
-	@echo "$(GREEN)Running migrations (Production)...$(NC)"
-	@echo "$(YELLOW)⚠ This will modify the production database schema$(NC)"
-	@read -p "Continue? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		$(DOCKER_COMPOSE_PROD) exec php php bin/console doctrine:migrations:migrate --no-interaction; \
-	else \
-		echo "$(YELLOW)Migration cancelled$(NC)"; \
-	fi
-
-prod-db-check: ## Verify MariaDB connection (Production)
-	@echo "$(GREEN)Checking MariaDB connection (Production)...$(NC)"
-	$(DOCKER_COMPOSE_PROD) exec mariadb mariadb -u physiotherapy_user -p$$MARIADB_PASSWORD physiotherapy_db -e "SHOW DATABASES;"
-
-prod-db-backup: ## Create database backup (Production)
-	@echo "$(GREEN)Creating database backup (Production)...$(NC)"
-	@mkdir -p docker/prod/backups
-	@BACKUP_FILE="docker/prod/backups/backup_$$(date +%Y%m%d_%H%M%S).sql"; \
-	$(DOCKER_COMPOSE_PROD) exec -T mariadb mariadb-dump -u physiotherapy_user -p$$MARIADB_PASSWORD physiotherapy_db > $$BACKUP_FILE; \
-	echo "$(GREEN)Backup created: $$BACKUP_FILE$(NC)"
-
-prod-db-restore: ## Restore database from backup (use: make prod-db-restore file=path/to/backup.sql)
-	@if [ -z "$(file)" ]; then \
-		echo "$(YELLOW)Usage: make prod-db-restore file=path/to/backup.sql$(NC)"; \
-		exit 1; \
-	fi
-	@echo "$(YELLOW)⚠ WARNING: This will restore the database from backup$(NC)"
-	@echo "$(YELLOW)⚠ Current data may be overwritten$(NC)"
-	@read -p "Continue? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		cat $(file) | $(DOCKER_COMPOSE_PROD) exec -T mariadb mariadb -u physiotherapy_user -p$$MARIADB_PASSWORD physiotherapy_db; \
-		echo "$(GREEN)Database restored from: $(file)$(NC)"; \
-	else \
-		echo "$(YELLOW)Restore cancelled$(NC)"; \
-	fi
-
-##@ Production Cache Operations
-
-prod-cache-clear: ## Clear application cache (Production)
-	@echo "$(GREEN)Clearing cache (Production)...$(NC)"
-	$(DOCKER_COMPOSE_PROD) exec php php bin/console cache:clear --env=prod --no-warmup
-
-prod-cache-warmup: ## Warm up cache (Production)
-	@echo "$(GREEN)Warming up cache (Production)...$(NC)"
-	$(DOCKER_COMPOSE_PROD) exec php php bin/console cache:warmup --env=prod
-
 ##@ Production Build & Deploy
 
-prod-build: ## Build production-ready application using dedicated build container
+prod-build: ## Build production artifacts in isolated container and export to dist/
 	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)Production Build Process$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Building production container image...$(NC)"
-	$(DOCKER_COMPOSE_BUILD) build
-	@echo ""
-	@echo "$(YELLOW)Running production build script...$(NC)"
-	$(DOCKER_COMPOSE_BUILD) run --rm build /var/www/html/docker/prod/build/build.sh
-	@echo ""
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)Production build completed!$(NC)"
+	@echo "$(GREEN)Production Build (Isolated)$(NC)"
 	@echo "$(GREEN)=========================================$(NC)"
 	@echo ""
-	@echo "$(YELLOW)Deploy with:$(NC)"
-	@echo "  make prod-deploy server=user@host:/path/to/app"
+	@echo "$(YELLOW)Building isolated production image...$(NC)"
+	docker build -f docker/prod/dist/Dockerfile -t physiotherapy-dist .
 	@echo ""
-	@echo "$(YELLOW)Or manually with rsync:$(NC)"
-	@echo "  rsync -avz --exclude='.git' --exclude='node_modules' --exclude='var/cache' --exclude='var/log' --exclude='docker' --exclude='tests' --exclude='.env.dev' --exclude='.env.test' ./ user@server:/path/to/app/"
+	@echo "$(YELLOW)Exporting to dist/ folder...$(NC)"
+	@mkdir -p dist
+	@CONTAINER_ID=$$(docker create physiotherapy-dist); \
+	echo "Container created: $$CONTAINER_ID"; \
+	rm -rf dist/*; \
+	docker cp $$CONTAINER_ID:/var/www/html/. dist/; \
+	echo "Files copied to dist/"; \
+	docker rm $$CONTAINER_ID > /dev/null; \
+	echo "Container removed"
 	@echo ""
-	@echo "$(YELLOW)See docs/DEPLOYMENT.md for detailed instructions$(NC)"
-
-prod-build-clean: ## Clean production build artifacts and restore dev environment
-	@echo "$(YELLOW)Cleaning production build artifacts...$(NC)"
-	@if [ -f .env.local.php ]; then rm .env.local.php && echo "$(GREEN)✓ Removed .env.local.php$(NC)"; fi
-	@if [ -d var/cache/prod ]; then rm -rf var/cache/prod && echo "$(GREEN)✓ Removed production cache$(NC)"; fi
-	@echo "$(YELLOW)Restoring development dependencies...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer install --optimize-autoloader --no-interaction
-	@echo "$(GREEN)✓ Development environment restored$(NC)"
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo "$(GREEN)Build exported to ./dist/$(NC)"
+	@echo "$(GREEN)=========================================$(NC)"
+	@echo ""
+	@echo "$(YELLOW)Ready to deploy!$(NC)"
 
 prod-deploy: ## Deploy to production server (use: make prod-deploy server=user@host:/path)
 	@if [ -z "$(server)" ]; then \
@@ -199,7 +100,12 @@ prod-deploy: ## Deploy to production server (use: make prod-deploy server=user@h
 		echo "$(YELLOW)Usage: make prod-deploy server=user@host:/path/to/app$(NC)"; \
 		exit 1; \
 	fi
-	@echo "$(YELLOW)Deploying to $(server)...$(NC)"
+	@if [ ! -d "dist" ]; then \
+		echo "$(RED)Error: dist/ directory not found.$(NC)"; \
+		echo "$(YELLOW)Please run 'make prod-build' first.$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(YELLOW)Deploying 'dist/' to $(server)...$(NC)"
 	@echo "$(YELLOW)⚠ This will overwrite files on the server$(NC)"
 	@read -p "Continue? [y/N] " -n 1 -r; \
 	echo; \
@@ -214,7 +120,7 @@ prod-deploy: ## Deploy to production server (use: make prod-deploy server=user@h
 			--exclude='.env.dev' \
 			--exclude='.env.test' \
 			--exclude='.env.local' \
-			./ $(server)/; \
+			dist/ $(server)/; \
 		echo "$(GREEN)✓ Deployment completed!$(NC)"; \
 		echo "$(YELLOW)Don't forget to:$(NC)"; \
 		echo "  1. Set APP_ENV=prod on the server"; \
@@ -223,6 +129,7 @@ prod-deploy: ## Deploy to production server (use: make prod-deploy server=user@h
 	else \
 		echo "$(YELLOW)Deployment cancelled$(NC)"; \
 	fi
+
 
 ##@ Container Access (Dev)
 
@@ -261,31 +168,6 @@ composer-install: ## Install composer dependencies
 composer-update: ## Update composer dependencies
 	@echo "$(GREEN)Updating composer dependencies...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php composer update --no-interaction
-
-composer-require: ## Install a package (use: make composer-require pkg="vendor/package")
-	@if [ -z "$(pkg)" ]; then \
-		echo "$(YELLOW)Usage: make composer-require pkg=\"vendor/package\"$(NC)"
-	else \
-		$(DOCKER_COMPOSE_DEV) exec php composer require $(pkg); \
-	fi
-
-composer-require-dev: ## Install a dev package (use: make composer-require-dev pkg="vendor/package")
-	@if [ -z "$(pkg)" ]; then \
-		echo "$(YELLOW)Usage: make composer-require-dev pkg=\"vendor/package\"$(NC)"
-	else \
-		$(DOCKER_COMPOSE_DEV) exec php composer require --dev $(pkg); \
-	fi
-
-composer-remove: ## Remove a package (use: make composer-remove pkg="vendor/package")
-	@if [ -z "$(pkg)" ]; then \
-		echo "$(YELLOW)Usage: make composer-remove pkg=\"vendor/package\"$(NC)"
-	else \
-		$(DOCKER_COMPOSE_DEV) exec php composer remove $(pkg); \
-	fi
-
-composer-validate: ## Validate composer.json
-	@echo "$(GREEN)Validating composer.json...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer validate --strict
 
 composer-dump-autoload: ## Regenerate autoload files
 	@echo "$(GREEN)Dumping autoload...$(NC)"
@@ -354,35 +236,9 @@ db-validate: ## Validate doctrine mapping
 
 ##@ Symfony Package Installation
 
-install-api: ## Install API Platform
-	@echo "$(GREEN)Installing API Platform...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require api
-
-install-security: ## Install Security components (already included in base)
-	@echo "$(GREEN)Security components are already installed$(NC)"
-
-install-cache: ## Install Cache component
-	@echo "$(GREEN)Installing Cache component...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require symfony/cache
-
-install-redis-bundle: ## Install Redis Bundle
-	@echo "$(GREEN)Installing Redis Bundle...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require snc/redis-bundle
-
-install-event-store: ## Install Broadway Event Store
-	@echo "$(GREEN)Installing Broadway Event Store...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require broadway/broadway broadway/event-store-dbal
-
-install-uuid: ## Install UUID/ULID support (already included)
-	@echo "$(GREEN)UUID support is already installed$(NC)"
-
-install-serializer: ## Install Serializer component (already included)
-	@echo "$(GREEN)Serializer component is already installed$(NC)"
-
-install-messenger: ## Install Messenger component (already included)
-	@echo "$(GREEN)Messenger component is already installed$(NC)"
-
-install-all-packages: composer-install install-redis-bundle install-event-store ## Install all recommended packages
+install-all-packages: composer-install ## Install all recommended packages (Redis, Event Store, API)
+	@echo "$(GREEN)Installing recommended packages...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec php composer require snc/redis-bundle broadway/broadway broadway/event-store-dbal api
 
 ##@ Code Quality
 
@@ -572,6 +428,33 @@ dev-clean: dev-down ## Stop containers and remove volumes
 clean-cache: ## Remove Symfony cache and logs
 	@echo "$(YELLOW)Cleaning cache and logs...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php rm -rf var/cache/* var/log/*
+
+##@ Build Assets
+
+build-assets: ## Build all assets (Composer + npm + Vite + routes + cache)
+	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║  Building all assets for development...                   ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
+	@echo ""
+	@echo "$(GREEN)[1/5] Installing Composer dependencies...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec php composer install --no-interaction --prefer-dist --optimize-autoloader
+	@echo ""
+	@echo "$(GREEN)[2/5] Installing npm dependencies...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec node_watch npm install
+	@echo ""
+	@echo "$(GREEN)[3/5] Building frontend assets with Vite...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec node_watch npm run build
+	@echo ""
+	@echo "$(GREEN)[4/5] Generating JavaScript routes...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec php php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
+	@echo ""
+	@echo "$(GREEN)[5/5] Clearing and warming up cache...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec php php bin/console cache:clear
+	$(DOCKER_COMPOSE_DEV) exec php php bin/console cache:warmup
+	@echo ""
+	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
+	@echo "$(GREEN)║  ✓ Build completed successfully!                          ║$(NC)"
+	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
 
 ##@ Utilities
 
