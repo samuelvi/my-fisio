@@ -115,6 +115,8 @@ when@dev:
         # Register Test Controllers as services
         App\Tests\Controller\:
             resource: '../tests/Controller/'
+            autowire: true
+            autoconfigure: true
             tags: ['controller.service_arguments']
 
 when@test:
@@ -129,4 +131,6 @@ when@test:
         # Register Test Controllers as services
         App\Tests\Controller\:
             resource: '../tests/Controller/'
+            autowire: true
+            autoconfigure: true
             tags: ['controller.service_arguments']
