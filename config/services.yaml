@@ -108,6 +108,8 @@ when@dev:
         # Register Test Fixtures as services
         App\Tests\DataFixtures\:
             resource: '../tests/DataFixtures/'
+            autowire: true
+            autoconfigure: true
             tags: ['doctrine.fixture.orm']
 
         # Register Test Controllers as services
@@ -120,6 +122,8 @@ when@test:
         # Register Test Fixtures as services
         App\Tests\DataFixtures\:
             resource: '../tests/DataFixtures/'
+            autowire: true
+            autoconfigure: true
             tags: ['doctrine.fixture.orm']
 
         # Register Test Controllers as services
