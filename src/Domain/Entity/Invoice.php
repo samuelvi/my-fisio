@@ -4,19 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\Entity;
 
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
-use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use ApiPlatform\Metadata\ApiProperty;
-use ApiPlatform\Metadata\ApiFilter;
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
-use App\Infrastructure\Api\Resource\InvoiceInput;
-use App\Infrastructure\Api\State\Processor\InvoiceCreateProcessor;
-use App\Infrastructure\Api\State\Processor\InvoiceUpdateProcessor;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -27,24 +14,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'invoices')]
-#[ApiResource(
-    operations: [
-        new GetCollection(name: 'api_invoices_collection'),
-        new Get(name: 'api_invoices_get'),
-        new Post(name: 'api_invoices_post', processor: InvoiceCreateProcessor::class, input: InvoiceInput::class),
-        new Put(name: 'api_invoices_put', processor: InvoiceUpdateProcessor::class, input: InvoiceInput::class),
-    ],
-    normalizationContext: ['groups' => ['invoice:read'], 'enable_max_depth' => true],
-    denormalizationContext: ['groups' => ['invoice:write']],
-    order: ['date' => 'DESC', 'number' => 'DESC'],
-)]
-#[ApiFilter(SearchFilter::class, properties: [
-    'fullName' => 'ipartial',
-    'taxId' => 'partial',
-    'number' => 'partial',
-])]
-#[ApiFilter(DateFilter::class, properties: ['date'])]
-#[ApiFilter(OrderFilter::class, properties: ['date', 'createdAt', 'amount'], arguments: ['orderParameterName' => 'order'])]
 class Invoice
 {
     #[ORM\Id]

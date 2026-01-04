@@ -19,12 +19,13 @@ use DateTimeImmutable;
 use function count;
 use function is_array;
 
+use App\Infrastructure\Api\Resource\InvoiceResource;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
- * @implements ProcessorInterface<Invoice, Invoice>
+ * @implements ProcessorInterface<InvoiceInput, InvoiceResource>
  */
 final class InvoiceCreateProcessor implements ProcessorInterface
 {
@@ -40,7 +41,7 @@ final class InvoiceCreateProcessor implements ProcessorInterface
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
         if (!$data instanceof InvoiceInput) {
-            return $this->persistProcessor->process($data, $operation, $uriVariables, $context);
+            return $data;
         }
 
         if (!$data->fullName) {
@@ -127,6 +128,41 @@ final class InvoiceCreateProcessor implements ProcessorInterface
             $invoice->lines->add($invoiceLine);
         }
 
-        return $this->persistProcessor->process($invoice, $operation, $uriVariables, $context);
+        /** @var Invoice $persistedInvoice */
+        $persistedInvoice = $this->persistProcessor->process($invoice, $operation, $uriVariables, $context);
+
+        return $this->mapToResource($persistedInvoice);
+    }
+
+    private function mapToResource(Invoice $invoice): InvoiceResource
+    {
+        $resource = new InvoiceResource();
+        $resource->id = $invoice->id;
+        $resource->number = $invoice->number;
+        $resource->fullName = $invoice->fullName;
+        $resource->taxId = $invoice->taxId;
+        $resource->amount = $invoice->amount;
+        $resource->phone = $invoice->phone;
+        $resource->address = $invoice->address;
+        $resource->email = $invoice->email;
+        $resource->date = $invoice->date instanceof DateTimeImmutable ? $invoice->date : DateTimeImmutable::createFromInterface($invoice->date);
+        $resource->createdAt = $invoice->createdAt instanceof DateTimeImmutable ? $invoice->createdAt : DateTimeImmutable::createFromInterface($invoice->createdAt);
+
+        if ($invoice->customer) {
+            $resource->customer = '/api/customers/' . $invoice->customer->id;
+        }
+
+        foreach ($invoice->lines as $line) {
+            $resource->lines[] = [
+                'id' => $line->id,
+                'concept' => $line->concept,
+                'description' => $line->description,
+                'quantity' => $line->quantity,
+                'price' => $line->price,
+                'amount' => $line->amount,
+            ];
+        }
+
+        return $resource;
     }
 }

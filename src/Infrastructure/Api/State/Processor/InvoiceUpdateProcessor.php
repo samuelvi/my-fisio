@@ -15,12 +15,14 @@ use App\Domain\Repository\CustomerRepositoryInterface;
 use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\Resource\InvoiceLineInput;
 use DateTimeImmutable;
+use App\Domain\Entity\Invoice;
+use App\Infrastructure\Api\Resource\InvoiceResource;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-use function count;
-use function is_array;
-
+/**
+ * @implements ProcessorInterface<InvoiceInput, InvoiceResource>
+ */
 final class InvoiceUpdateProcessor implements ProcessorInterface
 {
     public function __construct(
@@ -131,6 +133,38 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
 
         $this->invoiceRepository->save($invoice);
 
-        return $invoice;
+        return $this->mapToResource($invoice);
+    }
+
+    private function mapToResource(Invoice $invoice): InvoiceResource
+    {
+        $resource = new InvoiceResource();
+        $resource->id = $invoice->id;
+        $resource->number = $invoice->number;
+        $resource->fullName = $invoice->fullName;
+        $resource->taxId = $invoice->taxId;
+        $resource->amount = $invoice->amount;
+        $resource->phone = $invoice->phone;
+        $resource->address = $invoice->address;
+        $resource->email = $invoice->email;
+        $resource->date = $invoice->date instanceof DateTimeImmutable ? $invoice->date : DateTimeImmutable::createFromInterface($invoice->date);
+        $resource->createdAt = $invoice->createdAt instanceof DateTimeImmutable ? $invoice->createdAt : DateTimeImmutable::createFromInterface($invoice->createdAt);
+
+        if ($invoice->customer) {
+            $resource->customer = '/api/customers/' . $invoice->customer->id;
+        }
+
+        foreach ($invoice->lines as $line) {
+            $resource->lines[] = [
+                'id' => $line->id,
+                'concept' => $line->concept,
+                'description' => $line->description,
+                'quantity' => $line->quantity,
+                'price' => $line->price,
+                'amount' => $line->amount,
+            ];
+        }
+
+        return $resource;
     }
 }

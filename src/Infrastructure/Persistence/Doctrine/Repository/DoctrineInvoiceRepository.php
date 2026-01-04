@@ -162,4 +162,53 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             $result,
         )));
     }
+
+    public function getByIdAsArray(int $id): ?array
+    {
+        return $this->createQueryBuilder('i')
+            ->select('i', 'l')
+            ->leftJoin('i.lines', 'l')
+            ->where('i.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
+    }
+
+    public function searchAsArray(array $filters, int $page, int $limit): array
+    {
+        $offset = ($page - 1) * $limit;
+        $qb = $this->createQueryBuilder('i')
+            ->select('i', 'l')
+            ->leftJoin('i.lines', 'l');
+
+        if (!empty($filters['fullName'])) {
+            $qb->andWhere('LOWER(i.fullName) LIKE LOWER(:fullName)')
+               ->setParameter('fullName', '%' . $filters['fullName'] . '%');
+        }
+
+        if (!empty($filters['taxId'])) {
+            $qb->andWhere('LOWER(i.taxId) LIKE LOWER(:taxId)')
+               ->setParameter('taxId', '%' . $filters['taxId'] . '%');
+        }
+
+        if (!empty($filters['number'])) {
+            $qb->andWhere('i.number LIKE :number')
+               ->setParameter('number', '%' . $filters['number'] . '%');
+        }
+
+        if (!empty($filters['order']) && is_array($filters['order'])) {
+            foreach ($filters['order'] as $field => $direction) {
+                if (in_array($field, ['date', 'number', 'amount'], true)) {
+                    $qb->addOrderBy('i.' . $field, strtoupper((string)$direction) === 'DESC' ? 'DESC' : 'ASC');
+                }
+            }
+        } else {
+            $qb->orderBy('i.date', 'DESC')->addOrderBy('i.number', 'DESC');
+        }
+
+        return $qb->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getArrayResult();
+    }
 }

@@ -25,4 +25,8 @@ interface InvoiceRepositoryInterface
      * @return array<int, string>
      */
     public function getNumbersByYearExcluding(int $year, int $excludeId): array;
+
+    public function getByIdAsArray(int $id): ?array;
+
+    public function searchAsArray(array $filters, int $page, int $limit): array;
 }
