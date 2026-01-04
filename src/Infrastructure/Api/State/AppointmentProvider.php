@@ -6,7 +6,6 @@ namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
-use App\Domain\Enum\AppointmentType;
 use App\Infrastructure\Api\Resource\AppointmentResource;
 use App\Infrastructure\Persistence\Doctrine\Repository\DoctrineAppointmentRepository;
 use DateTimeImmutable;
@@ -50,7 +49,7 @@ class AppointmentProvider implements ProviderInterface
         $resource->title = $data['title'];
         $resource->allDay = $data['allDay'];
         $resource->notes = $data['notes'] ?? null;
-        $resource->type = $data['type'] instanceof AppointmentType ? $data['type'] : AppointmentType::from($data['type']);
+        $resource->type = $data['type'] ?? null;
 
         $resource->startsAt = $data['startsAt'] instanceof DateTimeInterface
             ? DateTimeImmutable::createFromInterface($data['startsAt'])
