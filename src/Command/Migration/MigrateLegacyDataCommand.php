@@ -6,6 +6,7 @@ namespace App\Command\Migration;
 
 use App\Domain\Entity\User;
 use App\Domain\Enum\PatientStatus;
+use App\Infrastructure\Audit\AuditService;
 use DateTime;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -154,6 +155,7 @@ final class MigrateLegacyDataCommand extends Command
         private readonly EntityManagerInterface      $entityManager,
         private readonly string                      $projectDir,
         private readonly UserPasswordHasherInterface $passwordHasher,
+        private readonly AuditService                $auditService,
     )
     {
         parent::__construct();
@@ -171,7 +173,11 @@ final class MigrateLegacyDataCommand extends Command
             return Command::FAILURE;
         }
 
-        $io->title('Migrating Legacy Data');
+        // Disable audit trail for batch migration operations
+        $this->auditService->disable();
+
+        try {
+            $io->title('Migrating Legacy Data');
 
         $connection = $this->entityManager->getConnection();
 
@@ -239,13 +245,17 @@ final class MigrateLegacyDataCommand extends Command
             $this->resetSequence($connection, $table);
         }
 
-        $io->success('Migration completed successfully.');
-        $io->table(
-            ['Table', 'Count'],
-            array_map(fn($k, $v) => [$k, $v], array_keys($stats), array_values($stats)),
-        );
+            $io->success('Migration completed successfully.');
+            $io->table(
+                ['Table', 'Count'],
+                array_map(fn($k, $v) => [$k, $v], array_keys($stats), array_values($stats)),
+            );
 
-        return Command::SUCCESS;
+            return Command::SUCCESS;
+        } finally {
+            // Re-enable audit trail
+            $this->auditService->enable();
+        }
     }
 
     private function processRow(Connection $connection, string $legacyTable, array $row): void

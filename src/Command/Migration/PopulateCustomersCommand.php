@@ -7,6 +7,7 @@ namespace App\Command\Migration;
 use App\Domain\Entity\Customer;
 use App\Domain\Entity\Invoice;
 use App\Domain\Entity\Patient;
+use App\Infrastructure\Audit\AuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -34,6 +35,7 @@ final class PopulateCustomersCommand extends Command
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly AuditService $auditService,
     ) {
         parent::__construct();
     }
@@ -48,10 +50,14 @@ final class PopulateCustomersCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $io->title('Populating Customers from Existing Data');
 
-        $reset = $input->getOption('reset') === '1';
-        if ($reset) {
-            $this->performReset($io);
-        }
+        // Disable audit trail for batch migration operations
+        $this->auditService->disable();
+
+        try {
+            $reset = $input->getOption('reset') === '1';
+            if ($reset) {
+                $this->performReset($io);
+            }
 
         $customerMap = $this->loadExistingCustomers();
         $io->note(sprintf('Loaded %d existing customers.', count($customerMap)));
@@ -135,11 +141,15 @@ final class PopulateCustomersCommand extends Command
         $this->entityManager->flush();
         $progressBar->finish();
         $io->newLine(2);
-        $io->text(sprintf('Linked Patients: %d', $patientLinkedCount));
+            $io->text(sprintf('Linked Patients: %d', $patientLinkedCount));
 
-        $io->success('Customers population completed successfully.');
+            $io->success('Customers population completed successfully.');
 
-        return Command::SUCCESS;
+            return Command::SUCCESS;
+        } finally {
+            // Re-enable audit trail
+            $this->auditService->enable();
+        }
     }
 
     private function performReset(SymfonyStyle $io): void

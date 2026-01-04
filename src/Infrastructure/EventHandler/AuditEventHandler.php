@@ -8,6 +8,7 @@ use App\Domain\Entity\AuditTrail;
 use App\Domain\Entity\User;
 use App\Domain\Event\DomainEventInterface;
 use App\Domain\Event\EventStoreInterface;
+use App\Infrastructure\Audit\AuditService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -20,13 +21,19 @@ class AuditEventHandler
         private EventStoreInterface $eventStore,
         private EntityManagerInterface $entityManager,
         private Security $security,
-        private RequestStack $requestStack
+        private RequestStack $requestStack,
+        private AuditService $auditService
     ) {
     }
 
     public function __invoke(DomainEventInterface $event): void
     {
         $this->eventStore->append($event);
+
+        // Skip audit trail creation if disabled (e.g., during batch operations)
+        if (!$this->auditService->isEnabled()) {
+            return;
+        }
 
         $payload = $event->getPayload();
         $entityType = $this->resolveEntityType($event);
