@@ -18,6 +18,7 @@ use App\Infrastructure\Api\State\CustomerProcessor;
 use App\Infrastructure\Api\State\CustomerProvider;
 use App\Domain\Entity\Customer;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+use App\Infrastructure\Validator\Constraints\UniqueCustomerTaxId;
 use DateTimeImmutable;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -28,13 +29,14 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Get(name: 'api_customers_item_get', uriTemplate: '/customers/{id}'),
         new GetCollection(name: 'api_customers_collection', uriTemplate: '/customers'),
         new Post(name: 'api_customers_post', uriTemplate: '/customers', processor: CustomerProcessor::class),
-        new Put(name: 'api_customers_put', uriTemplate: '/customers/{id}', processor: CustomerProcessor::class),
+        new Put(name: 'api_customers_put', uriTemplate: '/customers/{id}', processor: CustomerProcessor::class, validate: false),
         new Delete(name: 'api_customers_delete', uriTemplate: '/customers/{id}', processor: CustomerProcessor::class),
     ],
     provider: CustomerProvider::class,
     normalizationContext: ['groups' => ['customer:read']],
     denormalizationContext: ['groups' => ['customer:write']],
 )]
+#[UniqueCustomerTaxId]
 #[ApiFilter(SearchFilter::class, properties: [
     'fullName' => 'ipartial',
     'taxId' => 'ipartial',

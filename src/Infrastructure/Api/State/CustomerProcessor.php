@@ -30,7 +30,6 @@ final class CustomerProcessor implements ProcessorInterface
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
-        error_log(sprintf('CustomerProcessor: Entering process for %s', $operation->getName()));
         if ($operation instanceof DeleteOperationInterface) {
             $customer = $this->customerRepo->get((int) $uriVariables['id']);
             $this->customerRepo->delete($customer);
@@ -40,6 +39,11 @@ final class CustomerProcessor implements ProcessorInterface
 
         if (!$data instanceof CustomerResource) {
             return $data;
+        }
+
+        // Set ID before validation so UniqueCustomerTaxId validator can exclude current entity
+        if (isset($uriVariables['id'])) {
+            $data->id = (int) $uriVariables['id'];
         }
 
         $violations = $this->validator->validate($data);
@@ -73,6 +77,8 @@ final class CustomerProcessor implements ProcessorInterface
             $id = $this->handle($command);
             $data->id = $id;
         }
+
+        $data->fullName = trim($data->firstName . ' ' . $data->lastName);
 
         return $data;
     }

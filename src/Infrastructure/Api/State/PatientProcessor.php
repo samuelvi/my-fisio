@@ -33,6 +33,11 @@ class PatientProcessor implements ProcessorInterface
             return $data;
         }
 
+        // Set ID before validation so unique validators can exclude current entity
+        if (isset($uriVariables['id'])) {
+            $data->id = (int) $uriVariables['id'];
+        }
+
         $violations = $this->validator->validate($data);
         if (count($violations) > 0) {
             throw new ValidationException($violations);
@@ -98,6 +103,8 @@ class PatientProcessor implements ProcessorInterface
             $id = $this->handle($command);
             $data->id = $id;
         }
+
+        $data->fullName = trim($data->firstName . ' ' . $data->lastName);
 
         return $data;
     }

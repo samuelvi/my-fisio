@@ -26,7 +26,7 @@ use Symfony\Component\Validator\Constraints as Assert;
         new Get(name: 'api_patients_get'),
         new GetCollection(name: 'api_patients_collection'),
         new Post(name: 'api_patients_post', processor: PatientProcessor::class),
-        new Put(name: 'api_patients_put', processor: PatientProcessor::class),
+        new Put(name: 'api_patients_put', processor: PatientProcessor::class, validate: false),
     ],
     provider: PatientProvider::class,
     normalizationContext: ['groups' => ['patient:read']],
