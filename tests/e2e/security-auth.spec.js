@@ -25,6 +25,7 @@ test('authenticated users can access protected routes', async ({ page }) => {
 
   for (const route of protectedRoutes) {
     await page.goto(route.path);
+    await page.waitForLoadState('networkidle');
     await expect(page).toHaveURL(route.path);
     await expect(page).not.toHaveURL(/\/login/);
     await expect(page.getByRole('heading', { level: route.level, name: route.title })).toBeVisible();

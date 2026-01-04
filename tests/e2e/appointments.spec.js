@@ -9,6 +9,9 @@ async function resetDbEmpty(request) {
 }
 
 async function login(page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('app_locale', 'en');
+  });
   await page.goto('/login');
   await page.fill('input[name="email"]', 'tina@tinafisio.com');
   await page.fill('input[name="password"]', 'password');
@@ -166,6 +169,7 @@ test('appointments calendar flow', async ({ page, request }) => {
   await login(page);
 
   await page.goto('/appointments');
+  await page.waitForLoadState('networkidle');
   await expect(page.getByRole('heading', { name: 'Clinic Calendar' })).toBeVisible();
 
   // Create appointment for today at 9 AM (should be visible in current week view)

@@ -11,11 +11,9 @@ use App\Domain\Entity\Invoice;
 use App\Domain\Entity\Patient;
 use App\Domain\Entity\Record;
 use App\Domain\Entity\User;
-use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Event\OnFlushEventArgs;
 use Doctrine\ORM\Event\PostPersistEventArgs;
-use Doctrine\ORM\Events;
 use Doctrine\ORM\UnitOfWork;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -31,7 +29,7 @@ use Symfony\Component\HttpFoundation\RequestStack;
  * - Compliance requirements (GDPR, SOX, HIPAA)
  * - Immutable audit trail pattern
  */
-class DoctrineAuditListener implements EventSubscriber
+class DoctrineAuditListener
 {
     /**
      * Entities that should be audited
@@ -45,6 +43,11 @@ class DoctrineAuditListener implements EventSubscriber
         User::class,
     ];
 
+    /**
+     * Flag to prevent infinite loops when flushing audit trails
+     */
+    private bool $isProcessingAudit = false;
+
     public function __construct(
         private bool $enabled,
         private Security $security,
@@ -53,22 +56,11 @@ class DoctrineAuditListener implements EventSubscriber
     }
 
     /**
-     * Subscribe to Doctrine events
-     */
-    public function getSubscribedEvents(): array
-    {
-        return [
-            Events::postPersist => 'postPersist',  // For insertions (ID is available)
-            Events::onFlush => 'onFlush',          // For updates and deletions
-        ];
-    }
-
-    /**
      * Called after entity is persisted - captures insertions
      */
     public function postPersist(PostPersistEventArgs $args): void
     {
-        if (!$this->enabled) {
+        if (!$this->enabled || $this->isProcessingAudit) {
             return;
         }
 
@@ -86,12 +78,11 @@ class DoctrineAuditListener implements EventSubscriber
             return;
         }
 
-        // For postPersist, we need to track what changed
-        // We'll record all non-null fields as "created" changes
+        // Get all field values from the entity
         $em = $args->getObjectManager();
         $metadata = $em->getClassMetadata(get_class($entity));
-
         $changes = [];
+
         foreach ($metadata->getFieldNames() as $fieldName) {
             $value = $metadata->getFieldValue($entity, $fieldName);
             if ($value !== null) {
@@ -112,8 +103,15 @@ class DoctrineAuditListener implements EventSubscriber
             userAgent: $this->getUserAgent()
         );
 
-        $em->persist($audit);
-        $em->flush();
+        // Set flag to prevent infinite loop
+        $this->isProcessingAudit = true;
+
+        try {
+            $em->persist($audit);
+            $em->flush();
+        } finally {
+            $this->isProcessingAudit = false;
+        }
     }
 
     /**
@@ -121,7 +119,7 @@ class DoctrineAuditListener implements EventSubscriber
      */
     public function onFlush(OnFlushEventArgs $args): void
     {
-        if (!$this->enabled) {
+        if (!$this->enabled || $this->isProcessingAudit) {
             return;
         }
 

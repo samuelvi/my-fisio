@@ -80,8 +80,8 @@ services:
         arguments:
             $enabled: '%audit_trail_enabled%'
         tags:
-            - { name: doctrine.event_listener, event: postPersist }
-            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postPersist, method: postPersist }
+            - { name: doctrine.event_listener, event: onFlush, method: onFlush }
 
     # Custom DateTime normalizer to avoid timezone conversion issues
     App\Infrastructure\Serializer\DateTimeNormalizer:
@@ -145,13 +145,3 @@ when@test:
             autowire: true
             autoconfigure: true
             tags: ['controller.service_arguments']
-
-        # Make DoctrineAuditListener public for tests (so tests can manually register it if needed)
-        App\Infrastructure\Audit\DoctrineAuditListener:
-            public: true
-            autowire: true
-            arguments:
-                $enabled: '%audit_trail_enabled%'
-            tags:
-                - { name: doctrine.event_listener, event: postPersist }
-                - { name: doctrine.event_listener, event: onFlush }
