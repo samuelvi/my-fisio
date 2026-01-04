@@ -23,6 +23,52 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
         parent::__construct($registry, Invoice::class);
     }
 
+    public function get(int $id): \App\Domain\Entity\Invoice
+    {
+        /** @var \App\Domain\Entity\Invoice|null $invoice */
+        $invoice = $this->createQueryBuilder('i')
+            ->select('i', 'l')
+            ->leftJoin('i.lines', 'l')
+            ->where('i.id = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        if (!$invoice) {
+            throw new \RuntimeException(sprintf('Invoice with id %d not found', $id));
+        }
+
+        return $invoice;
+    }
+
+    public function save(Invoice $invoice): void
+    {
+        $this->getEntityManager()->persist($invoice);
+        $this->getEntityManager()->flush();
+    }
+
+    public function removeLine(\App\Domain\Entity\InvoiceLine $line): void
+    {
+        $this->getEntityManager()->remove($line);
+    }
+
+    #[\Override]
+    public function findLatestNumberForYear(int $year): ?string
+    {
+        $prefix = sprintf('%d', $year);
+
+        $qb = $this->createQueryBuilder('i')
+            ->select('i.number')
+            ->where('i.number LIKE :prefix')
+            ->orderBy('i.number', 'DESC')
+            ->setMaxResults(1)
+            ->setParameter('prefix', $prefix.'%');
+
+        $result = $qb->getQuery()->getArrayResult();
+
+        return $result[0]['number'] ?? null;
+    }
+
     public function getInvoiceExportView(int $id): ?InvoiceExportView
     {
         $qb = $this->createQueryBuilder('i')

@@ -13,6 +13,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/test')]
@@ -74,9 +75,8 @@ class TestController extends AbstractController
     }
 
     #[Route('/reset-db-empty', name: 'test_reset_db_empty', methods: ['POST'])]
-    public function resetDbEmpty(): JsonResponse
+    public function resetDbEmpty(): Response
     {
-        // WARNING: ONLY FOR TEST ENVIRONMENT
         if ('test' !== $this->getParameter('kernel.environment')) {
             return new JsonResponse(['error' => 'Access denied'], 403);
         }
@@ -94,31 +94,11 @@ class TestController extends AbstractController
 
     private function prepareSchema(): void
     {
-        $connection = $this->entityManager->getConnection();
-
-        // Get database name from connection params
-        $dbName = $connection->getParams()['dbname'];
-
-        // Close any existing connections to the database
         $this->entityManager->clear();
-
-        // Drop all tables (MariaDB approach)
-        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
-
-        $tables = $connection->fetchAllAssociative(
-            "SELECT TABLE_NAME FROM information_schema.TABLES WHERE TABLE_SCHEMA = ?",
-            [$dbName]
-        );
-
-        foreach ($tables as $table) {
-            $connection->executeStatement('DROP TABLE IF EXISTS ' . $table['TABLE_NAME']);
-        }
-
-        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
-
-        // Create schema using Doctrine
         $metadatas = $this->entityManager->getMetadataFactory()->getAllMetadata();
         $schemaTool = new SchemaTool($this->entityManager);
+
+        $schemaTool->dropSchema($metadatas);
         $schemaTool->createSchema($metadatas);
     }
 }

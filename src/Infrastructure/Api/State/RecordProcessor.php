@@ -6,17 +6,18 @@ namespace App\Infrastructure\Api\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
-use App\Domain\Entity\Patient;
 use App\Domain\Entity\Record;
+use App\Domain\Repository\PatientRepositoryInterface;
+use App\Domain\Repository\RecordRepositoryInterface;
 use App\Infrastructure\Api\Resource\RecordResource;
 use DateTimeImmutable;
-use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
 class RecordProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
+        private RecordRepositoryInterface $recordRepo,
+        private PatientRepositoryInterface $patientRepo,
     ) {
     }
 
@@ -27,7 +28,7 @@ class RecordProcessor implements ProcessorInterface
         }
 
         if (isset($uriVariables['id'])) {
-            $record = $this->entityManager->getRepository(Record::class)->find($uriVariables['id']);
+            $record = $this->recordRepo->get((int) $uriVariables['id']);
         } else {
             $record = Record::create(
                 physiotherapyTreatment: $data->physiotherapyTreatment,
@@ -43,18 +44,15 @@ class RecordProcessor implements ProcessorInterface
             );
         }
 
-        if (!$record) {
-            return null;
-        }
-
         // Parse patient ID from IRI
         if (null !== $data->patient && preg_match('#/api/patients/(\d+)#', $data->patient, $matches)) {
             $patientId = (int) $matches[1];
-            $patient = $this->entityManager->getRepository(Patient::class)->find($patientId);
-            if (!$patient) {
+            try {
+                $patient = $this->patientRepo->get($patientId);
+                $record->patient = $patient;
+            } catch (\Exception $e) {
                 throw new BadRequestHttpException('Patient not found');
             }
-            $record->patient = $patient;
         }
 
         $record->physiotherapyTreatment = $data->physiotherapyTreatment;
@@ -71,8 +69,7 @@ class RecordProcessor implements ProcessorInterface
             $record->createdAt = $data->createdAt;
         }
 
-        $this->entityManager->persist($record);
-        $this->entityManager->flush();
+        $this->recordRepo->save($record);
 
         $data->id = $record->id;
         if ($record->createdAt instanceof DateTimeImmutable) {

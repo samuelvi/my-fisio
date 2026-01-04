@@ -10,6 +10,10 @@ use DateTimeInterface;
 
 interface AppointmentRepositoryInterface
 {
+    public function get(int $id): Appointment;
+
+    public function delete(Appointment $appointment): void;
+
     public function countByDateAndType(DateTimeInterface $date, AppointmentType $type): int;
 
     public function save(Appointment $appointment): void;

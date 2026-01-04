@@ -8,27 +8,32 @@ use ApiPlatform\Metadata\DeleteOperationInterface;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
-use App\Domain\Entity\Customer;
+use App\Application\Command\Customer\CreateCustomerCommand;
+use App\Application\Command\Customer\UpdateCustomerCommand;
+use App\Domain\Repository\CustomerRepositoryInterface;
 use App\Infrastructure\Api\Resource\CustomerResource;
-use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Messenger\HandleTrait;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class CustomerProcessor implements ProcessorInterface
 {
+    use HandleTrait;
+
     public function __construct(
-        private EntityManagerInterface $entityManager,
+        MessageBusInterface $commandBus,
+        private CustomerRepositoryInterface $customerRepo,
         private ValidatorInterface $validator,
     ) {
+        $this->messageBus = $commandBus;
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
+        error_log(sprintf('CustomerProcessor: Entering process for %s', $operation->getName()));
         if ($operation instanceof DeleteOperationInterface) {
-            $customer = $this->entityManager->getRepository(Customer::class)->find($uriVariables['id']);
-            if ($customer) {
-                $this->entityManager->remove($customer);
-                $this->entityManager->flush();
-            }
+            $customer = $this->customerRepo->get((int) $uriVariables['id']);
+            $this->customerRepo->delete($customer);
 
             return null;
         }
@@ -43,9 +48,8 @@ final class CustomerProcessor implements ProcessorInterface
         }
 
         if (isset($uriVariables['id'])) {
-            $customer = $this->entityManager->getRepository(Customer::class)->find($uriVariables['id']);
-        } else {
-            $customer = Customer::create(
+            $command = new UpdateCustomerCommand(
+                id: (int) $uriVariables['id'],
                 firstName: $data->firstName,
                 lastName: $data->lastName,
                 taxId: $data->taxId,
@@ -53,40 +57,22 @@ final class CustomerProcessor implements ProcessorInterface
                 phone: $data->phone,
                 billingAddress: $data->billingAddress
             );
+
+            $this->handle($command);
+            $data->id = (int) $uriVariables['id'];
+        } else {
+            $command = new CreateCustomerCommand(
+                firstName: $data->firstName,
+                lastName: $data->lastName,
+                taxId: $data->taxId,
+                email: $data->email,
+                phone: $data->phone,
+                billingAddress: $data->billingAddress
+            );
+
+            $id = $this->handle($command);
+            $data->id = $id;
         }
-
-        if (!$customer) {
-            return null;
-        }
-
-        // Map DTO to Entity (for both new and existing)
-        $customer->firstName = $data->firstName;
-        $customer->lastName = $data->lastName;
-        $customer->taxId = $data->taxId;
-        $customer->email = $data->email;
-        $customer->phone = $data->phone;
-        $customer->billingAddress = $data->billingAddress;
-
-        $customer->updateFullName();
-        
-        if (isset($uriVariables['id'])) {
-            $customer->updateTimestamp();
-        }
-
-        // Final validation on the Entity (triggers UniqueEntity)
-        $entityViolations = $this->validator->validate($customer);
-        if (count($entityViolations) > 0) {
-            throw new ValidationException($entityViolations);
-        }
-
-        $this->entityManager->persist($customer);
-        $this->entityManager->flush();
-
-        // Map back to DTO
-        $data->id = $customer->id;
-        $data->fullName = $customer->fullName;
-        $data->createdAt = $customer->createdAt instanceof \DateTimeImmutable ? $customer->createdAt : null;
-        $data->updatedAt = $customer->updatedAt instanceof \DateTimeImmutable ? $customer->updatedAt : null;
 
         return $data;
     }

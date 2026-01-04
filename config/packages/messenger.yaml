@@ -12,10 +12,13 @@ framework:
                 default_middleware:
                     enabled: true
                     allow_no_handlers: true
+                middleware:
+                    - doctrine_transaction
 
         transports:
             sync: 'sync://'
 
         routing:
             # Route your messages to the transports
+            'App\Domain\Event\DomainEventInterface': sync
             # 'App\Message\YourMessage': async

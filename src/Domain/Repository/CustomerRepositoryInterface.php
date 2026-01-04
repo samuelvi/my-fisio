@@ -8,7 +8,11 @@ use App\Domain\Entity\Customer;
 
 interface CustomerRepositoryInterface
 {
+    public function get(int $id): Customer;
+
     public function findOneByTaxId(string $taxId): ?Customer;
 
     public function save(Customer $customer): void;
+
+    public function delete(Customer $customer): void;
 }

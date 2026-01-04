@@ -8,15 +8,15 @@ use ApiPlatform\Metadata\DeleteOperationInterface;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Domain\Entity\Appointment;
-use App\Domain\Entity\Patient;
+use App\Domain\Repository\AppointmentRepositoryInterface;
+use App\Domain\Repository\PatientRepositoryInterface;
 use App\Infrastructure\Api\Resource\AppointmentResource;
-use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class AppointmentProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
+        private AppointmentRepositoryInterface $appointmentRepo,
+        private PatientRepositoryInterface $patientRepo,
     ) {
     }
 
@@ -26,20 +26,17 @@ class AppointmentProcessor implements ProcessorInterface
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ?AppointmentResource
     {
         if ($operation instanceof DeleteOperationInterface) {
-            $appointment = $this->entityManager->getRepository(Appointment::class)->find($uriVariables['id']);
-            if ($appointment) {
-                $this->entityManager->remove($appointment);
-                $this->entityManager->flush();
-            }
+            $appointment = $this->appointmentRepo->get((int) $uriVariables['id']);
+            $this->appointmentRepo->delete($appointment);
 
             return null;
         }
 
         if (isset($uriVariables['id'])) {
-            $appointment = $this->entityManager->getRepository(Appointment::class)->find($uriVariables['id']);
+            $appointment = $this->appointmentRepo->get((int) $uriVariables['id']);
         } else {
             $appointment = Appointment::create(
-                patient: null, // Patient set below
+                patient: null,
                 userId: $data->userId,
                 startsAt: $data->startsAt,
                 endsAt: $data->endsAt,
@@ -50,18 +47,15 @@ class AppointmentProcessor implements ProcessorInterface
             );
         }
 
-        // Update patient if provided (allows changing or setting patient on update)
         if (null !== $data->patientId) {
-            $patient = $this->entityManager->getRepository(Patient::class)->find($data->patientId);
-            if ($patient) {
-                $appointment->patient = $patient;
-            }
+            $patient = $this->patientRepo->get((int) $data->patientId);
+            $appointment->patient = $patient;
         } elseif (property_exists($data, 'patientId')) {
-            // If patientId is explicitly null in the request, we might want to unset it
+            // Nullify if explicitly passed as null/undefined handling (depends on serialization)
+            // Ideally we check if it was actually in the payload
             $appointment->patient = null;
         }
 
-        // Update fields
         $appointment->title = $data->title;
         $appointment->allDay = $data->allDay;
         $appointment->startsAt = $data->startsAt;
@@ -71,8 +65,7 @@ class AppointmentProcessor implements ProcessorInterface
 
         $appointment->updateTimestamp();
 
-        $this->entityManager->persist($appointment);
-        $this->entityManager->flush();
+        $this->appointmentRepo->save($appointment);
 
         $data->id = $appointment->id;
         $data->patientName = $appointment->patient ? $appointment->patient->firstName.' '.$appointment->patient->lastName : null;

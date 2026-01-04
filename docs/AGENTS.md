@@ -100,8 +100,13 @@ src/
 ### Backend
 - Explicit Commands and Events
 - Aggregates as consistency boundaries
-- Event Sourcing: state rebuilt from events
-- CQRS: read/write separation using Symfony Messenger buses (`command.bus`, `query.bus`).
+- **Event Sourcing & Auditing**:
+    - **Source of Truth**: State is persisted in Entities, but significant changes MUST record Domain Events.
+    - **Event Store**: Use `EventStoreInterface` to persist events.
+    - **Audit System**: Technical audit logs (`audit_trail` table) are generated via `AuditEventHandler` consuming Domain Events. **DO NOT** use Doctrine Event Listeners (like `postPersist`, `onFlush`) for auditing.
+- **CQRS**:
+    - **Write Side**: Use Commands (`CreatePatientCommand`) and Handlers (`CreatePatientHandler`). Dispatch via `command.bus`.
+    - **Read Side**: Use Repositories directly in Providers/Controllers for queries.
 - Repositories only in domain layer (interfaces)
 - **Doctrine & Performance Standards**:
     - **No UnitOfWork Cache**: To ensure absolute data freshness, all read queries MUST bypass Doctrine's Identity Map.
@@ -111,26 +116,32 @@ src/
     - Efficient Fetching: Always use `getArrayResult()` for data fetching.
     - Mapping: Manually map array results to specialized DTOs (Read model) or Entities.
 - **Repository Pattern & Dependency Injection**:
-    - **NO EntityManager in Controllers or API Resources**: Controllers MUST NOT inject `EntityManagerInterface` directly.
+    - **NO EntityManager in Controllers, Processors or API Resources**: Controllers/Processors MUST NOT inject `EntityManagerInterface` directly. Use Repositories for reads and Command Bus for writes.
     - **Repository Interfaces**: All database queries MUST be encapsulated in repository methods defined in `Domain/Repository/` interfaces.
-    - **Repository Implementations**: Concrete implementations belong in `Infrastructure/Persistence/Repository/`.
-    - **Custom Query Methods**: Every query needs its own named method (e.g., `findPatientForInvoicePrefill(int $id): ?Patient`). NO generic `find()` or `findBy()` magic methods.
+    - **Repository Implementations**: Concrete implementations belong in `Infrastructure/Persistence/Doctrine/Repository/`.
+    - **Standard Methods**: Interfaces should generally include `get(int $id): Entity`, `save(Entity $entity): void`, `delete(Entity $entity): void`.
+    - **Custom Query Methods**: Every query needs its own named method (e.g., `findPatientForInvoicePrefill(int $id): ?array`). NO generic `find()` or `findBy()` magic methods.
     - **QueryBuilder Only**: All repository methods MUST use QueryBuilder, never magic methods.
     - **Example Structure**:
         ```php
         // Domain/Repository/PatientRepositoryInterface.php
         interface PatientRepositoryInterface {
-            public function findPatientForInvoicePrefill(int $id): ?Patient;
+            public function get(int $id): Patient;
+            public function save(Patient $patient): void;
+            public function findForInvoicePrefill(int $id): ?array;
         }
 
-        // Infrastructure/Persistence/Repository/PatientRepository.php
-        class PatientRepository implements PatientRepositoryInterface {
-            public function findPatientForInvoicePrefill(int $id): ?Patient {
-                $qb = $this->createQueryBuilder('p')
+        // Infrastructure/Persistence/Doctrine/Repository/DoctrinePatientRepository.php
+        class DoctrinePatientRepository extends ServiceEntityRepository implements PatientRepositoryInterface {
+            public function get(int $id): Patient { ... }
+            public function save(Patient $patient): void { ... }
+            public function findForInvoicePrefill(int $id): ?array {
+                return $this->createQueryBuilder('p')
+                    ->select('p.fullName, p.taxId')
                     ->where('p.id = :id')
-                    ->setParameter('id', $id);
-                $result = $qb->getQuery()->getArrayResult();
-                return $result ? Patient::fromArray($result[0]) : null;
+                    ->setParameter('id', $id)
+                    ->getQuery()
+                    ->getOneOrNullResult(AbstractQuery::HYDRATE_ARRAY);
             }
         }
         ```

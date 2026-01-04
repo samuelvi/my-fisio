@@ -8,7 +8,6 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use ApiPlatform\Validator\Exception\ValidationException;
 use App\Application\Service\InvoiceNumberValidator;
-use App\Domain\Entity\Invoice;
 use App\Domain\Entity\InvoiceLine;
 use App\Domain\Entity\Customer;
 use App\Domain\Repository\InvoiceRepositoryInterface;
@@ -16,19 +15,15 @@ use App\Domain\Repository\CustomerRepositoryInterface;
 use App\Infrastructure\Api\Resource\InvoiceInput;
 use App\Infrastructure\Api\Resource\InvoiceLineInput;
 use DateTimeImmutable;
-use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use function count;
 use function is_array;
 
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Validator\Validator\ValidatorInterface;
-
 final class InvoiceUpdateProcessor implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
         private InvoiceRepositoryInterface $invoiceRepository,
         private CustomerRepositoryInterface $customerRepository,
         private ValidatorInterface $validator,
@@ -46,18 +41,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         }
 
         $invoiceId = (int) $uriVariables['id'];
-        $invoice = $this->entityManager->getRepository(Invoice::class)
-            ->createQueryBuilder('i')
-            ->select('i', 'l')
-            ->leftJoin('i.lines', 'l')
-            ->where('i.id = :id')
-            ->setParameter('id', $invoiceId)
-            ->getQuery()
-            ->getOneOrNullResult();
-
-        if (!$invoice instanceof Invoice) {
-            throw new NotFoundHttpException('Invoice not found.');
-        }
+        $invoice = $this->invoiceRepository->get($invoiceId);
 
         if (!$data->fullName) {
             throw new BadRequestHttpException('Customer name is required.');
@@ -124,7 +108,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         }
 
         foreach ($invoice->lines as $line) {
-            $this->entityManager->remove($line);
+            $this->invoiceRepository->removeLine($line);
         }
         $invoice->lines->clear();
 
@@ -145,8 +129,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
 
         $invoice->amount = $totalAmount;
 
-        $this->entityManager->persist($invoice);
-        $this->entityManager->flush();
+        $this->invoiceRepository->save($invoice);
 
         return $invoice;
     }

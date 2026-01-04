@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Entity;
 
 use App\Domain\Enum\PatientStatus;
+use App\Domain\Event\Patient\PatientUpdatedEvent;
+use App\Domain\Model\AggregateRoot;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -20,6 +22,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Table(name: 'patients')]
 class Patient
 {
+    use AggregateRoot;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     #[ORM\Column(type: Types::INTEGER)]
@@ -178,6 +182,107 @@ class Patient
         $this->updateFullName();
         $this->createdAt = new DateTimeImmutable();
         $this->records = new ArrayCollection();
+    }
+
+    public function update(
+        string $firstName,
+        string $lastName,
+        ?DateTimeInterface $dateOfBirth = null,
+        ?string $taxId = null,
+        ?string $phone = null,
+        ?string $address = null,
+        ?string $email = null,
+        ?string $profession = null,
+        ?string $sportsActivity = null,
+        ?string $notes = null,
+        ?string $rate = null,
+        ?string $allergies = null,
+        ?string $medication = null,
+        ?string $systemicDiseases = null,
+        ?string $surgeries = null,
+        ?string $accidents = null,
+        ?string $injuries = null,
+        ?string $bruxism = null,
+        ?string $insoles = null,
+        ?string $others = null,
+        PatientStatus $status = PatientStatus::ACTIVE,
+    ): void {
+        $changes = [];
+        
+        $fields = [
+            'firstName' => $firstName,
+            'lastName' => $lastName,
+            'taxId' => $taxId,
+            'phone' => $phone,
+            'address' => $address,
+            'email' => $email,
+            'profession' => $profession,
+            'sportsActivity' => $sportsActivity,
+            'notes' => $notes,
+            'rate' => $rate,
+            'allergies' => $allergies,
+            'medication' => $medication,
+            'systemicDiseases' => $systemicDiseases,
+            'surgeries' => $surgeries,
+            'accidents' => $accidents,
+            'injuries' => $injuries,
+            'bruxism' => $bruxism,
+            'insoles' => $insoles,
+            'others' => $others,
+        ];
+
+        foreach ($fields as $field => $newValue) {
+            $oldValue = $this->$field;
+            if ($oldValue !== $newValue) {
+                $changes[$field] = ['before' => $oldValue, 'after' => $newValue];
+                $this->$field = $newValue;
+            }
+        }
+
+        // Handle DateOfBirth (DateTime comparison)
+        if ($this->dateOfBirth != $dateOfBirth) {
+             $changes['dateOfBirth'] = [
+                 'before' => $this->dateOfBirth?->format('Y-m-d'),
+                 'after' => $dateOfBirth?->format('Y-m-d')
+             ];
+             $this->dateOfBirth = $dateOfBirth;
+        }
+
+        // Handle Status (Enum)
+        if ($this->status !== $status) {
+            $changes['status'] = [
+                'before' => $this->status->value,
+                'after' => $status->value
+            ];
+            $this->status = $status;
+        }
+
+        $this->updateFullName();
+
+        if (!empty($changes)) {
+            $this->recordEvent(new PatientUpdatedEvent((string) $this->id, [
+                'changes' => $changes,
+                'updatedAt' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+            ]));
+        }
+    }
+
+    public function recordCreatedEvent(): void
+    {
+        $changes = [
+            'firstName' => ['before' => null, 'after' => $this->firstName],
+            'lastName' => ['before' => null, 'after' => $this->lastName],
+            'email' => ['before' => null, 'after' => $this->email],
+            'taxId' => ['before' => null, 'after' => $this->taxId],
+            'phone' => ['before' => null, 'after' => $this->phone],
+            'address' => ['before' => null, 'after' => $this->address],
+            'status' => ['before' => null, 'after' => $this->status->value],
+            'createdAt' => ['before' => null, 'after' => $this->createdAt->format('Y-m-d H:i:s')],
+        ];
+        
+        $this->recordEvent(new \App\Domain\Event\Patient\PatientCreatedEvent((string) $this->id, [
+            'changes' => $changes
+        ]));
     }
 
     public static function create(

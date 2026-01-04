@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Domain\Entity;
 
+use App\Domain\Event\Customer\CustomerCreatedEvent;
+use App\Domain\Event\Customer\CustomerUpdatedEvent;
+use App\Domain\Model\AggregateRoot;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -17,6 +20,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[UniqueEntity('taxId', message: 'error_customer_tax_id_duplicate')]
 class Customer
 {
+    use AggregateRoot;
+
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     #[ORM\Column(type: Types::INTEGER)]
@@ -79,6 +84,60 @@ class Customer
         $this->billingAddress = $billingAddress;
         $this->createdAt = new DateTimeImmutable();
         $this->updateFullName();
+    }
+
+    public function update(
+        string $firstName,
+        string $lastName,
+        string $taxId,
+        ?string $email = null,
+        ?string $phone = null,
+        ?string $billingAddress = null,
+    ): void {
+        $changes = [];
+        $fields = [
+            'firstName' => $firstName,
+            'lastName' => $lastName,
+            'taxId' => $taxId,
+            'email' => $email,
+            'phone' => $phone,
+            'billingAddress' => $billingAddress,
+        ];
+
+        foreach ($fields as $field => $newValue) {
+            $oldValue = $this->$field;
+            if ($oldValue !== $newValue) {
+                $changes[$field] = ['before' => $oldValue, 'after' => $newValue];
+                $this->$field = $newValue;
+            }
+        }
+
+        $this->updateFullName();
+        $this->updateTimestamp();
+
+        if (!empty($changes)) {
+            $this->recordEvent(new CustomerUpdatedEvent((string) $this->id, [
+                'changes' => $changes,
+                'updatedAt' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
+            ]));
+        }
+    }
+
+    public function recordCreatedEvent(): void
+    {
+        $changes = [
+            'firstName' => ['before' => null, 'after' => $this->firstName],
+            'lastName' => ['before' => null, 'after' => $this->lastName],
+            'taxId' => ['before' => null, 'after' => $this->taxId],
+            'email' => ['before' => null, 'after' => $this->email],
+            'phone' => ['before' => null, 'after' => $this->phone],
+            'billingAddress' => ['before' => null, 'after' => $this->billingAddress],
+            'createdAt' => ['before' => null, 'after' => $this->createdAt->format('Y-m-d H:i:s')],
+        ];
+
+        $this->recordEvent(new CustomerCreatedEvent((string) $this->id, [
+            'changes' => $changes
+        ]));
     }
 
     public static function create(

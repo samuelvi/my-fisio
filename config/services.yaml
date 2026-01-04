@@ -70,18 +70,17 @@ services:
     App\Domain\Repository\InvoiceRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineInvoiceRepository'
     App\Domain\Repository\CounterRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineCounterRepository'
     App\Domain\Repository\CustomerRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineCustomerRepository'
+    App\Domain\Repository\RecordRepositoryInterface: '@App\Infrastructure\Persistence\Doctrine\Repository\DoctrineRecordRepository'
+
+    App\Domain\Event\EventStoreInterface: '@App\Infrastructure\Persistence\EventStore\DoctrineEventStore'
+    App\Infrastructure\EventHandler\AuditEventHandler:
+        tags: [ { name: messenger.message_handler, bus: event.bus } ]
+    
+    App\Infrastructure\Api\State\AuditTrailProvider: ~
 
     App\Command\Migration\MigrateLegacyDataCommand:
         arguments:
             $projectDir: '%kernel.project_dir%'
-
-    # Audit configuration
-    App\Infrastructure\Audit\DoctrineAuditListener:
-        arguments:
-            $enabled: '%audit_trail_enabled%'
-        tags:
-            - { name: doctrine.event_listener, event: postPersist, method: postPersist }
-            - { name: doctrine.event_listener, event: onFlush, method: onFlush }
 
     # Custom DateTime normalizer to avoid timezone conversion issues
     App\Infrastructure\Serializer\DateTimeNormalizer:
