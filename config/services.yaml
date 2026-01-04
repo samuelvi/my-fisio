@@ -31,6 +31,10 @@ parameters:
     # Invoice settings
     invoice_prefix: '%env(INVOICE_PREFIX)%'
 
+    # Audit settings
+    audit_trail_enabled: '%env(bool:AUDIT_TRAIL_ENABLED)%'
+    domain_events_enabled: '%env(bool:DOMAIN_EVENTS_ENABLED)%'
+
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -71,6 +75,18 @@ services:
     App\Command\Migration\MigrateLegacyDataCommand:
         arguments:
             $projectDir: '%kernel.project_dir%'
+
+    # Audit configuration
+    App\Infrastructure\Audit\DoctrineAuditListener:
+        arguments:
+            $enabled: '%audit_trail_enabled%'
+        tags:
+            - { name: doctrine.event_listener, event: postPersist }
+            - { name: doctrine.event_listener, event: onFlush }
+
+    App\Infrastructure\Audit\AuditLogger:
+        arguments:
+            $enabled: '%domain_events_enabled%'
 
     # Custom DateTime normalizer to avoid timezone conversion issues
     App\Infrastructure\Serializer\DateTimeNormalizer:
@@ -134,3 +150,13 @@ when@test:
             autowire: true
             autoconfigure: true
             tags: ['controller.service_arguments']
+
+        # Make DoctrineAuditListener public for tests (so tests can manually register it if needed)
+        App\Infrastructure\Audit\DoctrineAuditListener:
+            public: true
+            autowire: true
+            arguments:
+                $enabled: '%audit_trail_enabled%'
+            tags:
+                - { name: doctrine.event_listener, event: postPersist }
+                - { name: doctrine.event_listener, event: onFlush }

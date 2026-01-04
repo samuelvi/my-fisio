@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: physiotherapy_mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: physiotherapy_db
+      MARIADB_USER: physiotherapy_user
+      MARIADB_PASSWORD: physiotherapy_pass
+      MARIADB_ROOT_PASSWORD: root_pass
+    volumes:
+      # MariaDB data persistence (bind mount to host)
+      - ./docker/common/mariadb/data:/var/lib/mysql
+      # Custom MariaDB configuration (utf8mb4 defaults)
+      - ./docker/common/mariadb/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: physiotherapy_redis
+    restart: unless-stopped
+    volumes:
+      # Redis data persistence (bind mount to host)
+      - ./docker/common/redis/data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: physiotherapy_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP server
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+networks:
+  default:
+    name: physiotherapy_network
