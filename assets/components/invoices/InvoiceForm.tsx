@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
 import { Invoice, InvoiceLine } from '../../types';
+import { useDraft } from '../../presentation/hooks/useDraft';
+import DraftAlert from '../shared/DraftAlert';
+import DraftModal from '../shared/DraftModal';
 
 interface InvoiceInputProps {
     label: string;
@@ -35,6 +38,18 @@ const InvoiceInput = ({ label, value, setter, type = "text", required = false, p
 // Type for validation errors from Symfony
 interface ValidationErrors {
     [key: string]: string;
+}
+
+// Type for invoice form data (used for drafts)
+interface InvoiceFormData {
+    date: string;
+    customerName: string;
+    customerTaxId: string;
+    customerAddress: string;
+    customerPhone: string;
+    customerEmail: string;
+    invoiceNumber: string;
+    lines: InvoiceLine[];
 }
 
 // Helper function to parse Symfony violations into a flat error object
@@ -144,6 +159,42 @@ export default function InvoiceForm() {
         { concept: '', description: '', quantity: 1, price: 0, amount: 0 }
     ]);
 
+    // Draft system state
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+    const [showDiscardModal, setShowDiscardModal] = useState(false);
+    const formIdRef = useRef(`invoice-${isEditing ? id : 'new'}-${Date.now()}`);
+
+    // Initialize draft hook (now enabled for both new and edit modes)
+    const draft = useDraft<InvoiceFormData>({
+        type: 'invoice',
+        formId: formIdRef.current,
+        autoSaveInterval: 10000, // 10 seconds
+        enabled: true, // Enable for both new and edit
+        onRestore: (data) => {
+            // Populate form with draft data
+            setDate(data.date);
+            setCustomerName(data.customerName);
+            setCustomerTaxId(data.customerTaxId);
+            setCustomerAddress(data.customerAddress);
+            setCustomerPhone(data.customerPhone);
+            setCustomerEmail(data.customerEmail);
+            setInvoiceNumber(data.invoiceNumber);
+            setLines(data.lines);
+        }
+    });
+
+    // Function to get current form data for auto-save
+    const getCurrentFormData = (): InvoiceFormData => ({
+        date,
+        customerName,
+        customerTaxId,
+        customerAddress,
+        customerPhone,
+        customerEmail,
+        invoiceNumber,
+        lines
+    });
+
     useEffect(() => {
         if (isEditing && !editEnabled) {
             navigate('/invoices');
@@ -243,6 +294,36 @@ export default function InvoiceForm() {
         fetchCustomerData();
     }, [customerId, isEditing, t]);
 
+    // Start auto-save after initial data is loaded
+    useEffect(() => {
+        if (!isLoading) {
+            draft.startAutoSave(getCurrentFormData);
+        }
+
+        return () => {
+            draft.stopAutoSave();
+        };
+    }, [isLoading]);
+
+    // Draft action handlers
+    const handleRestoreClick = () => {
+        setShowRestoreModal(true);
+    };
+
+    const handleConfirmRestore = async () => {
+        await draft.restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardClick = () => {
+        setShowDiscardModal(true);
+    };
+
+    const handleConfirmDiscard = async () => {
+        await draft.discardDraft();
+        setShowDiscardModal(false);
+    };
+
     const handleAddLine = () => {
         setLines([...lines, { concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
     };
@@ -313,6 +394,10 @@ export default function InvoiceForm() {
                 delete payload.number;
                 await axios.post(Routing.generate('api_invoices_post'), payload);
             }
+
+            // Clear draft on successful save
+            draft.clearDraft();
+
             navigate('/invoices');
         } catch (err: any) {
             console.error('Error creating invoice:', err);
@@ -339,6 +424,22 @@ export default function InvoiceForm() {
 
             // Generic error
             setError(t('error_failed_to_create_invoice'));
+
+            // Save draft on network error
+            draft.saveOnNetworkError(err, getCurrentFormData());
+
+            // Move focus to draft alert if it's a network error
+            const isNetworkError = !err.response || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED';
+            if (isNetworkError) {
+                // Wait for state update and render before scrolling
+                setTimeout(() => {
+                    const alertElement = document.getElementById('draft-alert');
+                    if (alertElement) {
+                        alertElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        alertElement.focus();
+                    }
+                }, 300);
+            }
         } finally {
             setLoading(false);
         }
@@ -346,6 +447,33 @@ export default function InvoiceForm() {
 
     return (
         <div className="max-w-5xl mx-auto p-4 sm:p-6">
+            {/* Draft Alert - Only show when saved by error, not for regular auto-save */}
+            <DraftAlert
+                show={draft.hasDraft && draft.draftSavedByError}
+                draftAge={draft.draftAge}
+                onRestore={handleRestoreClick}
+                onDiscard={handleDiscardClick}
+                variant="error"
+            />
+
+            <DraftModal
+                isOpen={showRestoreModal}
+                title="Recuperar borrador"
+                message="¿Estás seguro de que deseas recuperar el borrador? Los datos actuales del formulario se reemplazarán con los datos del borrador."
+                type="restore"
+                onConfirm={handleConfirmRestore}
+                onCancel={() => setShowRestoreModal(false)}
+            />
+
+            <DraftModal
+                isOpen={showDiscardModal}
+                title="Descartar borrador"
+                message="¿Estás seguro de que deseas descartar el borrador? Esta acción no se puede deshacer."
+                type="discard"
+                onConfirm={handleConfirmDiscard}
+                onCancel={() => setShowDiscardModal(false)}
+            />
+
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">{isEditing ? t('edit_invoice') : t('new_invoice')}</h1>
                 <p className="text-sm text-gray-500">{isEditing ? t('edit_invoice_subtitle') : t('new_invoice_subtitle')}</p>
