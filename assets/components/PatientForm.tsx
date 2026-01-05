@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect, Fragment, ChangeEvent, FormEvent, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Dialog, Transition } from '@headlessui/react';
@@ -6,6 +6,9 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
 import { Patient, PatientStatus } from '../types';
+import { useDraft } from '../presentation/hooks/useDraft';
+import DraftAlert from './shared/DraftAlert';
+import DraftModal from './shared/DraftModal';
 
 interface PatientFormData {
     firstName: string;
@@ -64,11 +67,46 @@ export default function PatientForm() {
         status: 'active'
     });
 
+    // Ref to hold current form data for auto-save (avoids stale closures)
+    const formDataRef = useRef<PatientFormData>(formData);
+
+    // Update ref whenever form data changes
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
+
+    // Draft system state
+    const [showRestoreModal, setShowRestoreModal] = useState(false);
+    const [showDiscardModal, setShowDiscardModal] = useState(false);
+    const formIdRef = useRef(`patient-${isEditing ? id : 'new'}-${Date.now()}`);
+
+    // Initialize draft hook
+    const draft = useDraft<PatientFormData>({
+        type: 'patient',
+        formId: formIdRef.current,
+        autoSaveInterval: 5000, // 5 seconds
+        enabled: true,
+        onRestore: (data) => {
+            setFormData(data);
+        }
+    });
+
     useEffect(() => {
         if (isEditing) {
             fetchPatient();
         }
     }, [id]);
+
+    // Start auto-save after initial load or when ready
+    useEffect(() => {
+        if (!loading) {
+            draft.startAutoSave(() => formDataRef.current);
+        }
+
+        return () => {
+            draft.stopAutoSave();
+        };
+    }, [loading]);
 
     const fetchPatient = async () => {
         setLoading(true);
@@ -131,8 +169,28 @@ export default function PatientForm() {
         setIsConfirmModalOpen(false);
     };
 
+    // Draft action handlers
+    const handleRestoreClick = () => {
+        setShowRestoreModal(true);
+    };
+
+    const handleConfirmRestore = async () => {
+        await draft.restoreDraft();
+        setShowRestoreModal(false);
+    };
+
+    const handleDiscardClick = () => {
+        setShowDiscardModal(true);
+    };
+
+    const handleConfirmDiscard = async () => {
+        await draft.discardDraft();
+        setShowDiscardModal(false);
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        draft.stopAutoSave(); // Stop auto-save immediately
         setLoading(true);
         setErrors({});
 
@@ -142,13 +200,31 @@ export default function PatientForm() {
 
             if (isEditing) {
                 await axios.put(Routing.generate('api_patients_put', { id }), payload);
+                draft.clearDraft(); // Clear draft on success
                 navigate(`/patients/${id}`);
             } else {
                 await axios.post(Routing.generate('api_patients_post'), payload);
+                draft.clearDraft(); // Clear draft on success
                 navigate('/patients');
             }
         } catch (err: any) {
             console.error(err);
+            
+            // Save draft on network error
+            draft.saveOnNetworkError(err, formDataRef.current);
+
+            // Move focus to draft alert if it's a network error
+            const isNetworkError = !err.response || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED';
+            if (isNetworkError) {
+                setTimeout(() => {
+                    const alertElement = document.getElementById('draft-alert');
+                    if (alertElement) {
+                        alertElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        alertElement.focus();
+                    }
+                }, 300);
+            }
+
             if (err.response && err.response.data && err.response.data.violations) {
                 const newErrors: Record<string, string> = {};
                 err.response.data.violations.forEach((violation: any) => {
@@ -158,13 +234,39 @@ export default function PatientForm() {
             } else {
                 setErrors({ global: t('error_unexpected') });
             }
-        } finally {
             setLoading(false);
         }
     };
 
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-6">
+            {/* Draft Alert */}
+            <DraftAlert
+                show={draft.hasDraft && draft.draftSavedByError}
+                draftAge={draft.draftAge}
+                onRestore={handleRestoreClick}
+                onDiscard={handleDiscardClick}
+                variant="error"
+            />
+
+            <DraftModal
+                isOpen={showRestoreModal}
+                title="Recuperar borrador"
+                message="¿Estás seguro de que deseas recuperar el borrador? Los datos actuales del formulario se reemplazarán con los datos del borrador."
+                type="restore"
+                onConfirm={handleConfirmRestore}
+                onCancel={() => setShowRestoreModal(false)}
+            />
+
+            <DraftModal
+                isOpen={showDiscardModal}
+                title="Descartar borrador"
+                message="¿Estás seguro de que deseas descartar el borrador? Esta acción no se puede deshacer."
+                type="discard"
+                onConfirm={handleConfirmDiscard}
+                onCancel={() => setShowDiscardModal(false)}
+            />
+
             <div className="md:flex md:items-center md:justify-between mb-6">
                 <div className="flex-1 min-w-0">
                     <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
