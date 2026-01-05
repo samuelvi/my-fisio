@@ -183,6 +183,18 @@ export default function InvoiceForm() {
         }
     });
 
+    // Ref to hold current form data for auto-save (avoids stale closures)
+    const formDataRef = useRef<InvoiceFormData>({
+        date: new Date().toISOString().split('T')[0],
+        customerName: '',
+        customerTaxId: '',
+        customerAddress: '',
+        customerPhone: '',
+        customerEmail: '',
+        invoiceNumber: '',
+        lines: []
+    });
+
     // Function to get current form data for auto-save
     const getCurrentFormData = (): InvoiceFormData => ({
         date,
@@ -194,6 +206,11 @@ export default function InvoiceForm() {
         invoiceNumber,
         lines
     });
+
+    // Update ref whenever form data changes
+    useEffect(() => {
+        formDataRef.current = getCurrentFormData();
+    }, [date, customerName, customerTaxId, customerAddress, customerPhone, customerEmail, invoiceNumber, lines]);
 
     useEffect(() => {
         if (isEditing && !editEnabled) {
@@ -297,7 +314,7 @@ export default function InvoiceForm() {
     // Start auto-save after initial data is loaded
     useEffect(() => {
         if (!isLoading) {
-            draft.startAutoSave(getCurrentFormData);
+            draft.startAutoSave(() => formDataRef.current);
         }
 
         return () => {

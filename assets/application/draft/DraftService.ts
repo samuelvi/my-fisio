@@ -126,6 +126,11 @@ export class DraftService {
       return null;
     }
 
+    // If draft was saved by error, clear the flag upon restoration
+    if (draft.savedByError) {
+      this.saveDraft(type, draft.data, draft.formId, false);
+    }
+
     window.dispatchEvent(
       new CustomEvent(DRAFT_EVENTS.DRAFT_RESTORED, {
         detail: { type, timestamp: draft.timestamp }

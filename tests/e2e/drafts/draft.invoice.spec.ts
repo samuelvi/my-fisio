@@ -14,17 +14,15 @@ test.describe('Invoice Draft System', () => {
   test.beforeEach(async ({ page: testPage, context }) => {
     page = testPage;
     await loginAsAdmin(page, context);
-  });
 
-  test.afterEach(async () => {
-    // Clean up localStorage after each test
+    // Clean any existing drafts after login (now we have a valid context)
     await page.evaluate(() => {
       localStorage.removeItem('draft_invoice');
     });
   });
 
-  test.beforeEach(async () => {
-    // Also clean before each test to ensure clean slate
+  test.afterEach(async () => {
+    // Clean up localStorage after each test
     await page.evaluate(() => {
       localStorage.removeItem('draft_invoice');
     });
@@ -35,15 +33,28 @@ test.describe('Invoice Draft System', () => {
     await page.goto('/invoices/new');
     await page.waitForLoadState('networkidle');
 
+    // Wait for auto-save to initialize (useEffect runs after render)
+    await page.waitForTimeout(500);
+
     // Fill some form fields
     await setInvoiceInputValue(page, 'Customer Name', 'Test Draft Customer');
     await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '12345678X');
     await setInvoiceInputValue(page, 'Address', 'Test Address 123');
 
-    // Wait for at least one full auto-save cycle after filling (5s + margin)
-    await page.waitForTimeout(7000);
+    // Wait for draft to be saved with correct data (poll until it appears)
+    await page.waitForFunction(
+      () => {
+        const data = localStorage.getItem('draft_invoice');
+        if (!data) return false;
+        const draft = JSON.parse(data);
+        return draft.data.customerName === 'Test Draft Customer' &&
+               draft.data.customerTaxId === '12345678X' &&
+               draft.data.customerAddress === 'Test Address 123';
+      },
+      { timeout: 15000 } // Wait up to 15 seconds for auto-save
+    );
 
-    // Check localStorage for draft
+    // Verify the draft
     const draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_invoice');
       return data ? JSON.parse(data) : null;
@@ -392,6 +403,10 @@ test.describe('Invoice Draft System', () => {
 
   test('should restore draft from network error and clear savedByError flag', async () => {
     await page.goto('/invoices/new');
+    await page.waitForLoadState('networkidle');
+
+    // Wait for auto-save to initialize
+    await page.waitForTimeout(500);
 
     // Create draft with savedByError: true
     await page.evaluate(() => {
@@ -451,6 +466,9 @@ test.describe('Invoice Draft System', () => {
     await page.goto('/invoices/new');
     await page.waitForLoadState('networkidle');
 
+    // Wait for auto-save to initialize
+    await page.waitForTimeout(500);
+
     await setInvoiceInputValue(page, 'Customer Name', 'Edit Mode Test');
     await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '99999999E');
     await setInvoiceInputValue(page, 'Address', 'Edit Address');
@@ -465,14 +483,20 @@ test.describe('Invoice Draft System', () => {
     await page.click('a[href*="/invoices/"][href*="/edit"]');
     await page.waitForLoadState('networkidle');
 
-    // Wait for auto-save to initialize
+    // Wait for auto-save to initialize and form to load
     await page.waitForTimeout(1000);
 
     // Modify the form
     const nameInput = invoiceInput(page, 'Customer Name');
     await nameInput.fill('Modified in Edit');
 
-    // Wait for auto-save (5 seconds)
+    // Trigger blur to ensure React state updates
+    await nameInput.blur();
+
+    // Wait a bit for state to settle
+    await page.waitForTimeout(200);
+
+    // Wait for auto-save (5 seconds + buffer)
     await page.waitForTimeout(6000);
 
     // Check localStorage for draft
