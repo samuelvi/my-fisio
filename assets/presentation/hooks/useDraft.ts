@@ -16,7 +16,7 @@ interface UseDraftOptions {
   /** Unique form identifier */
   formId: string;
 
-  /** Auto-save interval in milliseconds (default: 10000 = 10s) */
+  /** Auto-save interval in milliseconds (default: 5000 = 5s) */
   autoSaveInterval?: number;
 
   /** Whether auto-save is enabled (default: true) */

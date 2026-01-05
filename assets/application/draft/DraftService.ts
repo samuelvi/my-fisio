@@ -41,7 +41,7 @@ export class DraftService {
     config: Partial<DraftConfig> = {}
   ): void {
     const finalConfig: DraftConfig = {
-      autoSaveInterval: config.autoSaveInterval ?? 10000, // 10 seconds
+      autoSaveInterval: config.autoSaveInterval ?? 5000, // 5 seconds
       storageKey: config.storageKey ?? `draft_${type}`,
       enabled: config.enabled ?? true
     };

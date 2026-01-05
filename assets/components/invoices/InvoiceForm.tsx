@@ -168,7 +168,7 @@ export default function InvoiceForm() {
     const draft = useDraft<InvoiceFormData>({
         type: 'invoice',
         formId: formIdRef.current,
-        autoSaveInterval: 10000, // 10 seconds
+        autoSaveInterval: 5000, // 5 seconds
         enabled: true, // Enable for both new and edit
         onRestore: (data) => {
             // Populate form with draft data
