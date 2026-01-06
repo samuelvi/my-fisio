@@ -12,7 +12,7 @@ import { enUS, es } from 'date-fns/locale';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
 import { Appointment } from '../types';
-import NetworkErrorAlert from './shared/NetworkErrorAlert';
+import StatusAlert from './shared/StatusAlert';
 
 registerLocale('en', enUS);
 registerLocale('es', es);
@@ -42,7 +42,9 @@ export default function Calendar() {
     const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
     const [currentEvent, setCurrentEvent] = useState<any>(null);
-    const [showNetworkError, setShowNetworkError] = useState<boolean>(false);
+    const [showAlert, setShowAlert] = useState<boolean>(false);
+    const [alertTitle, setAlertTitle] = useState<string>('');
+    const [alertMessage, setAlertMessage] = useState<string>('');
     const calendarRef = useRef<FullCalendar>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
     const [formData, setFormData] = useState<FormData>({
@@ -255,6 +257,24 @@ export default function Calendar() {
         setModalOpen(true);
     };
 
+    const handleApiError = (error: any) => {
+        const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+        
+        if (isNetworkError) {
+            setAlertTitle('Error de conexión');
+            setAlertMessage('Los cambios no se pudieron guardar porque se ha perdido la conexión a Internet. Por favor, comprueba tu conexión e inténtalo de nuevo.');
+        } else {
+            setAlertTitle('Error del servidor');
+            const serverMsg = error.response?.data?.detail || error.response?.data?.['hydra:description'] || 'Ocurrió un error inesperado al procesar la solicitud.';
+            setAlertMessage(serverMsg);
+        }
+        
+        setShowAlert(true);
+        setModalOpen(false);
+        setIsDeleteConfirmOpen(false);
+        setShowNoTypeConfirmModal(false);
+    };
+
     const saveAppointment = async () => {
         try {
             const payload = { ...formData, userId: 1 };
@@ -265,16 +285,11 @@ export default function Calendar() {
             }
             setModalOpen(false);
             setShowNoTypeConfirmModal(false);
-            setShowNetworkError(false);
+            setShowAlert(false);
             if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
         } catch (error: any) {
             console.error('Error saving appointment:', error);
-            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
-            if (isNetworkError) {
-                setShowNetworkError(true);
-                setModalOpen(false);
-                setShowNoTypeConfirmModal(false);
-            }
+            handleApiError(error);
         }
     };
 
@@ -294,16 +309,11 @@ export default function Calendar() {
             await axios.delete(Routing.generate('api_appointments_delete', { id: currentEvent.id }));
             setModalOpen(false);
             setIsDeleteConfirmOpen(false);
-            setShowNetworkError(false);
+            setShowAlert(false);
             if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
         } catch (error: any) {
             console.error('Error deleting appointment:', error);
-            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
-            if (isNetworkError) {
-                setShowNetworkError(true);
-                setModalOpen(false);
-                setIsDeleteConfirmOpen(false);
-            }
+            handleApiError(error);
         }
     };
 
@@ -322,13 +332,10 @@ export default function Calendar() {
                 userId: 1
             };
             await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
-            setShowNetworkError(false);
+            setShowAlert(false);
         } catch (error: any) {
             console.error('Error moving appointment:', error);
-            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
-            if (isNetworkError) {
-                setShowNetworkError(true);
-            }
+            handleApiError(error);
             dropInfo.revert();
         }
     };
@@ -348,13 +355,10 @@ export default function Calendar() {
                 userId: 1
             };
             await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
-            setShowNetworkError(false);
+            setShowAlert(false);
         } catch (error: any) {
             console.error('Error resizing appointment:', error);
-            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
-            if (isNetworkError) {
-                setShowNetworkError(true);
-            }
+            handleApiError(error);
             resizeInfo.revert();
         }
     };
@@ -415,9 +419,11 @@ export default function Calendar() {
 
     return (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm h-full overflow-hidden relative border border-gray-200">
-            <NetworkErrorAlert 
-                show={showNetworkError} 
-                onClose={() => setShowNetworkError(false)} 
+            <StatusAlert 
+                show={showAlert} 
+                onClose={() => setShowAlert(false)} 
+                title={alertTitle}
+                message={alertMessage}
             />
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>

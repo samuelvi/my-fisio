@@ -1,14 +1,14 @@
 /**
- * E2E Tests - Appointment Network Error Handling
+ * E2E Tests - Appointment Network & Server Error Handling
  *
- * Verifies that a red alert banner appears when network errors occur
- * during appointment operations (create, edit, delete, drag&drop).
+ * Verifies that a status alert banner appears when network errors
+ * or server errors occur during appointment operations.
  */
 
 import { test, expect, Page } from '@playwright/test';
 import { loginAsAdmin } from './helpers/auth';
 
-test.describe('Appointment Network Error Handling', () => {
+test.describe('Appointment Error Handling', () => {
   let page: Page;
 
   test.beforeEach(async ({ page: testPage, context }) => {
@@ -23,12 +23,12 @@ test.describe('Appointment Network Error Handling', () => {
     const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
     await newBtn.click(); 
 
-    await page.fill('input[placeholder*="vacio"], input[placeholder*="empty"]', 'Network Test Create');
+    await page.fill('input[placeholder*="vacio"], input[placeholder*="empty"]', 'Network Error Test');
 
     await context.setOffline(true);
     await page.click('button[type="submit"]');
 
-    const alert = page.locator('#network-error-alert');
+    const alert = page.locator('#status-alert');
     await expect(alert).toBeVisible();
     await expect(alert).toContainText('Error de conexión');
 
@@ -38,7 +38,37 @@ test.describe('Appointment Network Error Handling', () => {
     await context.setOffline(false);
   });
 
+  test('should show error alert when server returns 500 on creation', async () => {
+    // 1. Mock API failure
+    await page.route('**/api/appointments', route => {
+      if (route.request().method() === 'POST') {
+        route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ detail: 'Server Error Simulated' })
+        });
+      } else {
+        route.continue();
+      }
+    });
+
+    // 2. Open modal and fill
+    const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
+    await newBtn.click(); 
+    await page.fill('input[placeholder*="vacio"], input[placeholder*="empty"]', 'Server Error Test');
+
+    // 3. Save
+    await page.click('button[type="submit"]');
+
+    // 4. Verify alert
+    const alert = page.locator('#status-alert');
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText('Error del servidor');
+    await expect(alert).toContainText('Server Error Simulated');
+  });
+
   test('should show error alert when dragging appointment fails due to network', async ({ context }) => {
+    // 1. Create an appointment
     const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
     await newBtn.click(); 
     await page.fill('input[placeholder*="vacio"], input[placeholder*="empty"]', 'DragTarget');
@@ -52,16 +82,15 @@ test.describe('Appointment Network Error Handling', () => {
 
     await context.setOffline(true);
 
-    // Use a simpler drag method - target a column
     const target = page.locator('.fc-timegrid-col').last();
-    console.log('Dragging to column...');
     await event.dragTo(target, { force: true });
 
-    await expect(page.locator('#network-error-alert')).toBeVisible();
+    await expect(page.locator('#status-alert')).toBeVisible();
     await context.setOffline(false);
   });
 
   test('should show error alert when editing appointment fails due to network', async ({ context }) => {
+    // 1. Create an appointment
     const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
     await newBtn.click(); 
     await page.fill('input[placeholder*="vacio"], input[placeholder*="empty"]', 'EditTarget');
@@ -79,11 +108,12 @@ test.describe('Appointment Network Error Handling', () => {
     await context.setOffline(true);
     await page.click('button[type="submit"]');
 
-    await expect(page.locator('#network-error-alert')).toBeVisible();
+    await expect(page.locator('#status-alert')).toBeVisible();
     await context.setOffline(false);
   });
 
   test('should show error alert when deleting appointment fails due to network', async ({ context }) => {
+    // 1. Create an appointment
     const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
     await newBtn.click(); 
     await page.fill('input[placeholder*="vacio"], input[placeholder*="empty"]', 'DeleteTarget');
@@ -104,7 +134,7 @@ test.describe('Appointment Network Error Handling', () => {
     await context.setOffline(true);
     await page.getByRole('button', { name: /Borrar|Delete/i }).last().click();
 
-    await expect(page.locator('#network-error-alert')).toBeVisible();
+    await expect(page.locator('#status-alert')).toBeVisible();
     await context.setOffline(false);
   });
 });
