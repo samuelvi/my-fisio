@@ -1,14 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
 import { Customer } from '../../types';
+import { useFormDraft } from '../../presentation/hooks/useFormDraft';
+import FormDraftUI from '../shared/FormDraftUI';
 
 export default function CustomerForm() {
     const { t } = useLanguage();
     const navigate = useNavigate();
     const { id } = useParams();
+    const isEditing = !!id;
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -20,6 +23,20 @@ export default function CustomerForm() {
         email: '',
         phone: '',
         billingAddress: ''
+    });
+
+    const formDataRef = useRef<Customer>(formData);
+    useEffect(() => {
+        formDataRef.current = formData;
+    }, [formData]);
+
+    const formIdRef = useRef(`customer-${isEditing ? id : 'new'}-${Date.now()}`);
+    const draft = useFormDraft<Customer>({
+        type: 'customer',
+        formId: formIdRef.current,
+        onRestore: (data) => {
+            setFormData(data);
+        }
     });
 
     useEffect(() => {
@@ -52,7 +69,6 @@ export default function CustomerForm() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        // Clear specific error when user types
         if (formErrors[name]) {
             setFormErrors(prev => {
                 const newErrors = { ...prev };
@@ -75,6 +91,8 @@ export default function CustomerForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        draft.saveDraft(formDataRef.current);
+
         if (!validate()) return;
 
         setLoading(true);
@@ -83,21 +101,26 @@ export default function CustomerForm() {
 
         try {
             if (id) {
-                console.log('[CustomerForm] PUT Request to:', Routing.generate('api_customers_put', { id }));
                 await axios.put(Routing.generate('api_customers_put', { id }), formData);
             } else {
-                console.log('[CustomerForm] POST Request to:', Routing.generate('api_customers_post'));
                 await axios.post(Routing.generate('api_customers_post'), formData);
             }
-            console.log('[CustomerForm] Success! Redirecting to /customers');
-            // Using a short timeout to ensure the user can see if something happened, 
-            // though SPA navigation is usually instant.
-            setTimeout(() => {
-                navigate('/customers', { replace: true });
-            }, 100);
+            draft.clearDraft();
+            navigate('/customers', { replace: true });
         } catch (error: any) {
-            console.error('[CustomerForm] Full Error Object:', error);
+            draft.saveOnNetworkError(error, formDataRef.current);
             
+            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+            if (isNetworkError) {
+                setTimeout(() => {
+                    const alertElement = document.getElementById('draft-alert');
+                    if (alertElement) {
+                        alertElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        alertElement.focus();
+                    }
+                }, 300);
+            }
+
             const responseData = error.response?.data;
             const status = error.response?.status;
 
@@ -105,32 +128,18 @@ export default function CustomerForm() {
                 const violations = responseData.violations || responseData['hydra:violations'];
                 if (violations && Array.isArray(violations)) {
                     const serverErrors: Record<string, string> = {};
-                    const unmatchedViolations: string[] = [];
-                    
                     violations.forEach((violation: any) => {
                         const path = violation.propertyPath || violation.property_path;
                         if (path && (formData as any).hasOwnProperty(path)) {
                             serverErrors[path] = violation.message;
-                        } else {
-                            unmatchedViolations.push(violation.message);
                         }
                     });
-                    
-                    console.log('[CustomerForm] Server Violations:', serverErrors);
                     setFormErrors(serverErrors);
-                    
-                    if (unmatchedViolations.length > 0) {
-                        setError(unmatchedViolations.join(', '));
-                    } else {
-                        setError(t('error_validation_failed'));
-                    }
+                    setError(t('error_validation_failed'));
                     return;
                 }
             }
-
-            // If we are here, it's an unexpected error
-            const errorMsg = responseData?.['hydra:description'] || responseData?.detail || error.message || t('error_saving_customer');
-            setError(`Error (${status}): ${errorMsg}`);
+            setError(responseData?.detail || error.message || t('error_saving_customer'));
         } finally {
             setLoading(false);
         }
@@ -138,6 +147,20 @@ export default function CustomerForm() {
 
     return (
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+            <FormDraftUI
+                hasDraft={draft.hasDraft}
+                draftAge={draft.draftAge}
+                draftSavedByError={draft.draftSavedByError}
+                showRestoreModal={draft.showRestoreModal}
+                showDiscardModal={draft.showDiscardModal}
+                onRestore={draft.openRestoreModal}
+                onDiscard={draft.openDiscardModal}
+                onRestoreConfirm={draft.handleRestoreDraft}
+                onDiscardConfirm={draft.handleDiscardDraft}
+                onRestoreCancel={draft.closeRestoreModal}
+                onDiscardCancel={draft.closeDiscardModal}
+            />
+
             <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-center mb-6">
                 <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
                     {id ? t('edit_customer') : t('new_customer')}
@@ -163,10 +186,11 @@ export default function CustomerForm() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                            <label htmlFor="firstName" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
                                 {t('first_name')} <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="firstName"
                                 type="text"
                                 name="firstName"
                                 value={formData.firstName}
@@ -181,10 +205,11 @@ export default function CustomerForm() {
                             )}
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                            <label htmlFor="lastName" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
                                 {t('last_name')} <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="lastName"
                                 type="text"
                                 name="lastName"
                                 value={formData.lastName}
@@ -199,10 +224,11 @@ export default function CustomerForm() {
                             )}
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                            <label htmlFor="taxId" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
                                 {t('tax_id')} <span className="text-red-500">*</span>
                             </label>
                             <input
+                                id="taxId"
                                 type="text"
                                 name="taxId"
                                 value={formData.taxId}
@@ -217,10 +243,11 @@ export default function CustomerForm() {
                             )}
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                            <label htmlFor="email" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
                                 {t('email')}
                             </label>
                             <input
+                                id="email"
                                 type="email"
                                 name="email"
                                 value={formData.email}
@@ -232,10 +259,11 @@ export default function CustomerForm() {
                             />
                         </div>
                         <div>
-                            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                            <label htmlFor="phone" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
                                 {t('phone')}
                             </label>
                             <input
+                                id="phone"
                                 type="text"
                                 name="phone"
                                 value={formData.phone}
@@ -249,10 +277,11 @@ export default function CustomerForm() {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                        <label htmlFor="billingAddress" className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
                             {t('address')} <span className="text-red-500">*</span>
                         </label>
                         <textarea
+                            id="billingAddress"
                             name="billingAddress"
                             value={formData.billingAddress}
                             onChange={handleChange}
