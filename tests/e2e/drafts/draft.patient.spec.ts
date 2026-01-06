@@ -122,7 +122,7 @@ test.describe('Patient Draft System', () => {
 
   test('should restore draft and KEEP savedByError flag/panel visible', async () => {
     await page.goto('/patients/new');
-    
+
     // Create a draft with savedByError: true
     await page.evaluate(() => {
       const draftData = {
@@ -169,6 +169,65 @@ test.describe('Patient Draft System', () => {
 
     expect(draftData).not.toBeNull();
     expect(draftData.savedByError).toBe(true);
+  });
+
+  test('should NOT auto-save modifications after restoring draft from network error', async () => {
+    await page.goto('/patients/new');
+
+    // Create a draft with savedByError: true
+    await page.evaluate(() => {
+      const draftData = {
+        type: 'patient',
+        data: {
+          firstName: 'Original First',
+          lastName: 'Original Last',
+          taxId: '99887766C',
+          phone: '111222333',
+          email: 'original@test.com',
+          allergies: 'Original Allergies'
+        },
+        timestamp: Date.now(),
+        formId: 'patient-new-' + Date.now(),
+        savedByError: true
+      };
+      localStorage.setItem('draft_patient', JSON.stringify(draftData));
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Restore draft
+    await page.click('text=Recuperar borrador');
+    await page.click('text=Sí, recuperar');
+    await page.waitForTimeout(500);
+
+    // Verify form fields are populated with original data
+    let firstName = await page.inputValue('input[name="firstName"]');
+    expect(firstName).toBe('Original First');
+
+    // Modify form fields
+    await page.fill('input[name="firstName"]', 'Modified First');
+    await page.fill('input[name="lastName"]', 'Modified Last');
+    await page.fill('input[name="allergies"]', 'Modified Allergies');
+
+    // Wait for what used to be the auto-save interval (6 seconds)
+    await page.waitForTimeout(6000);
+
+    // Check draft - should STILL have ORIGINAL data (not modified data)
+    // This confirms auto-save is NOT running
+    const draftData = await page.evaluate(() => {
+      const data = localStorage.getItem('draft_patient');
+      return data ? JSON.parse(data) : null;
+    });
+
+    expect(draftData).not.toBeNull();
+    expect(draftData.savedByError).toBe(true);
+    expect(draftData.data.firstName).toBe('Original First'); // Original data
+    expect(draftData.data.lastName).toBe('Original Last'); // Original data
+    expect(draftData.data.allergies).toBe('Original Allergies'); // Original data
+
+    // Alert should still be visible
+    await expect(page.locator('#draft-alert')).toBeVisible();
   });
 
   test('should allow modifying form and then recovering draft without error', async () => {

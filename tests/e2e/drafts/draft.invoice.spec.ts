@@ -430,12 +430,9 @@ test.describe('Invoice Draft System', () => {
     await expect(page.locator('#draft-alert')).not.toBeVisible();
   });
 
-  test('should restore draft from network error and KEEP savedByError flag/panel visible', async () => {
+  test('should restore draft and KEEP savedByError flag/panel visible', async () => {
     await page.goto('/invoices/new');
     await page.waitForLoadState('networkidle');
-
-    // Wait for auto-save to initialize
-    await page.waitForTimeout(500);
 
     // Create draft with savedByError: true
     await page.evaluate(() => {
@@ -479,18 +476,79 @@ test.describe('Invoice Draft System', () => {
     // ALERT SHOULD STILL BE VISIBLE
     await expect(page.locator('#draft-alert')).toBeVisible();
 
-    // Wait for auto-save to update the draft (5 seconds)
-    await page.waitForTimeout(6000);
-
     // Check draft - savedByError should STILL be true
     const draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_invoice');
       return data ? JSON.parse(data) : null;
     });
 
-    // Draft should exist and savedByError should be true
     expect(draftData).not.toBeNull();
     expect(draftData.savedByError).toBe(true);
+  });
+
+  test('should NOT auto-save modifications after restoring draft from network error', async () => {
+    await page.goto('/invoices/new');
+    await page.waitForLoadState('networkidle');
+
+    // Create draft with savedByError: true
+    await page.evaluate(() => {
+      const draftData = {
+        type: 'invoice',
+        data: {
+          date: '2026-01-15',
+          customerName: 'Original Invoice Name',
+          customerTaxId: '88776655D',
+          customerAddress: 'Original Address',
+          customerPhone: '555666777',
+          customerEmail: 'original@invoice.com',
+          invoiceNumber: '',
+          lines: [
+            { concept: 'Original Service', description: 'Original Desc', quantity: 1, price: 100, amount: 100 }
+          ]
+        },
+        timestamp: Date.now(),
+        formId: 'test-form-' + Date.now(),
+        savedByError: true
+      };
+      localStorage.setItem('draft_invoice', JSON.stringify(draftData));
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // Restore draft
+    await page.click('text=Recuperar borrador');
+    await page.click('text=Sí, recuperar');
+    await page.waitForTimeout(500);
+
+    // Verify form fields are populated with original data
+    const customerNameInput = invoiceInput(page, 'Customer Name');
+    let customerName = await customerNameInput.inputValue();
+    expect(customerName).toBe('Original Invoice Name');
+
+    // Modify form fields
+    await setInvoiceInputValue(page, 'Customer Name', 'Modified Invoice Name');
+    await setInvoiceInputValue(page, 'Address', 'Modified Address');
+    await setInvoiceInputValue(page, 'Email', 'modified@invoice.com');
+
+    // Wait for what used to be the auto-save interval (6 seconds)
+    await page.waitForTimeout(6000);
+
+    // Check draft - should STILL have ORIGINAL data (not modified data)
+    // This confirms auto-save is NOT running
+    const draftData = await page.evaluate(() => {
+      const data = localStorage.getItem('draft_invoice');
+      return data ? JSON.parse(data) : null;
+    });
+
+    expect(draftData).not.toBeNull();
+    expect(draftData.savedByError).toBe(true);
+    expect(draftData.data.customerName).toBe('Original Invoice Name'); // Original data
+    expect(draftData.data.customerAddress).toBe('Original Address'); // Original data
+    expect(draftData.data.customerEmail).toBe('original@invoice.com'); // Original data
+
+    // Alert should still be visible
+    await expect(page.locator('#draft-alert')).toBeVisible();
   });
 
   test('should work in edit mode', async () => {
