@@ -112,7 +112,7 @@ test('patient creation flow with server validation', async ({ page, request }) =
   await page.getByLabel(/^Profession$/).fill('Physio');
   await page.getByLabel(/Sports/).fill('Running');
   await page.getByLabel(/^Rate$/).fill('50 EUR');
-  await page.getByLabel(/^Allergies$/).fill('None');
+  await page.locator('#allergies').fill('None');
   await page.getByLabel(/Systemic Diseases/).fill('None');
   await page.getByLabel(/^Surgeries$/).fill('None');
   await page.getByLabel(/Accidents/).fill('None');
@@ -137,7 +137,7 @@ test('patient creation flow with server validation', async ({ page, request }) =
   await expect(page.getByLabel(/^Profession$/)).toHaveValue('Physio');
   await expect(page.getByLabel(/Sports/)).toHaveValue('Running');
   await expect(page.getByLabel(/^Rate$/)).toHaveValue('50 EUR');
-  await expect(page.getByLabel(/^Allergies$/)).toHaveValue('None');
+  await expect(page.locator('#allergies')).toHaveValue('None');
   await expect(page.getByLabel(/Systemic Diseases/)).toHaveValue('None');
   await expect(page.getByLabel(/^Surgeries$/)).toHaveValue('None');
   await expect(page.getByLabel(/Accidents/)).toHaveValue('None');

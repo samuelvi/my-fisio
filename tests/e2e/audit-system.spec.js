@@ -229,6 +229,9 @@ test('audit trail captures patient creation', async ({ page, request }) => {
   const emailInput = page.locator('input[name="email"]');
   await emailInput.fill('alice.patient@example.com');
 
+  const allergiesInput = page.locator('#allergies');
+  await allergiesInput.fill('None');
+
   // Save patient
   await page.getByRole('button', { name: 'Save Patient' }).click();
 

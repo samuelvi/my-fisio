@@ -27,6 +27,7 @@ test('clinical records lifecycle: validation, create full, edit verification', a
   await page.getByRole('link', { name: 'New Patient' }).click();
   await page.fill('input[name="firstName"]', patientFirstName);
   await page.fill('input[name="lastName"]', patientLastName);
+  await page.locator('#allergies').fill('None');
   await page.click('button:has-text("Save Patient")');
 
   // 3. Open patient detail
