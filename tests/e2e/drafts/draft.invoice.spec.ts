@@ -17,54 +17,72 @@ test.describe('Invoice Draft System', () => {
 
     // Clean any existing drafts after login (now we have a valid context)
     await page.evaluate(() => {
-      localStorage.removeItem('draft_invoice');
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('draft_'))
+        .forEach(key => localStorage.removeItem(key));
     });
   });
 
   test.afterEach(async () => {
     // Clean up localStorage after each test
     await page.evaluate(() => {
-      localStorage.removeItem('draft_invoice');
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('draft_'))
+        .forEach(key => localStorage.removeItem(key));
     });
   });
 
-  test('should auto-save draft after 5 seconds', async () => {
+  test('should NOT auto-save draft automatically', async () => {
     // Navigate to new invoice
     await page.goto('/invoices/new');
     await page.waitForLoadState('networkidle');
 
-    // Wait for auto-save to initialize (useEffect runs after render)
-    await page.waitForTimeout(500);
-
     // Fill some form fields
-    await setInvoiceInputValue(page, 'Customer Name', 'Test Draft Customer');
+    await setInvoiceInputValue(page, 'Customer Name', 'No Auto Save');
     await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '12345678X');
-    await setInvoiceInputValue(page, 'Address', 'Test Address 123');
 
-    // Wait for draft to be saved with correct data (poll until it appears)
-    await page.waitForFunction(
-      () => {
-        const data = localStorage.getItem('draft_invoice');
-        if (!data) return false;
-        const draft = JSON.parse(data);
-        return draft.data.customerName === 'Test Draft Customer' &&
-               draft.data.customerTaxId === '12345678X' &&
-               draft.data.customerAddress === 'Test Address 123';
-      },
-      { timeout: 15000 } // Wait up to 15 seconds for auto-save
-    );
+    // Wait for what used to be the auto-save interval (5 seconds + margin)
+    await page.waitForTimeout(6000);
 
-    // Verify the draft
+    // Verify NO draft exists
+    const draftData = await page.evaluate(() => {
+      return localStorage.getItem('draft_invoice');
+    });
+    expect(draftData).toBeNull();
+  });
+
+  test('should save draft explicitly when clicking save and show alert on network error', async ({ context }) => {
+    await page.goto('/invoices/new');
+    await page.waitForLoadState('networkidle');
+
+    // Fill form
+    await setInvoiceInputValue(page, 'Customer Name', 'Network Error Test');
+    await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '12312312D');
+    await setInvoiceInputValue(page, 'Concept', 'Test Service');
+    await setInvoiceInputValue(page, 'Qty', '1');
+    await page.fill('input[type="number"][step="0.01"]', '100');
+
+    // Go offline
+    await context.setOffline(true);
+
+    // Submit form
+    await page.click('button[type="submit"]');
+
+    // Alert should be visible
+    await expect(page.locator('#draft-alert')).toBeVisible();
+
+    // Verify the draft exists
     const draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_invoice');
       return data ? JSON.parse(data) : null;
     });
 
     expect(draftData).not.toBeNull();
-    expect(draftData.type).toBe('invoice');
-    expect(draftData.data.customerName).toBe('Test Draft Customer');
-    expect(draftData.data.customerTaxId).toBe('12345678X');
-    expect(draftData.data.customerAddress).toBe('Test Address 123');
+    expect(draftData.data.customerName).toBe('Network Error Test');
+    expect(draftData.savedByError).toBe(true);
+
+    // Back online
+    await context.setOffline(false);
   });
 
   test('should show draft alert on reload', async () => {
@@ -275,14 +293,11 @@ test.describe('Invoice Draft System', () => {
     await setInvoiceInputValue(page, 'Qty', '2'); // quantity
     await page.fill('input[type="number"][step="0.01"]', '75'); // price
 
-    // Wait for auto-save (5 seconds)
-    await page.waitForTimeout(6000);
-
-    // Verify draft exists
+    // Verify draft DOES NOT exist yet
     let draftData = await page.evaluate(() => {
       return localStorage.getItem('draft_invoice');
     });
-    expect(draftData).not.toBeNull();
+    expect(draftData).toBeNull();
 
     // Submit form
     await page.click('button[type="submit"]');
@@ -337,17 +352,17 @@ test.describe('Invoice Draft System', () => {
     expect(alertText).toContain('No se pudo guardar');
   });
 
-  test('should NOT show alert for regular auto-save (savedByError:false)', async () => {
+  test('should NOT show alert for regular save attempt (savedByError:false)', async () => {
     await page.goto('/invoices/new');
     await page.waitForLoadState('networkidle');
 
-    // Create draft WITHOUT savedByError (regular auto-save)
+    // Create draft WITHOUT savedByError (simulating a save that was interrupted but not by network error)
     await page.evaluate(() => {
       const draftData = {
         type: 'invoice',
         data: {
           date: new Date().toISOString().split('T')[0],
-          customerName: 'Auto Save Test',
+          customerName: 'Regular Save Test',
           customerTaxId: '99999999X',
           customerAddress: 'Auto Save Address',
           customerPhone: '',
@@ -357,7 +372,7 @@ test.describe('Invoice Draft System', () => {
         },
         timestamp: Date.now(),
         formId: 'test-form-' + Date.now(),
-        savedByError: false // Regular auto-save
+        savedByError: false // Regular save
       };
       localStorage.setItem('draft_invoice', JSON.stringify(draftData));
     });
@@ -365,44 +380,9 @@ test.describe('Invoice Draft System', () => {
     await page.reload();
     await page.waitForLoadState('networkidle');
 
-    // Alert should NOT be visible for regular auto-save
+    // Alert should NOT be visible for regular save
     const alertVisible = await page.locator('#draft-alert').isVisible();
     expect(alertVisible).toBe(false);
-  });
-
-  test('should preserve savedByError:true across multiple auto-saves', async () => {
-    await page.goto('/invoices/new');
-    await page.waitForLoadState('networkidle');
-
-    // Fill form
-    await setInvoiceInputValue(page, 'Customer Name', 'Preserve Test');
-    await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '11111111A');
-    await setInvoiceInputValue(page, 'Address', 'Test Address');
-
-    // Wait for first auto-save to capture the data
-    await page.waitForTimeout(7000);
-
-    // Manually set savedByError: true (simulating network error happened)
-    await page.evaluate(() => {
-      const existing = localStorage.getItem('draft_invoice');
-      if (existing) {
-        const draft = JSON.parse(existing);
-        draft.savedByError = true;
-        localStorage.setItem('draft_invoice', JSON.stringify(draft));
-      }
-    });
-
-    // Wait for another auto-save cycle (5 seconds)
-    await page.waitForTimeout(6000);
-
-    // Check that savedByError is still true
-    const draftData = await page.evaluate(() => {
-      const data = localStorage.getItem('draft_invoice');
-      return data ? JSON.parse(data) : null;
-    });
-
-    expect(draftData).not.toBeNull();
-    expect(draftData.savedByError).toBe(true);
   });
 
   test('should clear savedByError flag when discarding draft', async () => {
@@ -518,9 +498,6 @@ test.describe('Invoice Draft System', () => {
     await page.goto('/invoices/new');
     await page.waitForLoadState('networkidle');
 
-    // Wait for auto-save to initialize
-    await page.waitForTimeout(500);
-
     await setInvoiceInputValue(page, 'Customer Name', 'Edit Mode Test');
     await setInvoiceInputValue(page, 'Tax Identifier (CIF/NIF)', '99999999E');
     await setInvoiceInputValue(page, 'Address', 'Edit Address');
@@ -535,30 +512,31 @@ test.describe('Invoice Draft System', () => {
     await page.click('a[href*="/invoices/"][href*="/edit"]');
     await page.waitForLoadState('networkidle');
 
-    // Wait for auto-save to initialize and form to load
+    // Wait for form to load
     await page.waitForTimeout(1000);
 
     // Modify the form
     const nameInput = invoiceInput(page, 'Customer Name');
     await nameInput.fill('Modified in Edit');
-
-    // Trigger blur to ensure React state updates
     await nameInput.blur();
 
-    // Wait a bit for state to settle
-    await page.waitForTimeout(200);
+    // Verify NO draft exists yet
+    let draftData = await page.evaluate(() => {
+      return localStorage.getItem('draft_invoice');
+    });
+    expect(draftData).toBeNull();
 
-    // Wait for auto-save (5 seconds + buffer)
-    await page.waitForTimeout(6000);
+    // Submit
+    await page.click('button[type="submit"]');
+    await page.waitForURL('**/invoices');
 
-    // Check localStorage for draft
-    const draftData = await page.evaluate(() => {
+    // Check localStorage for draft - should be gone
+    draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_invoice');
       return data ? JSON.parse(data) : null;
     });
 
-    expect(draftData).not.toBeNull();
-    expect(draftData.data.customerName).toBe('Modified in Edit');
+    expect(draftData).toBeNull();
   });
 
   test('should cancel modals with ESC key', async () => {

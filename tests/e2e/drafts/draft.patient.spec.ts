@@ -16,53 +16,73 @@ test.describe('Patient Draft System', () => {
 
     // Clean any existing drafts after login
     await page.evaluate(() => {
-      localStorage.removeItem('draft_patient');
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('draft_'))
+        .forEach(key => localStorage.removeItem(key));
     });
   });
 
   test.afterEach(async () => {
     // Clean up localStorage after each test
     await page.evaluate(() => {
-      localStorage.removeItem('draft_patient');
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('draft_'))
+        .forEach(key => localStorage.removeItem(key));
     });
   });
 
-  test('should auto-save draft after 5 seconds', async () => {
+  test('should NOT auto-save draft automatically', async ({ page }) => {
     // Navigate to new patient
     await page.goto('/patients/new');
     await page.waitForLoadState('networkidle');
 
-    // Wait for auto-save to initialize
-    await page.waitForTimeout(500);
-
     // Fill some form fields
-    await page.fill('input[name="firstName"]', 'Test Draft Firstname');
-    await page.fill('input[name="lastName"]', 'Test Draft Lastname');
+    await page.fill('input[name="firstName"]', 'No Auto Save');
+    await page.fill('input[name="lastName"]', 'Test');
+    await page.fill('input[name="allergies"]', 'None');
+
+    // Wait for what used to be the auto-save interval (5 seconds + margin)
+    await page.waitForTimeout(6000);
+
+    // Verify NO draft exists
+    const draftData = await page.evaluate(() => {
+      return localStorage.getItem('draft_patient');
+    });
+    expect(draftData).toBeNull();
+  });
+
+  test('should save draft explicitly when clicking save and show alert on network error', async ({ page, context }) => {
+    await page.goto('/patients/new');
+    await page.waitForLoadState('networkidle');
+
+    // Fill form
+    await page.fill('input[name="firstName"]', 'Network Error Test');
+    await page.fill('input[name="lastName"]', 'Patient');
     await page.fill('input[name="taxId"]', '12345678X');
     await page.fill('input[name="allergies"]', 'None');
 
-    // Wait for draft to be saved with correct data
-    await page.waitForFunction(
-      () => {
-        const data = localStorage.getItem('draft_patient');
-        if (!data) return false;
-        const draft = JSON.parse(data);
-        return draft.data.firstName === 'Test Draft Firstname' &&
-               draft.data.lastName === 'Test Draft Lastname';
-      },
-      { timeout: 15000 }
-    );
+    // Go offline to simulate network error
+    await context.setOffline(true);
 
-    // Verify the draft
+    // Submit form - this should trigger manual saveDraft before axios call
+    // and then saveOnNetworkError in the catch block
+    await page.click('button[type="submit"]');
+
+    // Alert should be visible (red variant)
+    await expect(page.locator('#draft-alert')).toBeVisible();
+
+    // Verify the draft exists in localStorage
     const draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_patient');
       return data ? JSON.parse(data) : null;
     });
 
     expect(draftData).not.toBeNull();
-    expect(draftData.type).toBe('patient');
-    expect(draftData.data.firstName).toBe('Test Draft Firstname');
-    expect(draftData.data.lastName).toBe('Test Draft Lastname');
+    expect(draftData.data.firstName).toBe('Network Error Test');
+    expect(draftData.savedByError).toBe(true);
+
+    // Back online for cleanup
+    await context.setOffline(false);
   });
 
   test('should show draft alert on reload (savedByError: true)', async () => {
@@ -247,14 +267,11 @@ test.describe('Patient Draft System', () => {
     await page.fill('input[name="taxId"]', '55443322C');
     await page.fill('input[name="allergies"]', 'None');
 
-    // Wait for auto-save (5 seconds)
-    await page.waitForTimeout(6000);
-
-    // Verify draft exists
+    // Verify NO draft exists yet (no auto-save)
     let draftData = await page.evaluate(() => {
       return localStorage.getItem('draft_patient');
     });
-    expect(draftData).not.toBeNull();
+    expect(draftData).toBeNull();
 
     // Submit form
     await page.click('button[type="submit"]');
@@ -265,7 +282,7 @@ test.describe('Patient Draft System', () => {
     // Wait a bit for local storage cleanup
     await page.waitForTimeout(1000);
 
-    // Draft should be cleared
+    // Draft should be cleared (or never existed/lasted only during ajax)
     draftData = await page.evaluate(() => {
       return localStorage.getItem('draft_patient');
     });
@@ -300,23 +317,27 @@ test.describe('Patient Draft System', () => {
     await page.goto(`${currentUrl}/edit`);
     await page.waitForLoadState('networkidle');
     
-    // Wait for auto-save to initialize
-    await page.waitForTimeout(1000);
-
     // Modify the form
     await page.fill('input[name="firstName"]', 'Modified in Edit');
     await page.locator('input[name="firstName"]').blur();
 
-    // Wait for auto-save
-    await page.waitForTimeout(6000);
-
-    // Check localStorage for draft
-    const draftData = await page.evaluate(() => {
-      const data = localStorage.getItem('draft_patient');
-      return data ? JSON.parse(data) : null;
+    // Verify NO draft exists (no auto-save)
+    let draftData = await page.evaluate(() => {
+      return localStorage.getItem('draft_patient');
     });
+    expect(draftData).toBeNull();
 
-    expect(draftData).not.toBeNull();
-    expect(draftData.data.firstName).toBe('Modified in Edit');
+    // Submit
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/patients\/\d+/);
+
+    // Wait for cleanup
+    await page.waitForTimeout(1000);
+
+    // Draft should be gone
+    draftData = await page.evaluate(() => {
+      return localStorage.getItem('draft_patient');
+    });
+    expect(draftData).toBeNull();
   });
 });
