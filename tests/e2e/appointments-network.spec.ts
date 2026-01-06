@@ -19,6 +19,28 @@ test.describe('Appointment Error Handling', () => {
     await page.waitForSelector('.fc');
   });
 
+  test.afterEach(async ({ context }) => {
+    // Ensure we are back online after each test
+    await context.setOffline(false);
+  });
+
+  test('should show error alert when clicking "Nueva Cita" while offline', async ({ context }) => {
+    // 1. Go offline before clicking
+    await context.setOffline(true);
+
+    // 2. Try to click "New Appointment" button
+    const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
+    await newBtn.click();
+
+    // 3. Verify alert is visible and NO modal is open
+    const alert = page.locator('#status-alert');
+    await expect(alert).toBeVisible();
+    await expect(alert).toContainText('Error de conexión');
+    
+    const modal = page.locator('h3:has-text("Nueva Cita"), h3:has-text("New Appointment")');
+    await expect(modal).not.toBeVisible();
+  });
+
   test('should show error alert when creating appointment fails due to network', async ({ context }) => {
     const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
     await newBtn.click(); 
@@ -34,8 +56,6 @@ test.describe('Appointment Error Handling', () => {
 
     await alert.locator('button').click();
     await expect(alert).not.toBeVisible();
-
-    await context.setOffline(false);
   });
 
   test('should show error alert when server returns 500 on creation', async () => {
@@ -86,7 +106,6 @@ test.describe('Appointment Error Handling', () => {
     await event.dragTo(target, { force: true });
 
     await expect(page.locator('#status-alert')).toBeVisible();
-    await context.setOffline(false);
   });
 
   test('should show error alert when editing appointment fails due to network', async ({ context }) => {
@@ -109,7 +128,6 @@ test.describe('Appointment Error Handling', () => {
     await page.click('button[type="submit"]');
 
     await expect(page.locator('#status-alert')).toBeVisible();
-    await context.setOffline(false);
   });
 
   test('should show error alert when deleting appointment fails due to network', async ({ context }) => {
@@ -132,9 +150,10 @@ test.describe('Appointment Error Handling', () => {
     await expect(page.locator('h3', { hasText: /Delete|Borrar/i }).last()).toBeVisible();
 
     await context.setOffline(true);
-    await page.getByRole('button', { name: /Borrar|Delete/i }).last().click();
+    // Click confirm delete button
+    const confirmBtn = page.getByRole('button', { name: /Borrar|Delete/i }).last();
+    await confirmBtn.click();
 
     await expect(page.locator('#status-alert')).toBeVisible();
-    await context.setOffline(false);
   });
 });

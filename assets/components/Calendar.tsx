@@ -219,6 +219,10 @@ export default function Calendar() {
     }, []); // Empty dependencies - function never changes
 
     const handleDateClick = (arg: any) => {
+        if (!navigator.onLine) {
+            handleApiError({ code: 'ERR_NETWORK' });
+            return;
+        }
         const calendarApi = arg.view.calendar;
         const start = arg.date;
         const end = new Date(start.getTime() + (DEFAULT_DURATION_MINUTES * 60000));
@@ -231,6 +235,10 @@ export default function Calendar() {
     };
 
     const handleDateSelect = (selectInfo: any) => {
+        if (!navigator.onLine) {
+            handleApiError({ code: 'ERR_NETWORK' });
+            return;
+        }
         setFormData({
             title: '',
             notes: '',
@@ -244,6 +252,10 @@ export default function Calendar() {
     };
 
     const handleEventClick = (clickInfo: any) => {
+        if (!navigator.onLine) {
+            handleApiError({ code: 'ERR_NETWORK' });
+            return;
+        }
         const app = clickInfo.event;
         setFormData({
             title: app.title || '',
@@ -454,6 +466,10 @@ export default function Calendar() {
                     </button>
                     <button
                         onClick={() => {
+                            if (!navigator.onLine) {
+                                handleApiError({ code: 'ERR_NETWORK' });
+                                return;
+                            }
                             const now = new Date();
                             now.setMinutes(0, 0, 0);
                             now.setHours(now.getHours() + 1);
