@@ -12,6 +12,7 @@ import { enUS, es } from 'date-fns/locale';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
 import { Appointment } from '../types';
+import NetworkErrorAlert from './shared/NetworkErrorAlert';
 
 registerLocale('en', enUS);
 registerLocale('es', es);
@@ -41,6 +42,7 @@ export default function Calendar() {
     const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState<boolean>(false);
     const [currentEvent, setCurrentEvent] = useState<any>(null);
+    const [showNetworkError, setShowNetworkError] = useState<boolean>(false);
     const calendarRef = useRef<FullCalendar>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
     const [formData, setFormData] = useState<FormData>({
@@ -263,9 +265,16 @@ export default function Calendar() {
             }
             setModalOpen(false);
             setShowNoTypeConfirmModal(false);
+            setShowNetworkError(false);
             if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error saving appointment:', error);
+            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+            if (isNetworkError) {
+                setShowNetworkError(true);
+                setModalOpen(false);
+                setShowNoTypeConfirmModal(false);
+            }
         }
     };
 
@@ -285,9 +294,16 @@ export default function Calendar() {
             await axios.delete(Routing.generate('api_appointments_delete', { id: currentEvent.id }));
             setModalOpen(false);
             setIsDeleteConfirmOpen(false);
+            setShowNetworkError(false);
             if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error deleting appointment:', error);
+            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+            if (isNetworkError) {
+                setShowNetworkError(true);
+                setModalOpen(false);
+                setIsDeleteConfirmOpen(false);
+            }
         }
     };
 
@@ -306,8 +322,13 @@ export default function Calendar() {
                 userId: 1
             };
             await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
-        } catch (error) {
+            setShowNetworkError(false);
+        } catch (error: any) {
             console.error('Error moving appointment:', error);
+            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+            if (isNetworkError) {
+                setShowNetworkError(true);
+            }
             dropInfo.revert();
         }
     };
@@ -327,8 +348,13 @@ export default function Calendar() {
                 userId: 1
             };
             await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
-        } catch (error) {
+            setShowNetworkError(false);
+        } catch (error: any) {
             console.error('Error resizing appointment:', error);
+            const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
+            if (isNetworkError) {
+                setShowNetworkError(true);
+            }
             resizeInfo.revert();
         }
     };
@@ -389,6 +415,10 @@ export default function Calendar() {
 
     return (
         <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm h-full overflow-hidden relative border border-gray-200">
+            <NetworkErrorAlert 
+                show={showNetworkError} 
+                onClose={() => setShowNetworkError(false)} 
+            />
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>
                 <div className="flex flex-wrap gap-2 items-center">
