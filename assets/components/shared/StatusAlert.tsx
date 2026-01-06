@@ -6,6 +6,7 @@
 
 import React from 'react';
 import { XMarkIcon, NoSymbolIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { useLanguage } from '../LanguageContext';
 
 interface StatusAlertProps {
   /** Whether the alert should be shown */
@@ -35,6 +36,8 @@ export default function StatusAlert({
   variant = 'error',
   className = ''
 }: StatusAlertProps) {
+  const { t } = useLanguage();
+
   if (!show) {
     return null;
   }
@@ -48,10 +51,10 @@ export default function StatusAlert({
   const closeButtonColor = isError ? 'text-red-500 hover:bg-red-100' : 'text-amber-500 hover:bg-amber-100';
   const focusRingColor = isError ? 'focus:ring-red-600' : 'focus:ring-amber-600';
 
-  const defaultTitle = isError ? 'Error del servidor' : 'Aviso del sistema';
+  const defaultTitle = isError ? t('server_error') : t('system_notice');
   const defaultMessage = isError 
-    ? 'Ocurrió un error inesperado al procesar la solicitud. Por favor, inténtalo de nuevo más tarde.'
-    : 'Hay un problema con la solicitud. Por favor, revisa los datos.';
+    ? t('unexpected_server_error')
+    : t('request_problem_msg');
 
   return (
     <div

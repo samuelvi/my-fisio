@@ -273,11 +273,11 @@ export default function Calendar() {
         const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNABORTED';
         
         if (isNetworkError) {
-            setAlertTitle('Error de conexión');
-            setAlertMessage('Los cambios no se pudieron guardar porque se ha perdido la conexión a Internet. Por favor, comprueba tu conexión e inténtalo de nuevo.');
+            setAlertTitle(t('connection_error'));
+            setAlertMessage(t('connection_lost_msg'));
         } else {
-            setAlertTitle('Error del servidor');
-            const serverMsg = error.response?.data?.detail || error.response?.data?.['hydra:description'] || 'Ocurrió un error inesperado al procesar la solicitud.';
+            setAlertTitle(t('server_error'));
+            const serverMsg = error.response?.data?.detail || error.response?.data?.['hydra:description'] || t('unexpected_server_error');
             setAlertMessage(serverMsg);
         }
         

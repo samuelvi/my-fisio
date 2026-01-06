@@ -28,14 +28,15 @@ test.describe('Appointment Error Handling', () => {
     // 1. Go offline before clicking
     await context.setOffline(true);
 
-    // 2. Try to click "New Appointment" button
+    // 2. Try to click "New Appointment" button (language agnostic)
     const newBtn = page.locator('button:has-text("Nueva Cita"), button:has-text("New Appointment"), button:has-text("+")').first();
     await newBtn.click();
 
     // 3. Verify alert is visible and NO modal is open
     const alert = page.locator('#status-alert');
     await expect(alert).toBeVisible();
-    await expect(alert).toContainText('Error de conexión');
+    // Using regex to match either language
+    await expect(alert).toContainText(/Error de conexi.n|Connection Error/i);
     
     const modal = page.locator('h3:has-text("Nueva Cita"), h3:has-text("New Appointment")');
     await expect(modal).not.toBeVisible();
@@ -52,7 +53,7 @@ test.describe('Appointment Error Handling', () => {
 
     const alert = page.locator('#status-alert');
     await expect(alert).toBeVisible();
-    await expect(alert).toContainText('Error de conexión');
+    await expect(alert).toContainText(/Error de conexi.n|Connection Error/i);
 
     await alert.locator('button').click();
     await expect(alert).not.toBeVisible();
@@ -83,7 +84,7 @@ test.describe('Appointment Error Handling', () => {
     // 4. Verify alert
     const alert = page.locator('#status-alert');
     await expect(alert).toBeVisible();
-    await expect(alert).toContainText('Error del servidor');
+    await expect(alert).toContainText(/Error del servidor|Server Error/i);
     await expect(alert).toContainText('Server Error Simulated');
   });
 
