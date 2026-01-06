@@ -41,7 +41,7 @@ export default function DraftModal({
   message,
   type,
   onConfirm,
-  onCancel,
+  onCancel = () => console.warn('DraftModal: onCancel prop is missing'),
   isLoading = false
 }: DraftModalProps) {
   const isRestoreType = type === 'restore';

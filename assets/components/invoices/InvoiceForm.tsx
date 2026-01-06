@@ -4,9 +4,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
 import { Invoice, InvoiceLine } from '../../types';
-import { useDraft } from '../../presentation/hooks/useDraft';
-import DraftAlert from '../shared/DraftAlert';
-import DraftModal from '../shared/DraftModal';
+import { useFormDraft } from '../../presentation/hooks/useFormDraft';
+import FormDraftUI from '../shared/FormDraftUI';
 
 interface InvoiceInputProps {
     label: string;
@@ -159,18 +158,13 @@ export default function InvoiceForm() {
         { concept: '', description: '', quantity: 1, price: 0, amount: 0 }
     ]);
 
-    // Draft system state
-    const [showRestoreModal, setShowRestoreModal] = useState(false);
-    const [showDiscardModal, setShowDiscardModal] = useState(false);
+    // Draft system
     const formIdRef = useRef(`invoice-${isEditing ? id : 'new'}-${Date.now()}`);
 
-    // Initialize draft hook (now enabled for both new and edit modes)
-    const draft = useDraft<InvoiceFormData>({
+    const draft = useFormDraft<InvoiceFormData>({
         type: 'invoice',
         formId: formIdRef.current,
-        enabled: true, // Enable for both new and edit
         onRestore: (data) => {
-            // Populate form with draft data
             setDate(data.date);
             setCustomerName(data.customerName);
             setCustomerTaxId(data.customerTaxId);
@@ -312,25 +306,6 @@ export default function InvoiceForm() {
 
 
 
-    // Draft action handlers
-    const handleRestoreClick = () => {
-        setShowRestoreModal(true);
-    };
-
-    const handleConfirmRestore = async () => {
-        await draft.restoreDraft();
-        setShowRestoreModal(false);
-    };
-
-    const handleDiscardClick = () => {
-        setShowDiscardModal(true);
-    };
-
-    const handleConfirmDiscard = async () => {
-        await draft.discardDraft();
-        setShowDiscardModal(false);
-    };
-
     const handleAddLine = () => {
         setLines([...lines, { concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
     };
@@ -459,31 +434,18 @@ export default function InvoiceForm() {
 
     return (
         <div className="max-w-5xl mx-auto p-4 sm:p-6">
-            {/* Draft Alert - Only show when saved by error, not for regular auto-save */}
-            <DraftAlert
-                show={draft.hasDraft && draft.draftSavedByError}
+            <FormDraftUI
+                hasDraft={draft.hasDraft}
                 draftAge={draft.draftAge}
-                onRestore={handleRestoreClick}
-                onDiscard={handleDiscardClick}
-                variant="error"
-            />
-
-            <DraftModal
-                isOpen={showRestoreModal}
-                title="Recuperar borrador"
-                message="¿Estás seguro de que deseas recuperar el borrador? Los datos actuales del formulario se reemplazarán con los datos del borrador."
-                type="restore"
-                onConfirm={handleConfirmRestore}
-                onCancel={() => setShowRestoreModal(false)}
-            />
-
-            <DraftModal
-                isOpen={showDiscardModal}
-                title="Descartar borrador"
-                message="¿Estás seguro de que deseas descartar el borrador? Esta acción no se puede deshacer."
-                type="discard"
-                onConfirm={handleConfirmDiscard}
-                onCancel={() => setShowDiscardModal(false)}
+                draftSavedByError={draft.draftSavedByError}
+                showRestoreModal={draft.showRestoreModal}
+                showDiscardModal={draft.showDiscardModal}
+                onRestore={draft.openRestoreModal}
+                onDiscard={draft.openDiscardModal}
+                onRestoreConfirm={draft.handleRestoreDraft}
+                onDiscardConfirm={draft.handleDiscardDraft}
+                onRestoreCancel={draft.closeRestoreModal}
+                onDiscardCancel={draft.closeDiscardModal}
             />
 
             <div className="mb-6">

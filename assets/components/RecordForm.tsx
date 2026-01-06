@@ -1,9 +1,11 @@
-import React, { useState, useEffect, ChangeEvent, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
 import { RecordEntry, Patient } from '../types';
+import { useFormDraft } from '../presentation/hooks/useFormDraft';
+import FormDraftUI from './shared/FormDraftUI';
 
 interface RecordFormInputAreaProps {
     label: string;
@@ -69,6 +71,17 @@ export default function RecordForm() {
         sickLeave: false
     });
 
+    // Draft system
+    const formIdRef = useRef(`record-${isEditing ? recordId : 'new'}-${Date.now()}`);
+
+    const draft = useFormDraft<RecordFormData>({
+        type: 'record',
+        formId: formIdRef.current,
+        onRestore: (data) => {
+            setFormData(data);
+        }
+    });
+
     useEffect(() => {
         const loadInitialData = async () => {
             if (!patientId) return;
@@ -125,6 +138,10 @@ export default function RecordForm() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+
+        // Save draft before submitting
+        draft.saveDraft(formData);
+
         setLoading(true);
         setErrors({});
 
@@ -139,6 +156,10 @@ export default function RecordForm() {
             } else {
                 await axios.post(Routing.generate('api_records_post'), payload);
             }
+
+            // Clear draft on successful save
+            draft.clearDraft();
+
             navigate(`/patients/${patientId}`);
         } catch (err: any) {
             console.error(err);
@@ -150,6 +171,21 @@ export default function RecordForm() {
                 setErrors(newErrors);
             } else {
                 setErrors({ global: t('error_unexpected') });
+
+                // Save draft on network error
+                draft.saveOnNetworkError(err, formData);
+
+                // Move focus to draft alert if it's a network error
+                const isNetworkError = !err.response || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED';
+                if (isNetworkError) {
+                    setTimeout(() => {
+                        const alertElement = document.getElementById('draft-alert');
+                        if (alertElement) {
+                            alertElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            alertElement.focus();
+                        }
+                    }, 300);
+                }
             }
         } finally {
             setLoading(false);
@@ -162,6 +198,20 @@ export default function RecordForm() {
 
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-6">
+            <FormDraftUI
+                hasDraft={draft.hasDraft}
+                draftAge={draft.draftAge}
+                draftSavedByError={draft.draftSavedByError}
+                showRestoreModal={draft.showRestoreModal}
+                showDiscardModal={draft.showDiscardModal}
+                onRestore={draft.openRestoreModal}
+                onDiscard={draft.openDiscardModal}
+                onRestoreConfirm={draft.handleRestoreDraft}
+                onDiscardConfirm={draft.handleDiscardDraft}
+                onRestoreCancel={draft.closeRestoreModal}
+                onDiscardCancel={draft.closeDiscardModal}
+            />
+
             <button onClick={() => navigate(`/patients/${patientId}`)} className="text-primary font-bold hover:text-primary-dark mb-6 inline-flex items-center transition">
                 ← {t('back_to_patient')}
             </button>

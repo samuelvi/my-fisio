@@ -157,7 +157,7 @@ test.describe('Invoice Draft System', () => {
     await page.click('text=Recuperar borrador');
 
     // Modal should appear
-    await expect(page.locator('text=¿Estás seguro de que deseas recuperar el borrador?')).toBeVisible();
+    await expect(page.locator('text=¿Estás seguro de que quieres recuperar el borrador guardado?')).toBeVisible();
 
     // Confirm restore
     await page.click('text=Sí, recuperar');
@@ -258,7 +258,7 @@ test.describe('Invoice Draft System', () => {
     await page.click('text=Descartar borrador');
 
     // Modal should appear
-    await expect(page.locator('text=¿Estás seguro de que deseas descartar el borrador?')).toBeVisible();
+    await expect(page.locator('text=¿Estás seguro de que quieres descartar este borrador?')).toBeVisible();
 
     // Confirm discard
     await page.click('text=Sí, descartar');
@@ -625,13 +625,13 @@ test.describe('Invoice Draft System', () => {
 
     // Open restore modal
     await page.click('text=Recuperar borrador');
-    await expect(page.locator('text=¿Estás seguro de que deseas recuperar el borrador?')).toBeVisible();
+    await expect(page.locator('text=¿Estás seguro de que quieres recuperar el borrador guardado?')).toBeVisible();
 
     // Press ESC
     await page.keyboard.press('Escape');
 
     // Modal should close
-    await expect(page.locator('text=¿Estás seguro de que deseas recuperar el borrador?')).not.toBeVisible();
+    await expect(page.locator('text=¿Estás seguro de que quieres recuperar el borrador guardado?')).not.toBeVisible();
 
     // Alert should still be visible
     const alertVisible = await page.locator('#draft-alert').isVisible();
@@ -639,12 +639,12 @@ test.describe('Invoice Draft System', () => {
 
     // Open discard modal
     await page.click('text=Descartar borrador');
-    await expect(page.locator('text=¿Estás seguro de que deseas descartar el borrador?')).toBeVisible();
+    await expect(page.locator('text=¿Estás seguro de que quieres descartar este borrador?')).toBeVisible();
 
     // Press ESC
     await page.keyboard.press('Escape');
 
     // Modal should close
-    await expect(page.locator('text=¿Estás seguro de que deseas descartar el borrador?')).not.toBeVisible();
+    await expect(page.locator('text=¿Estás seguro de que quieres descartar este borrador?')).not.toBeVisible();
   });
 });

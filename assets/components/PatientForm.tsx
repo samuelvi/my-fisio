@@ -6,9 +6,8 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
 import { Patient, PatientStatus } from '../types';
-import { useDraft } from '../presentation/hooks/useDraft';
-import DraftAlert from './shared/DraftAlert';
-import DraftModal from './shared/DraftModal';
+import { useFormDraft } from '../presentation/hooks/useFormDraft';
+import FormDraftUI from './shared/FormDraftUI';
 
 interface PatientFormData {
     firstName: string;
@@ -75,16 +74,11 @@ export default function PatientForm() {
         formDataRef.current = formData;
     }, [formData]);
 
-    // Draft system state
-    const [showRestoreModal, setShowRestoreModal] = useState(false);
-    const [showDiscardModal, setShowDiscardModal] = useState(false);
+    // Draft system using reusable hook
     const formIdRef = useRef(`patient-${isEditing ? id : 'new'}-${Date.now()}`);
-
-    // Initialize draft hook
-    const draft = useDraft<PatientFormData>({
+    const draft = useFormDraft<PatientFormData>({
         type: 'patient',
         formId: formIdRef.current,
-        enabled: true,
         onRestore: (data) => {
             setFormData(data);
         }
@@ -157,24 +151,6 @@ export default function PatientForm() {
         setIsConfirmModalOpen(false);
     };
 
-    // Draft action handlers
-    const handleRestoreClick = () => {
-        setShowRestoreModal(true);
-    };
-
-    const handleConfirmRestore = async () => {
-        await draft.restoreDraft();
-        setShowRestoreModal(false);
-    };
-
-    const handleDiscardClick = () => {
-        setShowDiscardModal(true);
-    };
-
-    const handleConfirmDiscard = async () => {
-        await draft.discardDraft();
-        setShowDiscardModal(false);
-    };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -239,31 +215,19 @@ export default function PatientForm() {
 
     return (
         <div className="max-w-4xl mx-auto p-4 sm:p-6">
-            {/* Draft Alert */}
-            <DraftAlert
-                show={draft.hasDraft && draft.draftSavedByError}
+            {/* Draft UI (Alert + Modals) */}
+            <FormDraftUI
+                hasDraft={draft.hasDraft}
                 draftAge={draft.draftAge}
-                onRestore={handleRestoreClick}
-                onDiscard={handleDiscardClick}
-                variant="error"
-            />
-
-            <DraftModal
-                isOpen={showRestoreModal}
-                title="Recuperar borrador"
-                message="¿Estás seguro de que deseas recuperar el borrador? Los datos actuales del formulario se reemplazarán con los datos del borrador."
-                type="restore"
-                onConfirm={handleConfirmRestore}
-                onCancel={() => setShowRestoreModal(false)}
-            />
-
-            <DraftModal
-                isOpen={showDiscardModal}
-                title="Descartar borrador"
-                message="¿Estás seguro de que deseas descartar el borrador? Esta acción no se puede deshacer."
-                type="discard"
-                onConfirm={handleConfirmDiscard}
-                onCancel={() => setShowDiscardModal(false)}
+                draftSavedByError={draft.draftSavedByError}
+                showRestoreModal={draft.showRestoreModal}
+                showDiscardModal={draft.showDiscardModal}
+                onRestore={draft.openRestoreModal}
+                onDiscard={draft.openDiscardModal}
+                onRestoreConfirm={draft.handleRestoreDraft}
+                onDiscardConfirm={draft.handleDiscardDraft}
+                onRestoreCancel={draft.closeRestoreModal}
+                onDiscardCancel={draft.closeDiscardModal}
             />
 
             <div className="md:flex md:items-center md:justify-between mb-6">
