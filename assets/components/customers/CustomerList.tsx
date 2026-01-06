@@ -33,7 +33,6 @@ export default function CustomerList() {
 
 
     const fetchCustomers = async () => {
-        console.log('[CustomerList] Fetching with filters:', filters, 'page:', page);
         setLoading(true);
         try {
             const params: any = {
@@ -46,10 +45,8 @@ export default function CustomerList() {
             if (filters.name.trim()) params['fullName'] = filters.name.trim();
             if (filters.taxId.trim()) params['taxId'] = filters.taxId.trim();
             
-            console.log('[CustomerList] API Request Params:', params);
             const response = await axios.get(Routing.generate('api_customers_collection'), { params });
             const responseData = response.data;
-            console.log('[CustomerList] API Response received:', responseData);
             
             let data: Customer[] = [];
             if (Array.isArray(responseData)) {
@@ -60,11 +57,9 @@ export default function CustomerList() {
                 data = responseData['member'];
             }
 
-            // Handle N+1 pagination
             const hasMore = data.length > ITEMS_PER_PAGE;
-            console.log('[CustomerList] hasMore:', hasMore, 'Count:', data.length);
             if (hasMore) {
-                data.pop(); // Remove the N+1 item
+                data.pop();
             }
             setHasNextPage(hasMore);
             setCustomers(data);
@@ -78,19 +73,15 @@ export default function CustomerList() {
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('[CustomerList] handleSearch triggered. nameInput:', nameInput, 'taxIdInput:', taxIdInput);
-        
         const newFilters = {
             name: nameInput,
             taxId: taxIdInput
         };
-        
         setPage(1);
         setFilters(newFilters);
     };
 
     const handleClear = () => {
-        console.log('[CustomerList] handleClear triggered');
         setNameInput('');
         setTaxIdInput('');
         setPage(1);
