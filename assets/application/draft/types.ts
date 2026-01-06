@@ -7,20 +7,6 @@
 import { DraftType } from '../../domain/Draft';
 
 /**
- * Configuration for draft auto-save behavior
- */
-export interface DraftConfig {
-  /** Auto-save interval in milliseconds (default: 10000ms = 10s) */
-  autoSaveInterval: number;
-
-  /** LocalStorage key for this draft type */
-  storageKey: string;
-
-  /** Whether auto-save is enabled */
-  enabled: boolean;
-}
-
-/**
  * Actions available for draft management
  */
 export interface DraftActions {

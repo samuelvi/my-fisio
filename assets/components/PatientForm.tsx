@@ -42,7 +42,7 @@ export default function PatientForm() {
     const [loading, setLoading] = useState<boolean>(false);
     const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
-    
+
     const [formData, setFormData] = useState<PatientFormData>({
         firstName: '',
         lastName: '',
@@ -84,7 +84,6 @@ export default function PatientForm() {
     const draft = useDraft<PatientFormData>({
         type: 'patient',
         formId: formIdRef.current,
-        autoSaveInterval: 5000, // 5 seconds
         enabled: true,
         onRestore: (data) => {
             setFormData(data);
@@ -97,24 +96,13 @@ export default function PatientForm() {
         }
     }, [id]);
 
-    // Start auto-save after initial load or when ready
-    useEffect(() => {
-        if (!loading) {
-            draft.startAutoSave(() => formDataRef.current);
-        }
-
-        return () => {
-            draft.stopAutoSave();
-        };
-    }, [loading]);
-
     const fetchPatient = async () => {
         setLoading(true);
         try {
             const response = await axios.get<Patient>(Routing.generate('api_patients_get', { id }));
             const data = response.data;
             const formattedDate = data.dateOfBirth ? new Date(data.dateOfBirth).toISOString().split('T')[0] : '';
-            
+
             setFormData({
                 firstName: data.firstName || '',
                 lastName: data.lastName || '',
@@ -156,7 +144,7 @@ export default function PatientForm() {
 
     const handleStatusChange = () => {
         const currentStatus = formData.status || 'active';
-        
+
         if (currentStatus === 'active') {
             setIsConfirmModalOpen(true);
         } else {
@@ -190,26 +178,35 @@ export default function PatientForm() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        draft.stopAutoSave(); // Stop auto-save immediately
+        
+        // Save draft before submitting (as per requirement)
+        draft.saveDraft(formDataRef.current);
+        
+        // Set loading state first
         setLoading(true);
         setErrors({});
-
         try {
             const payload: any = { ...formData };
             if (!payload.dateOfBirth) delete payload.dateOfBirth;
 
             if (isEditing) {
                 await axios.put(Routing.generate('api_patients_put', { id }), payload);
-                draft.clearDraft(); // Clear draft on success
-                navigate(`/patients/${id}`);
             } else {
                 await axios.post(Routing.generate('api_patients_post'), payload);
-                draft.clearDraft(); // Clear draft on success
+            }
+
+            // SUCCESS: Clear draft and navigate
+            draft.clearDraft();
+
+            // Do NOT set loading to false here, let the component unmount
+            if (isEditing) {
+                navigate(`/patients/${id}`);
+            } else {
                 navigate('/patients');
             }
         } catch (err: any) {
             console.error(err);
-            
+
             // Save draft on network error
             draft.saveOnNetworkError(err, formDataRef.current);
 
@@ -234,6 +231,8 @@ export default function PatientForm() {
             } else {
                 setErrors({ global: t('error_unexpected') });
             }
+
+            // ONLY set loading to false on error, so auto-save can resume if fixed
             setLoading(false);
         }
     };
@@ -483,11 +482,12 @@ export default function PatientForm() {
                                 </div>
 
                                 <div className="col-span-6">
-                                    <label htmlFor="allergies" className="block text-sm font-bold text-red-600">{t('allergies')}</label>
+                                    <label htmlFor="allergies" className="block text-sm font-bold text-red-600">{t('allergies')} *</label>
                                     <input
                                         type="text"
                                         name="allergies"
                                         id="allergies"
+                                        required
                                         placeholder={t('allergies_placeholder')}
                                         value={formData.allergies}
                                         onChange={handleChange}
@@ -537,7 +537,7 @@ export default function PatientForm() {
                                         className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
-                                
+
                                 <div className="col-span-6">
                                     <label htmlFor="medication" className="block text-sm font-semibold text-gray-700">{t('current_medication')}</label>
                                     <input

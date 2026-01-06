@@ -117,7 +117,11 @@ export default function DraftAlert({
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={onRestore}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onRestore();
+              }}
               className={`
                 inline-flex items-center px-4 py-2
                 border border-transparent rounded-md
@@ -145,7 +149,11 @@ export default function DraftAlert({
 
             <button
               type="button"
-              onClick={onDiscard}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDiscard();
+              }}
               className="
                 inline-flex items-center px-4 py-2
                 border border-gray-300 rounded-md

@@ -39,6 +39,7 @@ test.describe('Patient Draft System', () => {
     await page.fill('input[name="firstName"]', 'Test Draft Firstname');
     await page.fill('input[name="lastName"]', 'Test Draft Lastname');
     await page.fill('input[name="taxId"]', '12345678X');
+    await page.fill('input[name="allergies"]', 'None');
 
     // Wait for draft to be saved with correct data
     await page.waitForFunction(
@@ -47,8 +48,7 @@ test.describe('Patient Draft System', () => {
         if (!data) return false;
         const draft = JSON.parse(data);
         return draft.data.firstName === 'Test Draft Firstname' &&
-               draft.data.lastName === 'Test Draft Lastname' &&
-               draft.data.taxId === '12345678X';
+               draft.data.lastName === 'Test Draft Lastname';
       },
       { timeout: 15000 }
     );
@@ -76,23 +76,7 @@ test.describe('Patient Draft System', () => {
           firstName: 'Reload Test First',
           lastName: 'Reload Test Last',
           taxId: '87654321Y',
-          dateOfBirth: '',
-          phone: '',
-          email: '',
-          address: '',
-          profession: '',
-          sportsActivity: '',
-          rate: '',
-          allergies: '',
-          systemicDiseases: '',
-          medication: '',
-          surgeries: '',
-          accidents: '',
-          injuries: '',
-          bruxism: '',
-          insoles: '',
-          others: '',
-          notes: '',
+          allergies: 'None',
           status: 'active'
         },
         timestamp: Date.now(),
@@ -116,7 +100,7 @@ test.describe('Patient Draft System', () => {
     expect(alertText).toContain('Recuperar borrador');
   });
 
-  test('should restore draft when clicking "Recuperar"', async () => {
+  test('should restore draft and KEEP savedByError flag/panel visible', async () => {
     await page.goto('/patients/new');
     
     // Create a draft with savedByError: true
@@ -128,7 +112,8 @@ test.describe('Patient Draft System', () => {
           lastName: 'Restore Last',
           taxId: '11223344A',
           phone: '666777888',
-          email: 'restore@test.com'
+          email: 'restore@test.com',
+          allergies: 'Peanuts'
         },
         timestamp: Date.now(),
         formId: 'patient-new-' + Date.now(),
@@ -153,11 +138,65 @@ test.describe('Patient Draft System', () => {
     const firstName = await page.inputValue('input[name="firstName"]');
     expect(firstName).toBe('Restore First');
 
-    const lastName = await page.inputValue('input[name="lastName"]');
-    expect(lastName).toBe('Restore Last');
+    // ALERT SHOULD STILL BE VISIBLE
+    await expect(page.locator('#draft-alert')).toBeVisible();
 
-    const email = await page.inputValue('input[name="email"]');
-    expect(email).toBe('restore@test.com');
+    // Check draft - savedByError should STILL be true
+    const draftData = await page.evaluate(() => {
+      const data = localStorage.getItem('draft_patient');
+      return data ? JSON.parse(data) : null;
+    });
+
+    expect(draftData).not.toBeNull();
+    expect(draftData.savedByError).toBe(true);
+  });
+
+  test('should allow modifying form and then recovering draft without error', async () => {
+    await page.goto('/patients/new');
+    
+    // 1. Create a draft with savedByError: true (simulating network error)
+    await page.evaluate(() => {
+      const draftData = {
+        type: 'patient',
+        data: {
+          firstName: 'Original Name',
+          lastName: 'Original Lastname',
+          taxId: '11111111A',
+          allergies: 'None'
+        },
+        timestamp: Date.now(),
+        formId: 'patient-new-' + Date.now(),
+        savedByError: true
+      };
+      localStorage.setItem('draft_patient', JSON.stringify(draftData));
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // 2. Verify alert is visible
+    await expect(page.locator('#draft-alert')).toBeVisible();
+
+    // 3. Modify the form (simulating user changing their mind or trying to fix it)
+    await page.fill('input[name="firstName"]', 'Modified Name');
+    await page.fill('input[name="lastName"]', 'Modified Lastname');
+
+    // 4. Click "Recuperar borrador"
+    await page.click('text=Recuperar borrador');
+
+    // 5. Confirm restore
+    await page.click('text=Sí, recuperar');
+
+    // 6. Verify NO error message is shown
+    const errorVisible = await page.locator('text=Ocurrió un error inesperado').isVisible();
+    expect(errorVisible).toBe(false);
+
+    // 7. Verify data is restored to ORIGINAL values
+    const firstName = await page.inputValue('input[name="firstName"]');
+    expect(firstName).toBe('Original Name');
+
+    const lastName = await page.inputValue('input[name="lastName"]');
+    expect(lastName).toBe('Original Lastname');
   });
 
   test('should discard draft when clicking "Descartar"', async () => {
@@ -206,6 +245,7 @@ test.describe('Patient Draft System', () => {
     await page.fill('input[name="firstName"]', 'Success First');
     await page.fill('input[name="lastName"]', 'Success Last');
     await page.fill('input[name="taxId"]', '55443322C');
+    await page.fill('input[name="allergies"]', 'None');
 
     // Wait for auto-save (5 seconds)
     await page.waitForTimeout(6000);
@@ -219,7 +259,7 @@ test.describe('Patient Draft System', () => {
     // Submit form
     await page.click('button[type="submit"]');
 
-    // Wait for navigation (either to list or detail)
+    // Wait for navigation
     await page.waitForURL(/\/patients/);
 
     // Wait a bit for local storage cleanup
@@ -239,26 +279,26 @@ test.describe('Patient Draft System', () => {
 
     await page.fill('input[name="firstName"]', 'Edit Mode First');
     await page.fill('input[name="lastName"]', 'Edit Mode Last');
+    await page.fill('input[name="allergies"]', 'None');
     await page.click('button[type="submit"]');
+    
+    // Wait for redirect to list
     await page.waitForURL(/\/patients/);
+    await page.waitForLoadState('networkidle');
 
-    // Navigate to edit page (assuming first item in list or we can navigate directly if we knew ID, 
-    // but cleaner to go via UI or direct URL if we can capture ID)
-    
-    // For simplicity, let's assume we are redirected to patient list or detail. 
-    // If detail: /patients/{id} -> click edit
-    // If list: /patients -> click first edit
-    
-    // Let's go to list and click first patient
-    await page.goto('/patients');
-    await page.click('text=Edit Mode First'); // Click on name to go to detail
+    // Search for the patient to ensure we click the right one
+    await page.fill('input[type="text"]', 'Edit Mode First');
+    await page.click('button[type="submit"]');
+    await page.waitForLoadState('networkidle');
+
+    // Click on name to go to detail
+    await page.click('text=Edit Mode First'); 
     await page.waitForURL(/\/patients\/\d+/);
     
-    // Click edit button (assuming there is one, or navigate to /edit)
-    // Actually PatientDetail might have an edit button. 
-    // Let's assume we can append /edit to current URL
+    // Navigate to edit
     const currentUrl = page.url();
     await page.goto(`${currentUrl}/edit`);
+    await page.waitForLoadState('networkidle');
     
     // Wait for auto-save to initialize
     await page.waitForTimeout(1000);

@@ -16,12 +16,6 @@ interface UseDraftOptions {
   /** Unique form identifier */
   formId: string;
 
-  /** Auto-save interval in milliseconds (default: 5000 = 5s) */
-  autoSaveInterval?: number;
-
-  /** Whether auto-save is enabled (default: true) */
-  enabled?: boolean;
-
   /** Callback when draft is restored */
   onRestore?: (data: any) => void;
 
@@ -51,12 +45,6 @@ interface UseDraftReturn<T> {
   /** Clear draft (called after successful save) */
   clearDraft: () => void;
 
-  /** Start auto-save */
-  startAutoSave: (getData: () => T) => void;
-
-  /** Stop auto-save */
-  stopAutoSave: () => void;
-
   /** Save draft on network error */
   saveOnNetworkError: (error: any, data: T) => void;
 }
@@ -85,7 +73,7 @@ interface UseDraftReturn<T> {
  * ```
  */
 export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<T> {
-  const { type, formId, autoSaveInterval, enabled = true, onRestore, onDiscard } = options;
+  const { type, formId, onRestore, onDiscard } = options;
 
   const [hasDraft, setHasDraft] = useState<boolean>(false);
   const [draftAge, setDraftAge] = useState<string | null>(null);
@@ -158,25 +146,6 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
     draftService.clearDraft(type);
     checkDraft();
   }, [type, checkDraft]);
-
-  /**
-   * Start auto-save with data getter
-   */
-  const startAutoSave = useCallback((getData: () => T) => {
-    if (!enabled) return;
-
-    draftService.startAutoSave(type, getData, formId, {
-      autoSaveInterval,
-      enabled
-    });
-  }, [type, formId, autoSaveInterval, enabled]);
-
-  /**
-   * Stop auto-save
-   */
-  const stopAutoSave = useCallback(() => {
-    draftService.stopAutoSave(type);
-  }, [type]);
 
   /**
    * Save draft on network error
@@ -271,9 +240,8 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
-      stopAutoSave();
     };
-  }, [stopAutoSave]);
+  }, []);
 
   return {
     hasDraft,
@@ -283,8 +251,6 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
     restoreDraft,
     discardDraft,
     clearDraft,
-    startAutoSave,
-    stopAutoSave,
     saveOnNetworkError
   };
 }

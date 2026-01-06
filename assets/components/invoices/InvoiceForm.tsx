@@ -168,7 +168,6 @@ export default function InvoiceForm() {
     const draft = useDraft<InvoiceFormData>({
         type: 'invoice',
         formId: formIdRef.current,
-        autoSaveInterval: 5000, // 5 seconds
         enabled: true, // Enable for both new and edit
         onRestore: (data) => {
             // Populate form with draft data
@@ -311,16 +310,7 @@ export default function InvoiceForm() {
         fetchCustomerData();
     }, [customerId, isEditing, t]);
 
-    // Start auto-save after initial data is loaded
-    useEffect(() => {
-        if (!isLoading) {
-            draft.startAutoSave(() => formDataRef.current);
-        }
 
-        return () => {
-            draft.stopAutoSave();
-        };
-    }, [isLoading]);
 
     // Draft action handlers
     const handleRestoreClick = () => {
@@ -375,6 +365,10 @@ export default function InvoiceForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        
+        // Save draft before submitting (as per requirement)
+        draft.saveDraft(getCurrentFormData());
+        
         setLoading(true);
         setError(null);
         setNumberError('');
@@ -457,7 +451,8 @@ export default function InvoiceForm() {
                     }
                 }, 300);
             }
-        } finally {
+            
+            // Allow retry
             setLoading(false);
         }
     };

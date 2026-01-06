@@ -5,7 +5,7 @@
  */
 
 import { DraftType, Draft } from '../../domain/Draft';
-import { DraftRepository, DraftConfig, DRAFT_EVENTS } from './types';
+import { DraftRepository, DRAFT_EVENTS } from './types';
 import { draftRepository } from '../../infrastructure/storage/LocalStorageDraftRepository';
 
 /**
@@ -18,64 +18,11 @@ import { draftRepository } from '../../infrastructure/storage/LocalStorageDraftR
  * - Restore and discard operations
  */
 export class DraftService {
-  private autoSaveTimers: Map<string, NodeJS.Timeout> = new Map();
   private repository: DraftRepository;
 
   constructor(repository: DraftRepository = draftRepository) {
     this.repository = repository;
     this.setupNetworkErrorListener();
-  }
-
-  /**
-   * Start auto-saving for a specific draft type
-   *
-   * @param type - The draft type (invoice, patient, customer)
-   * @param getData - Callback to get current form data
-   * @param formId - Unique form identifier
-   * @param config - Configuration options
-   */
-  startAutoSave<T>(
-    type: DraftType,
-    getData: () => T,
-    formId: string,
-    config: Partial<DraftConfig> = {}
-  ): void {
-    const finalConfig: DraftConfig = {
-      autoSaveInterval: config.autoSaveInterval ?? 5000, // 5 seconds
-      storageKey: config.storageKey ?? `draft_${type}`,
-      enabled: config.enabled ?? true
-    };
-
-    if (!finalConfig.enabled) {
-      return;
-    }
-
-    // Clear existing timer if any
-    this.stopAutoSave(type);
-
-    // Set up new auto-save timer
-    const timer = setInterval(() => {
-      const data = getData();
-      if (data) {
-        // Preserve savedByError flag if it exists
-        const existingDraft = this.getDraft(type);
-        const savedByError = existingDraft?.savedByError || false;
-        this.saveDraft(type, data, formId, savedByError);
-      }
-    }, finalConfig.autoSaveInterval);
-
-    this.autoSaveTimers.set(type, timer);
-  }
-
-  /**
-   * Stop auto-saving for a specific draft type
-   */
-  stopAutoSave(type: DraftType): void {
-    const timer = this.autoSaveTimers.get(type);
-    if (timer) {
-      clearInterval(timer);
-      this.autoSaveTimers.delete(type);
-    }
   }
 
   /**
@@ -107,7 +54,6 @@ export class DraftService {
    * Clear draft (used after successful save)
    */
   clearDraft(type: DraftType): void {
-    this.stopAutoSave(type);
     this.repository.remove(type);
 
     window.dispatchEvent(
@@ -126,11 +72,6 @@ export class DraftService {
       return null;
     }
 
-    // If draft was saved by error, clear the flag upon restoration
-    if (draft.savedByError) {
-      this.saveDraft(type, draft.data, draft.formId, false);
-    }
-
     window.dispatchEvent(
       new CustomEvent(DRAFT_EVENTS.DRAFT_RESTORED, {
         detail: { type, timestamp: draft.timestamp }
@@ -144,7 +85,6 @@ export class DraftService {
    * Discard draft permanently
    */
   async discardDraft(type: DraftType): Promise<void> {
-    this.stopAutoSave(type);
     this.repository.remove(type);
 
     window.dispatchEvent(
@@ -173,14 +113,6 @@ export class DraftService {
         this.saveDraft(type, data, formId, true);
       }
     }) as EventListener);
-  }
-
-  /**
-   * Cleanup all timers (call on app unmount)
-   */
-  cleanup(): void {
-    this.autoSaveTimers.forEach(timer => clearInterval(timer));
-    this.autoSaveTimers.clear();
   }
 }
 

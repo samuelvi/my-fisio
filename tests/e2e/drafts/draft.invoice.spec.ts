@@ -161,6 +161,55 @@ test.describe('Invoice Draft System', () => {
     expect(email).toBe('restore@test.com');
   });
 
+  test('should allow modifying form and then recovering draft without error', async () => {
+    await page.goto('/invoices/new');
+    
+    // 1. Create a draft with savedByError: true (simulating network error)
+    await page.evaluate(() => {
+      const draftData = {
+        type: 'invoice',
+        data: {
+          date: new Date().toISOString().split('T')[0],
+          customerName: 'Original Invoice Name',
+          customerTaxId: '11111111A',
+          customerAddress: 'Original Address',
+          customerPhone: '',
+          customerEmail: '',
+          invoiceNumber: '',
+          lines: []
+        },
+        timestamp: Date.now(),
+        formId: 'test-form-' + Date.now(),
+        savedByError: true
+      };
+      localStorage.setItem('draft_invoice', JSON.stringify(draftData));
+    });
+
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+
+    // 2. Verify alert is visible
+    await expect(page.locator('#draft-alert')).toBeVisible();
+
+    // 3. Modify the form (simulating user changing their mind or trying to fix it)
+    await setInvoiceInputValue(page, 'Customer Name', 'Modified Invoice Name');
+    
+    // 4. Click "Recuperar borrador"
+    await page.click('text=Recuperar borrador');
+
+    // 5. Confirm restore
+    await page.click('text=Sí, recuperar');
+
+    // 6. Verify NO error message is shown
+    // "Ocurrió un error inesperado" usually appears in a specific error container
+    const errorVisible = await page.locator('text=Ocurrió un error inesperado').isVisible();
+    expect(errorVisible).toBe(false);
+
+    // 7. Verify data is restored to ORIGINAL values
+    const customerName = await page.inputValue('input[value="Original Invoice Name"]');
+    expect(customerName).toBe('Original Invoice Name');
+  });
+
   test('should discard draft when clicking "Descartar"', async () => {
     // Create a draft with savedByError: true
     await page.goto('/invoices/new');
@@ -401,7 +450,7 @@ test.describe('Invoice Draft System', () => {
     await expect(page.locator('#draft-alert')).not.toBeVisible();
   });
 
-  test('should restore draft from network error and clear savedByError flag', async () => {
+  test('should restore draft from network error and KEEP savedByError flag/panel visible', async () => {
     await page.goto('/invoices/new');
     await page.waitForLoadState('networkidle');
 
@@ -447,18 +496,21 @@ test.describe('Invoice Draft System', () => {
     const customerName = await customerNameInput.inputValue();
     expect(customerName).toBe('Restore Error Test');
 
+    // ALERT SHOULD STILL BE VISIBLE
+    await expect(page.locator('#draft-alert')).toBeVisible();
+
     // Wait for auto-save to update the draft (5 seconds)
     await page.waitForTimeout(6000);
 
-    // Check draft - savedByError should now be false (regular auto-save took over)
+    // Check draft - savedByError should STILL be true
     const draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_invoice');
       return data ? JSON.parse(data) : null;
     });
 
-    // Draft should exist but savedByError should be false
+    // Draft should exist and savedByError should be true
     expect(draftData).not.toBeNull();
-    expect(draftData.savedByError).toBe(false);
+    expect(draftData.savedByError).toBe(true);
   });
 
   test('should work in edit mode', async () => {
