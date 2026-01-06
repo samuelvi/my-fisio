@@ -9,6 +9,8 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'appointments')]
+#[ORM\Index(columns: ['starts_at'], name: 'idx_appointments_starts_at')]
+#[ORM\Index(columns: ['ends_at'], name: 'idx_appointments_ends_at')]
 class Appointment
 {
     #[ORM\Id]

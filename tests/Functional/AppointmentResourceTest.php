@@ -125,7 +125,31 @@ class AppointmentResourceTest extends ApiTestCase
         AppointmentFactory::createMany(3, [
             'patient' => $patient,
             'userId' => $auth['userId'],
+            'startsAt' => new \DateTimeImmutable('2026-01-06T10:00:00'),
+            'endsAt' => new \DateTimeImmutable('2026-01-06T11:00:00'),
         ]);
+
+        $client = self::createClient();
+        $client->request('GET', '/api/appointments', [
+            'auth_bearer' => $auth['token'],
+            'headers' => [
+                'Accept' => 'application/ld+json',
+            ],
+            'query' => [
+                'start' => '2026-01-01T00:00:00',
+                'end' => '2026-01-31T23:59:59',
+            ],
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $this->assertJsonContains([
+            'totalItems' => 3,
+        ]);
+    }
+
+    public function testGetAppointmentsFailsWithoutFilters(): void
+    {
+        $auth = $this->authenticate();
 
         $client = self::createClient();
         $client->request('GET', '/api/appointments', [
@@ -135,9 +159,38 @@ class AppointmentResourceTest extends ApiTestCase
             ],
         ]);
 
+        $this->assertResponseStatusCodeSame(400);
+        $this->assertJsonContains([
+            'detail' => 'Filtros de fecha "start" y "end" son obligatorios para consultar citas.',
+        ]);
+    }
+
+    public function testGetAppointmentsWithApiPlatformFilters(): void
+    {
+        $auth = $this->authenticate();
+        $patient = PatientFactory::createOne();
+        AppointmentFactory::createOne([
+            'patient' => $patient,
+            'userId' => $auth['userId'],
+            'startsAt' => new \DateTimeImmutable('2026-05-15T10:00:00'),
+            'endsAt' => new \DateTimeImmutable('2026-05-15T11:00:00'),
+        ]);
+
+        $client = self::createClient();
+        $client->request('GET', '/api/appointments', [
+            'auth_bearer' => $auth['token'],
+            'headers' => [
+                'Accept' => 'application/ld+json',
+            ],
+            'query' => [
+                'startsAt[after]' => '2026-05-01T00:00:00',
+                'endsAt[before]' => '2026-05-31T23:59:59',
+            ],
+        ]);
+
         $this->assertResponseIsSuccessful();
         $this->assertJsonContains([
-            'totalItems' => 3,
+            'totalItems' => 1,
         ]);
     }
 

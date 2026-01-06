@@ -11,10 +11,14 @@ use App\Infrastructure\Persistence\Doctrine\Repository\DoctrineAppointmentReposi
 use DateTimeImmutable;
 use DateTimeInterface;
 
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+
 class AppointmentProvider implements ProviderInterface
 {
     public function __construct(
         private readonly DoctrineAppointmentRepository $repository,
+        private readonly RequestStack $requestStack,
     ) {
     }
 
@@ -26,12 +30,31 @@ class AppointmentProvider implements ProviderInterface
         }
 
         $filters = $context['filters'] ?? [];
+        $request = $this->requestStack->getCurrentRequest();
+        
         $searchFilters = [];
+        
+        // 1. Try to get dates from standard API Platform filters
         if (isset($filters['startsAt']['after'])) {
             $searchFilters['startsAt'] = $filters['startsAt']['after'];
         }
         if (isset($filters['endsAt']['before'])) {
             $searchFilters['endsAt'] = $filters['endsAt']['before'];
+        }
+        
+        // 2. Try to get dates from FullCalendar compatibility (start/end parameters)
+        if ($request) {
+            if (null !== $start = $request->query->get('start')) {
+                $searchFilters['startsAt'] = $start;
+            }
+            if (null !== $end = $request->query->get('end')) {
+                $searchFilters['endsAt'] = $end;
+            }
+        }
+
+        // 3. MANDATORY VALIDATION: start and end must be present
+        if (!isset($searchFilters['startsAt']) || !isset($searchFilters['endsAt'])) {
+            throw new BadRequestHttpException('Filtros de fecha "start" y "end" son obligatorios para consultar citas.');
         }
 
         $appointments = $this->repository->searchAsArray($searchFilters);

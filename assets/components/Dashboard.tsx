@@ -37,8 +37,11 @@ export default function Dashboard() {
         fetchStats();
     }, []);
 
-    const StatCard = ({ title, value, colorClass, icon }: { title: string; value: number; colorClass: string; icon: ReactNode }) => (
-        <div className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${colorClass}`}>
+    const StatCard = ({ title, value, colorClass, icon, linkTo }: { title: string; value: number; colorClass: string; icon: ReactNode; linkTo?: string }) => (
+        <div 
+            onClick={() => linkTo && navigate(linkTo)}
+            className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${colorClass} ${linkTo ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+        >
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-gray-500 text-xs font-semibold uppercase tracking-wider">{title}</h3>
@@ -56,29 +59,33 @@ export default function Dashboard() {
     return (
         <div className="space-y-6 p-4 sm:p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
-                <StatCard 
-                    title={t('total_patients')} 
-                    value={stats.totalPatients} 
+                <StatCard
+                    title={t('total_patients')}
+                    value={stats.totalPatients}
                     colorClass="border-primary"
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>}
+                    linkTo={Routing.generate('app_home', { reactRouting: 'patients' })}
                 />
-                <StatCard 
-                    title={t('appointments_today')} 
-                    value={stats.appointmentsToday} 
-                    colorClass="border-green-500" 
-                    icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
-                />
-                <StatCard 
-                    title={t('others_today')} 
-                    value={stats.othersToday} 
-                    colorClass="border-yellow-500" 
-                    icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
-                />
-                <StatCard 
-                    title={t('invoices_this_year')} 
-                    value={stats.invoicesThisYear} 
-                    colorClass="border-primary" 
+                <StatCard
+                    title={t('invoices_this_year')}
+                    value={stats.invoicesThisYear}
+                    colorClass="border-yellow-500"
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>}
+                    linkTo={Routing.generate('app_home', { reactRouting: 'invoices' })}
+                />
+                <StatCard
+                    title={t('appointments_today')}
+                    value={stats.appointmentsToday}
+                    colorClass="border-primary"
+                    icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
+                    linkTo={Routing.generate('app_home', { reactRouting: 'appointments' })}
+                />
+                <StatCard
+                    title={t('others_today')}
+                    value={stats.othersToday}
+                    colorClass="border-green-500"
+                    icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
+                    linkTo={Routing.generate('app_home', { reactRouting: 'appointments' })}
                 />
             </div>
 
@@ -94,18 +101,18 @@ export default function Dashboard() {
                         <p className="text-sm sm:text-base text-gray-500">{t('dashboard_subtitle')}</p>
                     </div>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-12 mt-6 sm:mt-8 border-t border-gray-100 pt-6 sm:pt-8">
                     <div>
                         <h4 className="font-bold text-gray-700 mb-4 uppercase text-xs tracking-widest">{t('quick_actions')}</h4>
                         <div className="flex flex-wrap gap-4">
-                            <button 
+                            <button
                                 onClick={() => navigate('/patients/new')}
                                 className="px-5 py-2.5 bg-[rgb(var(--color-btn-info))] text-primary-dark rounded-md text-sm font-bold hover:bg-[rgb(var(--color-btn-secondary))] transition shadow-sm border border-primary/10"
                             >
                                 {t('new_patient')}
                             </button>
-                            <button 
+                            <button
                                 onClick={() => navigate('/appointments')}
                                 className="px-5 py-2.5 bg-primary text-white rounded-md text-sm font-bold hover:bg-primary-dark transition shadow-sm"
                             >
