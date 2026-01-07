@@ -164,7 +164,9 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
       !error.response || // No response = network error
       error.code === 'ERR_NETWORK' ||
       error.code === 'ECONNABORTED' ||
-      error.code === 'ETIMEDOUT';
+      error.code === 'ETIMEDOUT' ||
+      error.code === 'ERR_INTERNET_DISCONNECTED' ||
+      (error.message && error.message.toLowerCase().includes('network'));
 
     console.log('[useDraft] isNetworkError:', isNetworkError);
 

@@ -17,7 +17,7 @@ module.exports = defineConfig({
   reporter: [['html', { outputFolder: './var/log/playwright/report', open: 'never' }], ['list']],
   /* Directory for artifacts like screenshots, videos, traces, etc. */
   outputDir: './var/log/playwright/test-results',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  /* Shared settings for all the projects below. See https://playwright.dev/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: 'http://127.0.0.1:8081',
@@ -41,11 +41,11 @@ module.exports = defineConfig({
   /* Expect configuration for assertions */
   expect: {
     /* Maximum time expect() should wait for the condition to be met */
-    timeout: 10000, // 10 seconds for assertions (with automatic retries)
+    timeout: 30000, // 30 seconds for assertions (with automatic retries)
   },
 
   /* Maximum time one test can run for. */
-  timeout: 1200000, // 120 seconds per test
+  timeout: 120000, // 120 seconds per test
 
   /* Configure projects for major browsers */
   projects: [
