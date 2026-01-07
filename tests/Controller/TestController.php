@@ -34,6 +34,7 @@ class TestController extends AbstractController
         return new JsonResponse([
             'patients' => $this->entityManager->getRepository(Patient::class)->count([]),
             'records' => $this->entityManager->getRepository(Record::class)->count([]),
+            'customers' => $this->entityManager->getRepository(\App\Domain\Entity\Customer::class)->count([]),
         ]);
     }
 

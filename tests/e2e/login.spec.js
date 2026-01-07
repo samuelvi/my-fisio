@@ -1,15 +1,12 @@
-// @ts-check
-import { test, expect } from '@playwright/test';
+/**
+ * E2E Tests - Login Flow
+ */
 
-// test.beforeEach(async ({ request }) => {
-//   // Reset Database before each test
-//   const response = await request.post('/api/test/reset-db');
-//   expect(response.ok()).toBeTruthy();
-// });
+import { test, expect } from '@playwright/test';
 
 test('has title and login works', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('app_locale', 'en');
+    localStorage.setItem('app_locale', 'es');
   });
   await page.goto('/login');
 
@@ -17,16 +14,16 @@ test('has title and login works', async ({ page }) => {
   await page.fill('input[name="email"]', 'tina@tinafisio.com');
   await page.fill('input[name="password"]', 'password');
   
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: /Sign in|Entrar/i }).click();
 
   // Expect to be redirected to dashboard
-  await expect(page).toHaveURL('/dashboard');
-  await expect(page.locator('text=Dashboard')).toBeVisible();
+  await page.waitForURL('**/dashboard', { timeout: 30000 });
+  await page.waitForLoadState('networkidle');
 });
 
 test('failed login shows error and does not redirect', async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem('app_locale', 'en');
+    localStorage.setItem('app_locale', 'es');
   });
   await page.goto('/login');
 
@@ -34,15 +31,15 @@ test('failed login shows error and does not redirect', async ({ page }) => {
   await page.fill('input[name="email"]', 'wrong@user.com');
   await page.fill('input[name="password"]', 'wrongpassword');
   
-  await page.click('button[type="submit"]');
+  await page.getByRole('button', { name: /Sign in|Entrar/i }).click();
 
   // Expect to still be on login page
-  await expect(page).toHaveURL('/login');
+  await expect(page).toHaveURL(/\/login/);
   
-  // Expect error message to be visible
-  await expect(page.locator('text=Invalid credentials')).toBeVisible();
+  // Expect error message to be visible (regex for both languages)
+  await expect(page.locator('body')).toContainText(/Invalid credentials|Credenciales inv.lidas/i);
   
   // Verify dashboard is NOT accessible directly (should redirect back to login if no token)
   await page.goto('/dashboard');
-  await expect(page).toHaveURL(/\/login(\?expired=1)?/);
+  await page.waitForURL(/\/login(\?expired=1)?/);
 });

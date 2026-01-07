@@ -413,16 +413,14 @@ test.describe('Record Draft System', () => {
     // Wait for redirect to patient detail
     await page.waitForURL(/\/patients\/\d+$/);
     await page.waitForLoadState('networkidle');
+    
+    // 3. Find the record in the timeline
+    const recordRow = page.locator('.fc-event, li', { hasText: 'Edit Mode Treatment' }).first();
+    await expect(recordRow).toBeVisible({ timeout: 10000 });
+    await recordRow.scrollIntoViewIfNeeded();
 
-    // Find the record in the list and navigate to edit
-    // Records are shown in the patient detail page
-    const recordRow = page.locator('text=Edit Mode Treatment').first();
-    await expect(recordRow).toBeVisible();
-
-    // Click the edit button (pencil icon) for this record
-    // The button has a title attribute "Editar" (or "Edit" in EN)
-    const recordContainer = page.locator('li', { hasText: 'Edit Mode Treatment' }).first();
-    const editButton = recordContainer.locator('button[title="Editar"], button[title="Edit"]');
+    // 4. Click the edit button (pencil icon) for this record
+    const editButton = recordRow.locator('button[title="Editar"], button[title="Edit"]');
     
     // Ensure button is visible before clicking
     await expect(editButton).toBeVisible();

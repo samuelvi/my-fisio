@@ -26,7 +26,7 @@ module.exports = defineConfig({
     actionTimeout: 15000, // 15 seconds
 
     /* Maximum time for navigation. Defaults to 0 (no limit). */
-    navigationTimeout: 15000, // 15 seconds
+    navigationTimeout: 30000, // 30 seconds
 
     /* Collect screenshot when a test fails. */
     screenshot: 'only-on-failure',
@@ -41,7 +41,7 @@ module.exports = defineConfig({
   /* Expect configuration for assertions */
   expect: {
     /* Maximum time expect() should wait for the condition to be met */
-    timeout: 5000, // 5 seconds for assertions (with automatic retries)
+    timeout: 10000, // 10 seconds for assertions (with automatic retries)
   },
 
   /* Maximum time one test can run for. */

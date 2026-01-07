@@ -641,6 +641,7 @@ export default function PatientForm() {
                     <button
                         type="submit"
                         disabled={loading}
+                        data-testid="save-patient-btn"
                         className="inline-flex items-center px-8 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-dark focus:outline-none disabled:opacity-50 transition"
                     >
                         {loading ? t('saving') : t('save_patient')}

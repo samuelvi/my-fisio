@@ -127,6 +127,7 @@ export default function RecordTimeline({ records, onAddRecord, patientId, patien
                     </Link>
                     <button
                         onClick={onAddRecord}
+                        data-testid="add-record-btn"
                         className="inline-flex items-center px-3 py-1.5 border border-transparent shadow-sm text-xs font-black rounded-lg text-white bg-primary hover:bg-primary-dark transition-all uppercase tracking-wider"
                     >
                         + {t('add_item')}
@@ -142,6 +143,7 @@ export default function RecordTimeline({ records, onAddRecord, patientId, patien
                         <p className="text-gray-400 font-bold mb-6">{t('no_records_available')}</p>
                         <button
                             onClick={onAddRecord}
+                            data-testid="add-first-record-btn"
                             className="inline-flex items-center px-6 py-3 border border-transparent shadow-lg text-sm font-black rounded-xl text-white bg-primary hover:bg-primary-dark transition-all active:scale-95"
                         >
                             {t('add_first_record')}

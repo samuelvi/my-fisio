@@ -352,6 +352,7 @@ export default function RecordForm() {
                             <button
                                 type="submit"
                                 disabled={loading}
+                                data-testid="save-record-btn"
                                 className="px-8 py-2 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-primary hover:bg-primary-dark focus:outline-none disabled:opacity-50 transition"
                             >
                                 {loading ? t('saving') : (isEditing ? t('update') : t('save_history_entry'))}

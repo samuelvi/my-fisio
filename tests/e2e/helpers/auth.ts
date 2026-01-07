@@ -5,17 +5,30 @@
 import { Page, BrowserContext, expect } from '@playwright/test';
 
 /**
- * Login as admin user (tina@tinafisio.com)
+ * Login as admin user (tina@tinafisio.com) bypassing the UI form for speed and stability.
  */
 export async function loginAsAdmin(page: Page, context: BrowserContext): Promise<void> {
-  // Set locale before navigating
-  await page.addInitScript(() => {
-    localStorage.setItem('app_locale', 'en');
+  // 1. Get token via API
+  const loginResponse = await page.request.post('/api/login_check', {
+    data: {
+      username: 'tina@tinafisio.com',
+      password: 'password'
+    }
   });
+  
+  if (!loginResponse.ok()) {
+    throw new Error(`Login API failed with status ${loginResponse.status()}`);
+  }
+  
+  const { token } = await loginResponse.json();
 
-  await page.goto('/login');
-  await page.fill('input[name="email"]', 'tina@tinafisio.com');
-  await page.fill('input[name="password"]', 'password');
-  await page.click('button[type="submit"]');
-  await expect(page).toHaveURL('/dashboard');
+  // 2. Set token and locale in localStorage before any navigation
+  await page.addInitScript(({ jwt }) => {
+    localStorage.setItem('token', jwt);
+    localStorage.setItem('app_locale', 'es');
+  }, { jwt: token });
+
+  // 3. Navigate to dashboard
+  await page.goto('/dashboard');
+  await page.waitForURL('**/dashboard', { timeout: 30000 });
 }

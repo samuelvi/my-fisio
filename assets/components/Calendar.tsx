@@ -480,6 +480,7 @@ export default function Calendar() {
                             });
                         }}
                         className="bg-primary hover:bg-primary-dark text-white px-5 py-2.5 rounded-md font-bold transition shadow-sm"
+                        data-testid="new-appointment-btn"
                     >
                         + {t('new_appointment')}
                     </button>
@@ -612,6 +613,7 @@ export default function Calendar() {
                                         type="submit"
                                         disabled={!!validationError}
                                         className={`w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-6 py-2 text-base font-bold text-white sm:w-auto sm:text-sm transition ${validationError ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary-dark'}`}
+                                        data-testid="save-appointment-btn"
                                     >
                                         {currentEvent ? t('update') : t('create')}
                                     </button>
