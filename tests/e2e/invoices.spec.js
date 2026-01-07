@@ -20,16 +20,16 @@ test('invoice management flow', async ({ page, request, context }) => {
   await expect(page).toHaveURL('/invoices/new');
 
   // Fill customer info
-  await page.getByLabel(/Customer Name|Nombre del Cliente/i).fill('Test Invoice Customer');
-  await page.getByLabel(/Tax Identifier|Identificador Fiscal/i).fill('12345678X');
-  await page.getByLabel(/Address|Direcci.n/i).fill('Test Address 123');
+  await page.locator('#invoice-customerName').fill('Test Invoice Customer');
+  await page.locator('#invoice-customerTaxId').fill('12345678X');
+  await page.locator('#invoice-customerAddress').fill('Test Address 123');
 
   // Fill one line
-  await page.getByLabel(/Concept|Concepto/i).first().fill('Physio Session');
-  await page.getByLabel(/Price|Precio/i).first().fill('50');
+  await page.getByTestId('line-concept-0').fill('Physio Session');
+  await page.getByTestId('line-price-0').fill('50');
 
   // Save
-  await page.getByRole('button', { name: /Confirm Issuance|Confirmar Emisi.n/i }).click();
+  await page.getByTestId('confirm-issuance-btn').click();
 
   await page.waitForURL(/\/invoices$/);
   await expect(page.locator('tbody tr')).toHaveCount(1);
