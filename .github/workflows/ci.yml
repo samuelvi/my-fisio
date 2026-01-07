@@ -214,7 +214,7 @@ jobs:
       - name: Build frontend assets
         run: |
           echo "⚡ Building with Vite..."
-          npm run build
+          npm run build:test
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
