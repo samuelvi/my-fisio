@@ -193,11 +193,13 @@ export default function CustomerList() {
                             ) : customers.length === 0 ? (
                                 <tr><td colSpan={5} className="px-4 lg:px-8 py-20 text-center text-gray-400 font-bold">{t('no_customers_found')}</td></tr>
                             ) : (
-                                customers.map((customer) => (
+                                customers.map((customer) => {
+                                    const customerName = `${customer.firstName} ${customer.lastName}`.trim() || customer.fullName || '';
+                                    return (
                                     <tr key={customer.id} className="hover:bg-gray-50 transition-colors group">
                                         <td className="px-4 lg:px-8 py-5 whitespace-nowrap">
                                             <div className="text-sm font-bold text-gray-900 group-hover:text-primary transition-colors">
-                                                {customer.fullName || `${customer.firstName} ${customer.lastName}`}
+                                                {customerName}
                                             </div>
                                         </td>
                                         <td className="px-4 lg:px-8 py-5 whitespace-nowrap text-sm font-medium text-gray-500">
@@ -224,7 +226,8 @@ export default function CustomerList() {
                                             </Link>
                                         </td>
                                     </tr>
-                                ))
+                                );
+                            })
                             )}
                         </tbody>
                     </table>
@@ -236,10 +239,12 @@ export default function CustomerList() {
                     {!loading && customers.length === 0 && (
                         <div className="px-4 py-16 text-center text-gray-400 font-bold">{t('no_customers_found')}</div>
                     )}
-                    {!loading && customers.map((customer) => (
+                    {!loading && customers.map((customer) => {
+                        const customerName = `${customer.firstName} ${customer.lastName}`.trim() || customer.fullName || '';
+                        return (
                         <div key={customer.id} className="p-4 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
-                                <div className="text-sm font-bold text-primary">{customer.fullName || `${customer.firstName} ${customer.lastName}`}</div>
+                                <div className="text-sm font-bold text-primary">{customerName}</div>
                                 <div className="text-xs text-gray-500">{customer.taxId}</div>
                             </div>
                             <div className="flex items-center justify-between">
@@ -257,7 +262,8 @@ export default function CustomerList() {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 

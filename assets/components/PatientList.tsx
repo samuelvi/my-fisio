@@ -16,7 +16,6 @@ export default function PatientList() {
     const [useFuzzy, setUseFuzzy] = useState<boolean>(sessionStorage.getItem('patientList_useFuzzy') === 'true');
     const [page, setPage] = useState<number>(parseInt(sessionStorage.getItem('patientList_page') || '1', 10));
     const [hasNextPage, setHasNextPage] = useState<boolean>(false);
-    const [searchTrigger, setSearchTrigger] = useState<number>(0);
     const ITEMS_PER_PAGE = parseInt(import.meta.env.VITE_ITEMS_PER_PAGE || '10', 10);
 
     useEffect(() => {
@@ -30,31 +29,33 @@ export default function PatientList() {
 
     useEffect(() => {
         fetchPatients();
-    }, [page, searchTrigger]);
+    }, [page, searchTerm, statusFilter, sortOrder, useFuzzy]);
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         setPage(1);
         setSearchTerm(searchInput);
-        setSearchTrigger(prev => prev + 1);
     };
 
     const handleClear = () => {
         setSearchInput('');
         setSearchTerm('');
         setPage(1);
+        fetchPatients({ page: 1, searchTerm: '' });
     };
 
-    const fetchPatients = async () => {
+    const fetchPatients = async (options: { page?: number; searchTerm?: string } = {}) => {
         setLoading(true);
+        const currentPage = options.page ?? page;
+        const currentSearchTerm = options.searchTerm ?? searchTerm;
         try {
             const response = await axios.get(Routing.generate('api_patients_collection'), {
                 params: { 
                     status: statusFilter,
                     order: sortOrder,
-                    page: page,
+                    page: currentPage,
                     itemsPerPage: ITEMS_PER_PAGE + 1,
-                    search: searchTerm,
+                    search: currentSearchTerm,
                     fuzzy: useFuzzy
                 }
             });
@@ -264,7 +265,12 @@ export default function PatientList() {
                             {patients.map((patient) => (
                                 <tr key={patient.id} className="hover:bg-gray-50 transition-colors group">
                                     <td className="px-4 lg:px-8 py-5 whitespace-nowrap">
-                                        <Link to={`/patients/${patient.id}`} className="flex items-center">
+                                        <Link
+                                            to={`/patients/${patient.id}`}
+                                            state={{ patient }}
+                                            onClick={() => sessionStorage.setItem('patientDetail', JSON.stringify(patient))}
+                                            className="flex items-center"
+                                        >
                                             <div className="h-10 w-10 flex-shrink-0">
                                                 <span className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-sm border border-primary/10 group-hover:bg-primary group-hover:text-white transition-all duration-300">
                                                     {patient.firstName.charAt(0)}{patient.lastName.charAt(0)}
@@ -302,11 +308,13 @@ export default function PatientList() {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                 </svg>
                                             </Link>
-                                            <Link
-                                                to={`/patients/${patient.id}`}
-                                                className="patient-view-btn text-gray-400 hover:text-gray-600 transition-colors inline-flex items-center"
-                                                title={t('view')}
-                                            >
+                                <Link
+                                    to={`/patients/${patient.id}`}
+                                    state={{ patient }}
+                                    onClick={() => sessionStorage.setItem('patientDetail', JSON.stringify(patient))}
+                                    className="patient-view-btn text-gray-400 hover:text-gray-600 transition-colors inline-flex items-center"
+                                    title={t('view')}
+                                >
                                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -380,6 +388,8 @@ export default function PatientList() {
                                 </Link>
                                 <Link
                                     to={`/patients/${patient.id}`}
+                                    state={{ patient }}
+                                    onClick={() => sessionStorage.setItem('patientDetail', JSON.stringify(patient))}
                                     className="patient-view-btn flex-1 text-center bg-gray-50 text-gray-700 px-3 py-2.5 rounded-lg font-bold border border-gray-200 hover:bg-gray-100 transition-colors text-sm inline-flex items-center justify-center gap-1.5"
                                 >
                                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

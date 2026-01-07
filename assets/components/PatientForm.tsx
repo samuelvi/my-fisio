@@ -348,7 +348,7 @@ export default function PatientForm() {
                                 </div>
 
                                 <div className="col-span-6 sm:col-span-3">
-                                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700">{t('email_address')}</label>
+                                    <label htmlFor="email" className="block text-sm font-semibold text-gray-700">{t('email')}</label>
                                     <input
                                         type="email"
                                         name="email"
@@ -559,7 +559,9 @@ export default function PatientForm() {
                                 </div>
 
                                 <div className="col-span-6">
-                                    <label htmlFor="others" className="block text-sm font-semibold text-gray-700">{t('others')}</label>
+                                    <label htmlFor="others" className="block text-sm font-semibold text-gray-700">
+                                        {t('others') === 'Otros' ? 'Otros Detalles' : t('others')}
+                                    </label>
                                     <textarea
                                         name="others"
                                         id="others"
@@ -573,7 +575,9 @@ export default function PatientForm() {
                                 </div>
 
                                 <div className="col-span-6">
-                                    <label htmlFor="notes" className="block text-sm font-semibold text-gray-700">{t('notes')}</label>
+                                    <label htmlFor="notes" className="block text-sm font-semibold text-gray-700">
+                                        {t('notes') === 'Notas' ? 'Observaciones' : t('notes')}
+                                    </label>
                                     <textarea
                                         name="notes"
                                         id="notes"

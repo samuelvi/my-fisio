@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import RecordTimeline from './RecordTimeline';
 import { useLanguage } from './LanguageContext';
@@ -10,29 +10,53 @@ export default function PatientDetail() {
     const { t } = useLanguage();
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const [patient, setPatient] = useState<Patient | null>(null);
+    const location = useLocation();
+    const statePatient = (location.state as { patient?: Patient } | null)?.patient ?? null;
+    const storedPatient = (() => {
+        const raw = sessionStorage.getItem('patientDetail');
+        if (!raw) return null;
+        try {
+            const parsed = JSON.parse(raw) as Patient;
+            return id && parsed?.id && String(parsed.id) === String(id) ? parsed : null;
+        } catch {
+            return null;
+        }
+    })();
+    const fallbackPatient = statePatient ?? storedPatient;
+    const [patient, setPatient] = useState<Patient | null>(fallbackPatient);
     const [appointments, setAppointments] = useState<Appointment[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const fetchData = async () => {
             if (!id) return;
-            try {
-                const [patientRes, appointmentsRes] = await Promise.all([
-                    axios.get<Patient>(Routing.generate('api_patients_get', { id })),
-                    axios.get(Routing.generate('api_appointments_collection'), {
-                        params: { patientId: id }
-                    })
-                ]);
-                
-                setPatient(patientRes.data);
-                const appData = appointmentsRes.data['member'] || appointmentsRes.data['hydra:member'] || [];
-                setAppointments(appData);
-                setLoading(false);
-            } catch (error) {
-                console.error("Error fetching patient data:", error);
-                setLoading(false);
+            setLoading(true);
+            const [patientResult, appointmentsResult] = await Promise.allSettled([
+                axios.get<Patient>(Routing.generate('api_patients_get', { id })),
+                axios.get(Routing.generate('api_appointments_collection'), {
+                    params: { patientId: id }
+                })
+            ]);
+
+            if (patientResult.status === 'fulfilled') {
+                setPatient(patientResult.value.data);
+                sessionStorage.removeItem('patientDetail');
+            } else {
+                console.error('Error fetching patient data:', patientResult.reason);
+                if (!fallbackPatient) {
+                    setPatient(null);
+                }
             }
+
+            if (appointmentsResult.status === 'fulfilled') {
+                const appData = appointmentsResult.value.data['member'] || appointmentsResult.value.data['hydra:member'] || [];
+                setAppointments(appData);
+            } else {
+                console.error('Error fetching appointments:', appointmentsResult.reason);
+                setAppointments([]);
+            }
+
+            setLoading(false);
         };
 
         fetchData();

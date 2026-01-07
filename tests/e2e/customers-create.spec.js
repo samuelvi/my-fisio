@@ -8,7 +8,7 @@ async function resetDbEmpty(request) {
 }
 
 function customerInput(page, labelRegex) {
-  return page.locator('form').locator('label').filter({ hasText: labelRegex }).locator('..').locator('input, textarea');
+  return page.getByLabel(labelRegex).first();
 }
 
 async function setCustomerInputValue(page, labelRegex, value) {

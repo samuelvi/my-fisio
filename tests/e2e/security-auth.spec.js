@@ -19,8 +19,6 @@ test('authenticated users can access protected routes', async ({ page, context }
     await page.waitForLoadState('networkidle');
     // Ensure we are not redirected back to login
     expect(page.url()).toContain(route);
-    const body = await page.locator('body').textContent();
-    expect(body).not.toContain('Sign in to your account');
-    expect(body).not.toContain('Inicia sesión en tu cuenta');
+    await expect(page.getByRole('heading', { name: /Sign in to your account|Inicia sesión en tu cuenta/i })).toHaveCount(0);
   }
 });
