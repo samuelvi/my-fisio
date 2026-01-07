@@ -10,6 +10,7 @@ This agent defines testing conventions and validation practices for the project.
 ### UI / E2E (Playwright)
 - **Click by accessible name**: always click buttons or links by their accessible name (`getByRole({ name })`). Do not click by `id`, `class`, or CSS selectors.
 - **Prefer role-based queries**: use `getByRole` with `name` and `level` for headings, buttons, links, and form inputs.
+- **Default locale is Spanish**: set `app_locale` to `es` in tests by default. Only switch to another locale when explicitly required by the scenario.
 - **Keep locale deterministic**: set `app_locale` explicitly when the test relies on text.
 - **Avoid brittle selectors**: no CSS class selectors or deep DOM paths unless absolutely necessary.
 - **Wait on real signals**: wait for URLs, visible text, or API responses—not arbitrary timeouts.
