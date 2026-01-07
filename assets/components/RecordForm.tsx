@@ -24,6 +24,7 @@ const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, e
         <textarea
             name={name}
             id={name}
+            data-testid={`record-${name}`}
             rows={rows}
             required={required}
             value={value}

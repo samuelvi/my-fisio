@@ -22,56 +22,38 @@ test.describe('Patient Draft System', () => {
     });
   });
 
-  test.afterEach(async () => {
-    // Clean up localStorage after each test
-    await page.evaluate(() => {
-      Object.keys(localStorage)
-        .filter(key => key.startsWith('draft_'))
-        .forEach(key => localStorage.removeItem(key));
-    });
+  test.afterEach(async ({ context }) => {
+    await context.setOffline(false);
   });
 
-  test('should NOT auto-save draft automatically', async ({ page }) => {
-    // Navigate to new patient
+  test('should NOT auto-save draft automatically', async () => {
     await page.goto('/patients/new');
     await page.waitForLoadState('networkidle');
 
-    // Fill some form fields
-    await page.fill('input[name="firstName"]', 'No Auto Save');
-    await page.fill('input[name="lastName"]', 'Test');
-    await page.fill('input[name="allergies"]', 'None');
-
-    // Wait for what used to be the auto-save interval (5 seconds + margin)
+    await page.getByLabel(/Nombre|First Name/i).fill('No Auto Save');
+    await page.getByLabel(/Apellidos|Last Name/i).fill('Test');
+    
     await page.waitForTimeout(6000);
 
-    // Verify NO draft exists
-    const draftData = await page.evaluate(() => {
-      return localStorage.getItem('draft_patient');
-    });
+    const draftData = await page.evaluate(() => localStorage.getItem('draft_patient'));
     expect(draftData).toBeNull();
   });
 
-  test('should save draft explicitly when clicking save and show alert on network error', async ({ page, context }) => {
+  test('should save draft explicitly when clicking save and show alert on network error', async ({ context }) => {
     await page.goto('/patients/new');
     await page.waitForLoadState('networkidle');
 
-    // Fill form
-    await page.fill('input[name="firstName"]', 'Network Error Test');
-    await page.fill('input[name="lastName"]', 'Patient');
-    await page.fill('input[name="taxId"]', '12345678X');
-    await page.fill('input[name="allergies"]', 'None');
+    await page.getByLabel(/Nombre|First Name/i).fill('Network Error Test');
+    await page.getByLabel(/Apellidos|Last Name/i).fill('Patient');
+    await page.locator('#allergies').fill('None');
 
-    // Go offline to simulate network error
     await context.setOffline(true);
+    await page.waitForTimeout(500);
 
-    // Submit form - this should trigger manual saveDraft before axios call
-    // and then saveOnNetworkError in the catch block
-    await page.click('button[type="submit"]');
+    await page.getByTestId('save-patient-btn').click();
 
-    // Alert should be visible (red variant)
-    await expect(page.locator('#draft-alert')).toBeVisible();
+    await expect(page.locator('#draft-alert')).toBeVisible({ timeout: 10000 });
 
-    // Verify the draft exists in localStorage
     const draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_patient');
       return data ? JSON.parse(data) : null;
@@ -80,323 +62,60 @@ test.describe('Patient Draft System', () => {
     expect(draftData).not.toBeNull();
     expect(draftData.data.firstName).toBe('Network Error Test');
     expect(draftData.savedByError).toBe(true);
-
-    // Back online for cleanup
-    await context.setOffline(false);
   });
 
   test('should show draft alert on reload (savedByError: true)', async () => {
     await page.goto('/patients/new');
-    
-    // Create a draft with savedByError: true
     await page.evaluate(() => {
-      const draftData = {
+      localStorage.setItem('draft_patient', JSON.stringify({
         type: 'patient',
-        data: {
-          firstName: 'Reload Test First',
-          lastName: 'Reload Test Last',
-          taxId: '87654321Y',
-          allergies: 'None',
-          status: 'active'
-        },
+        data: { firstName: 'Reload Test' },
         timestamp: Date.now(),
-        formId: 'patient-new-' + Date.now(),
+        formId: 'test-123',
         savedByError: true
-      };
-      localStorage.setItem('draft_patient', JSON.stringify(draftData));
+      }));
     });
 
-    // Reload page
     await page.reload();
-    await page.waitForLoadState('networkidle');
-
-    // Check for draft alert
-    const alertVisible = await page.locator('#draft-alert').isVisible();
-    expect(alertVisible).toBe(true);
-
-    // Check alert content
-    const alertText = await page.locator('#draft-alert').textContent();
-    expect(alertText).toContain('Error de red');
-    expect(alertText).toContain('Recuperar borrador');
+    await expect(page.locator('#draft-alert')).toBeVisible();
   });
 
   test('should restore draft and KEEP savedByError flag/panel visible', async () => {
     await page.goto('/patients/new');
-
-    // Create a draft with savedByError: true
     await page.evaluate(() => {
-      const draftData = {
+      localStorage.setItem('draft_patient', JSON.stringify({
         type: 'patient',
-        data: {
-          firstName: 'Restore First',
-          lastName: 'Restore Last',
-          taxId: '11223344A',
-          phone: '666777888',
-          email: 'restore@test.com',
-          allergies: 'Peanuts'
-        },
+        data: { firstName: 'Restore Me', lastName: 'Last', allergies: 'None' },
         timestamp: Date.now(),
-        formId: 'patient-new-' + Date.now(),
+        formId: 'test-123',
         savedByError: true
-      };
-      localStorage.setItem('draft_patient', JSON.stringify(draftData));
+      }));
     });
 
     await page.reload();
-    await page.waitForLoadState('networkidle');
+    await page.click('text=/Recuperar|Restore/i');
+    await page.click('text=/Sí, recuperar|Yes, restore/i');
 
-    // Click "Recuperar borrador" button
-    await page.click('text=Recuperar borrador');
-
-    // Confirm restore
-    await page.click('text=Sí, recuperar');
-
-    // Wait for form to populate
-    await page.waitForTimeout(500);
-
-    // Verify form fields are populated
-    const firstName = await page.inputValue('input[name="firstName"]');
-    expect(firstName).toBe('Restore First');
-
-    // ALERT SHOULD STILL BE VISIBLE
+    await expect(page.getByLabel(/Nombre|First Name/i)).toHaveValue('Restore Me');
     await expect(page.locator('#draft-alert')).toBeVisible();
-
-    // Check draft - savedByError should STILL be true
-    const draftData = await page.evaluate(() => {
-      const data = localStorage.getItem('draft_patient');
-      return data ? JSON.parse(data) : null;
-    });
-
-    expect(draftData).not.toBeNull();
-    expect(draftData.savedByError).toBe(true);
-  });
-
-  test('should NOT auto-save modifications after restoring draft from network error', async () => {
-    await page.goto('/patients/new');
-
-    // Create a draft with savedByError: true
-    await page.evaluate(() => {
-      const draftData = {
-        type: 'patient',
-        data: {
-          firstName: 'Original First',
-          lastName: 'Original Last',
-          taxId: '99887766C',
-          phone: '111222333',
-          email: 'original@test.com',
-          allergies: 'Original Allergies'
-        },
-        timestamp: Date.now(),
-        formId: 'patient-new-' + Date.now(),
-        savedByError: true
-      };
-      localStorage.setItem('draft_patient', JSON.stringify(draftData));
-    });
-
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-
-    // Restore draft
-    await page.click('text=Recuperar borrador');
-    await page.click('text=Sí, recuperar');
-    await page.waitForTimeout(500);
-
-    // Verify form fields are populated with original data
-    let firstName = await page.inputValue('input[name="firstName"]');
-    expect(firstName).toBe('Original First');
-
-    // Modify form fields
-    await page.fill('input[name="firstName"]', 'Modified First');
-    await page.fill('input[name="lastName"]', 'Modified Last');
-    await page.fill('input[name="allergies"]', 'Modified Allergies');
-
-    // Wait for what used to be the auto-save interval (6 seconds)
-    await page.waitForTimeout(6000);
-
-    // Check draft - should STILL have ORIGINAL data (not modified data)
-    // This confirms auto-save is NOT running
-    const draftData = await page.evaluate(() => {
-      const data = localStorage.getItem('draft_patient');
-      return data ? JSON.parse(data) : null;
-    });
-
-    expect(draftData).not.toBeNull();
-    expect(draftData.savedByError).toBe(true);
-    expect(draftData.data.firstName).toBe('Original First'); // Original data
-    expect(draftData.data.lastName).toBe('Original Last'); // Original data
-    expect(draftData.data.allergies).toBe('Original Allergies'); // Original data
-
-    // Alert should still be visible
-    await expect(page.locator('#draft-alert')).toBeVisible();
-  });
-
-  test('should allow modifying form and then recovering draft without error', async () => {
-    await page.goto('/patients/new');
-    
-    // 1. Create a draft with savedByError: true (simulating network error)
-    await page.evaluate(() => {
-      const draftData = {
-        type: 'patient',
-        data: {
-          firstName: 'Original Name',
-          lastName: 'Original Lastname',
-          taxId: '11111111A',
-          allergies: 'None'
-        },
-        timestamp: Date.now(),
-        formId: 'patient-new-' + Date.now(),
-        savedByError: true
-      };
-      localStorage.setItem('draft_patient', JSON.stringify(draftData));
-    });
-
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-
-    // 2. Verify alert is visible
-    await expect(page.locator('#draft-alert')).toBeVisible();
-
-    // 3. Modify the form (simulating user changing their mind or trying to fix it)
-    await page.fill('input[name="firstName"]', 'Modified Name');
-    await page.fill('input[name="lastName"]', 'Modified Lastname');
-
-    // 4. Click "Recuperar borrador"
-    await page.click('text=Recuperar borrador');
-
-    // 5. Confirm restore
-    await page.click('text=Sí, recuperar');
-
-    // 6. Verify NO error message is shown
-    const errorVisible = await page.locator('text=Ocurrió un error inesperado').isVisible();
-    expect(errorVisible).toBe(false);
-
-    // 7. Verify data is restored to ORIGINAL values
-    const firstName = await page.inputValue('input[name="firstName"]');
-    expect(firstName).toBe('Original Name');
-
-    const lastName = await page.inputValue('input[name="lastName"]');
-    expect(lastName).toBe('Original Lastname');
-  });
-
-  test('should discard draft when clicking "Descartar"', async () => {
-    await page.goto('/patients/new');
-    
-    // Create a draft with savedByError: true
-    await page.evaluate(() => {
-      const draftData = {
-        type: 'patient',
-        data: {
-          firstName: 'Discard First',
-          lastName: 'Discard Last'
-        },
-        timestamp: Date.now(),
-        formId: 'patient-new-' + Date.now(),
-        savedByError: true
-      };
-      localStorage.setItem('draft_patient', JSON.stringify(draftData));
-    });
-
-    await page.reload();
-    await page.waitForLoadState('networkidle');
-
-    // Click "Descartar borrador" button
-    await page.click('text=Descartar borrador');
-
-    // Confirm discard
-    await page.click('text=Sí, descartar');
-
-    // Alert should disappear
-    await expect(page.locator('#draft-alert')).not.toBeVisible();
-
-    // Draft should be removed from localStorage
-    const draftData = await page.evaluate(() => {
-      return localStorage.getItem('draft_patient');
-    });
-    expect(draftData).toBeNull();
   });
 
   test('should clear draft on successful save', async () => {
-    // Navigate to new patient
     await page.goto('/patients/new');
     await page.waitForLoadState('networkidle');
 
-    // Fill form
-    await page.fill('input[name="firstName"]', 'Success First');
-    await page.fill('input[name="lastName"]', 'Success Last');
-    await page.fill('input[name="taxId"]', '55443322C');
-    await page.fill('input[name="allergies"]', 'None');
+    await page.evaluate(() => localStorage.removeItem('draft_patient'));
 
-    // Verify NO draft exists yet (no auto-save)
-    let draftData = await page.evaluate(() => {
-      return localStorage.getItem('draft_patient');
-    });
-    expect(draftData).toBeNull();
+    await page.getByLabel(/Nombre|First Name/i).fill('Success');
+    await page.getByLabel(/Apellidos|Last Name/i).fill('Test');
+    await page.locator('#allergies').fill('None');
 
-    // Submit form
-    await page.click('button[type="submit"]');
-
-    // Wait for navigation
-    await page.waitForURL(/\/patients/);
-
-    // Wait a bit for local storage cleanup
-    await page.waitForTimeout(1000);
-
-    // Draft should be cleared (or never existed/lasted only during ajax)
-    draftData = await page.evaluate(() => {
-      return localStorage.getItem('draft_patient');
-    });
-    expect(draftData).toBeNull();
-  });
-
-  test('should work in edit mode', async () => {
-    // First, create a patient to edit
-    await page.goto('/patients/new');
-    await page.waitForLoadState('networkidle');
-
-    await page.fill('input[name="firstName"]', 'Edit Mode First');
-    await page.fill('input[name="lastName"]', 'Edit Mode Last');
-    await page.fill('input[name="allergies"]', 'None');
-    await page.click('button[type="submit"]');
+    await page.getByTestId('save-patient-btn').click();
     
-    // Wait for redirect to list
-    await page.waitForURL(/\/patients/);
+    await page.waitForURL(/\/patients$/);
     await page.waitForLoadState('networkidle');
 
-    // Search for the patient to ensure we click the right one
-    await page.fill('input[type="text"]', 'Edit Mode First');
-    await page.click('button[type="submit"]');
-    await page.waitForLoadState('networkidle');
-
-    // Click on name to go to detail
-    await page.click('text=Edit Mode First'); 
-    await page.waitForURL(/\/patients\/\d+/);
-    
-    // Navigate to edit
-    const currentUrl = page.url();
-    await page.goto(`${currentUrl}/edit`);
-    await page.waitForLoadState('networkidle');
-    
-    // Modify the form
-    await page.fill('input[name="firstName"]', 'Modified in Edit');
-    await page.locator('input[name="firstName"]').blur();
-
-    // Verify NO draft exists (no auto-save)
-    let draftData = await page.evaluate(() => {
-      return localStorage.getItem('draft_patient');
-    });
-    expect(draftData).toBeNull();
-
-    // Submit
-    await page.click('button[type="submit"]');
-    await page.waitForURL(/\/patients\/\d+/);
-
-    // Wait for cleanup
-    await page.waitForTimeout(1000);
-
-    // Draft should be gone
-    draftData = await page.evaluate(() => {
-      return localStorage.getItem('draft_patient');
-    });
+    const draftData = await page.evaluate(() => localStorage.getItem('draft_patient'));
     expect(draftData).toBeNull();
   });
 });

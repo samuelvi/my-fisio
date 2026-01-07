@@ -8,9 +8,9 @@ import React, { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { 
   ArrowPathIcon, 
-  TrashIcon, 
-  ExclamationTriangleIcon 
+  TrashIcon
 } from '@heroicons/react/24/outline';
+import { useLanguage } from '../LanguageContext';
 
 interface DraftModalProps {
   /** Whether the modal is open */
@@ -41,9 +41,10 @@ export default function DraftModal({
   message,
   type,
   onConfirm,
-  onCancel = () => console.warn('DraftModal: onCancel prop is missing'),
+  onCancel,
   isLoading = false
 }: DraftModalProps) {
+  const { t } = useLanguage();
   const isRestoreType = type === 'restore';
   
   const handleConfirm = (e: React.MouseEvent) => {
@@ -55,12 +56,14 @@ export default function DraftModal({
   const handleCancel = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    onCancel();
+    if (onCancel) {
+        onCancel();
+    }
   };
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
-      <Dialog as="div" className="relative z-[100]" onClose={onCancel}>
+      <Dialog as="div" className="relative z-[100]" onClose={onCancel || (() => {})}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"
@@ -110,18 +113,20 @@ export default function DraftModal({
                   <button
                     type="button"
                     disabled={isLoading}
+                    data-testid="confirm-draft-btn"
                     className={`inline-flex w-full justify-center rounded-md px-4 py-2 text-sm font-bold text-white shadow-sm sm:w-auto transition ${isRestoreType ? 'bg-blue-600 hover:bg-blue-500' : 'bg-red-600 hover:bg-red-500'} disabled:opacity-50`}
                     onClick={handleConfirm}
                   >
-                    {isLoading ? 'Procesando...' : (isRestoreType ? 'Sí, recuperar' : 'Sí, descartar')}
+                    {isLoading ? t('processing') : (isRestoreType ? t('yes_restore') : t('yes_discard'))}
                   </button>
                   <button
                     type="button"
                     disabled={isLoading}
+                    data-testid="cancel-draft-btn"
                     className="mt-3 inline-flex w-full justify-center rounded-md bg-white px-4 py-2 text-sm font-bold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto transition disabled:opacity-50"
                     onClick={handleCancel}
                   >
-                    Cancelar
+                    {t('cancel')}
                   </button>
                 </div>
               </Dialog.Panel>

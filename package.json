@@ -3,7 +3,8 @@
     "private": true,
     "scripts": {
         "dev": "vite --mode dev",
-        "build": "vite build --mode prod"
+        "build": "vite build --mode prod",
+        "build:test": "vite build --mode test"
     },
     "dependencies": {
         "@fullcalendar/daygrid": "^6.1.19",

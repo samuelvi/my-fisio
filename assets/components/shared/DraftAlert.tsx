@@ -6,6 +6,7 @@
  */
 
 import React from 'react';
+import { useLanguage } from '../LanguageContext';
 
 interface DraftAlertProps {
   /** Whether the alert should be shown */
@@ -50,6 +51,7 @@ export default function DraftAlert({
   variant = 'error',
   className = ''
 }: DraftAlertProps) {
+  const { t } = useLanguage();
   console.log('[DraftAlert] Render:', { show, draftAge, variant });
 
   if (!show) {
@@ -64,8 +66,8 @@ export default function DraftAlert({
   const textColor = 'text-red-800';
   const buttonPrimaryBg = 'bg-red-600 hover:bg-red-700 focus:ring-red-500';
 
-  const title = 'Error de red - Borrador guardado';
-  const message = 'No se pudo guardar la factura por un error de conexión. Se ha guardado un borrador automáticamente';
+  const title = t('draft_network_error_title');
+  const message = t('draft_network_error_message');
 
   return (
     <div
@@ -144,7 +146,7 @@ export default function DraftAlert({
                   d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
                 />
               </svg>
-              Recuperar borrador
+              {t('restore_draft')}
             </button>
 
             <button
@@ -177,7 +179,7 @@ export default function DraftAlert({
                   d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
                 />
               </svg>
-              Descartar borrador
+              {t('discard_draft')}
             </button>
           </div>
         </div>

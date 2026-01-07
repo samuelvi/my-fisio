@@ -12,17 +12,19 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     const defaultLocale = (import.meta.env.VITE_DEFAULT_LOCALE as string) || 'en';
-    const [locale, setLocale] = useState<string>(localStorage.getItem('app_locale') || defaultLocale);
+    const initialLocale = localStorage.getItem('app_locale') || defaultLocale;
+    const [locale, setLocale] = useState<string>(initialLocale);
     
-    // Get translations from global window object injected by Twig
-    const allTranslations = window.APP_TRANSLATIONS || {};
-    const [translations, setTranslations] = useState<Record<string, string>>(allTranslations[locale] || {});
+    const allTranslations = (window as any).APP_TRANSLATIONS || {};
+    const [translations, setTranslations] = useState<Record<string, string>>(allTranslations[initialLocale] || {});
 
     useEffect(() => {
-        setTranslations(allTranslations[locale] || {});
+        // Re-sync translations if window object changed or locale changed
+        const currentAllTranslations = (window as any).APP_TRANSLATIONS || {};
+        setTranslations(currentAllTranslations[locale] || {});
         localStorage.setItem('app_locale', locale);
         axios.defaults.headers.common['X-App-Locale'] = locale;
-    }, [locale, allTranslations]);
+    }, [locale]);
 
     const t = (key: string, params: Record<string, string | number> | null = null): string => {
         let value = translations[key] || key;

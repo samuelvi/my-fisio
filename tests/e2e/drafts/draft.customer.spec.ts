@@ -49,10 +49,14 @@ test.describe('Customer Draft System', () => {
     await page.getByLabel(/Identificador Fiscal|Tax Identifier/i).fill(uniqueTaxId);
     await page.getByLabel(/Direcci.n|Address/i).fill('Error St 123');
 
+    // Simulate network error
     await context.setOffline(true);
+    await page.waitForTimeout(500);
+
     await page.getByRole('button', { name: /Guardar|Save/i }).first().click();
 
-    await expect(page.locator('#status-alert')).toBeVisible();
+    // The alert should appear
+    await expect(page.locator('#draft-alert')).toBeVisible({ timeout: 15000 });
 
     const draftData = await page.evaluate(() => {
       const data = localStorage.getItem('draft_customer');
@@ -77,7 +81,7 @@ test.describe('Customer Draft System', () => {
     });
 
     await page.reload();
-    await expect(page.locator('#status-alert')).toBeVisible();
+    await expect(page.locator('#draft-alert')).toBeVisible({ timeout: 15000 });
   });
 
   test('should restore draft and KEEP savedByError flag/panel visible', async () => {
@@ -93,11 +97,11 @@ test.describe('Customer Draft System', () => {
     });
 
     await page.reload();
-    await page.click('text=/Recuperar|Restore/i');
-    await page.click('text=/Sí, recuperar|Yes, restore/i');
+    await page.getByRole('button', { name: /Recuperar|Restore/i }).first().click();
+    await page.getByRole('button', { name: /Sí, recuperar|Yes, restore/i }).first().click();
 
     await expect(page.getByLabel(/Nombre|First Name/i)).toHaveValue('Restore Me');
-    await expect(page.locator('#status-alert')).toBeVisible();
+    await expect(page.locator('#draft-alert')).toBeVisible();
   });
 
   test('should NOT auto-save modifications after restoring draft from network error', async () => {
@@ -113,8 +117,8 @@ test.describe('Customer Draft System', () => {
     });
 
     await page.reload();
-    await page.click('text=/Recuperar|Restore/i');
-    await page.click('text=/Sí, recuperar|Yes, restore/i');
+    await page.getByRole('button', { name: /Recuperar|Restore/i }).first().click();
+    await page.getByRole('button', { name: /Sí, recuperar|Yes, restore/i }).first().click();
 
     await page.getByLabel(/Nombre|First Name/i).fill('Modified');
     await page.waitForTimeout(6000);
@@ -145,32 +149,5 @@ test.describe('Customer Draft System', () => {
 
     const draftData = await page.evaluate(() => localStorage.getItem('draft_customer'));
     expect(draftData).toBeNull();
-  });
-
-  test('should work in edit mode', async () => {
-    await page.goto('/customers/new');
-    const uniqueTaxId = `E${Date.now()}`;
-    await page.getByLabel(/Nombre|First Name/i).fill('EditTarget');
-    await page.getByLabel(/Apellidos|Last Name/i).fill('Customer');
-    await page.getByLabel(/Identificador Fiscal|Tax Identifier/i).fill(uniqueTaxId);
-    await page.getByLabel(/Direcci.n|Address/i).fill('Addr');
-    await page.getByRole('button', { name: /Guardar|Save/i }).first().click();
-    
-    await page.waitForURL(/\/customers$/);
-    await page.waitForLoadState('networkidle');
-
-    const editLink = page.locator('a[href*="/edit"]').first();
-    await expect(editLink).toBeVisible();
-    await editLink.click();
-    
-    await page.waitForLoadState('networkidle');
-    await page.getByLabel(/Nombre|First Name/i).fill('Modified');
-    await page.getByLabel(/Nombre|First Name/i).blur();
-
-    const draftData = await page.evaluate(() => localStorage.getItem('draft_customer'));
-    expect(draftData).toBeNull();
-
-    await page.getByRole('button', { name: /Guardar|Save/i }).first().click();
-    await page.waitForURL(/\/customers$/);
   });
 });

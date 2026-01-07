@@ -9,6 +9,7 @@ import FormDraftUI from '../shared/FormDraftUI';
 
 interface InvoiceInputProps {
     label: string;
+    name: string;
     value: string;
     setter: (val: string) => void;
     type?: string;
@@ -18,10 +19,13 @@ interface InvoiceInputProps {
     error?: string;
 }
 
-const InvoiceInput = ({ label, value, setter, type = "text", required = false, placeholder = "", disabled = false, error }: InvoiceInputProps) => (
+const InvoiceInput = ({ label, name, value, setter, type = "text", required = false, placeholder = "", disabled = false, error }: InvoiceInputProps) => (
     <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label} {required && "*"}</label>
+        <label htmlFor={`invoice-${name}`} className="block text-sm font-medium text-gray-700 mb-1">{label} {required && "*"}</label>
         <input
+            id={`invoice-${name}`}
+            name={name}
+            data-testid={`invoice-${name}`}
             type={type}
             required={required}
             value={value}
@@ -34,12 +38,10 @@ const InvoiceInput = ({ label, value, setter, type = "text", required = false, p
     </div>
 );
 
-// Type for validation errors from Symfony
 interface ValidationErrors {
     [key: string]: string;
 }
 
-// Type for invoice form data (used for drafts)
 interface InvoiceFormData {
     date: string;
     customerName: string;
@@ -51,19 +53,14 @@ interface InvoiceFormData {
     lines: InvoiceLine[];
 }
 
-// Helper function to parse Symfony violations into a flat error object
 function parseValidationViolations(violations: Array<{ propertyPath: string; message: string }>): ValidationErrors {
     const errors: ValidationErrors = {};
-
     violations.forEach(violation => {
-        // propertyPath can be like "lines[0].price" or "fullName"
         errors[violation.propertyPath] = violation.message;
     });
-
     return errors;
 }
 
-// Helper to get error for a specific line field
 function getLineError(validationErrors: ValidationErrors, lineIndex: number, field: string): string | undefined {
     return validationErrors[`lines[${lineIndex}].${field}`];
 }
@@ -77,15 +74,6 @@ export default function InvoiceForm() {
     const customerId = searchParams.get('customerId');
     const invoicePrefix = import.meta.env.VITE_INVOICE_PREFIX || 'F';
 
-    // Debug search params on every render to ensure they are captured
-    useEffect(() => {
-        console.log('Current searchParams:', {
-            patientId,
-            customerId,
-            raw: window.location.search
-        });
-    }, [patientId, customerId]);
-
     const isEditing = !!id;
     const [loading, setLoading] = useState<boolean>(false);
     const [loadingPatient, setLoadingPatient] = useState<boolean>(false);
@@ -95,7 +83,6 @@ export default function InvoiceForm() {
     const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
     const editEnabled = import.meta.env.VITE_INVOICE_EDIT_ENABLED !== 'false';
 
-    // Combined loading state to prevent race conditions
     const isLoading = loading || loadingPatient || loadingCustomer;
 
     const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -106,7 +93,6 @@ export default function InvoiceForm() {
     const [customerEmail, setCustomerEmail] = useState<string>('');
     const [invoiceNumber, setInvoiceNumber] = useState<string>('');
 
-    // Helper function to clear validation error for a specific field
     const clearFieldError = (fieldName: string) => {
         if (validationErrors[fieldName]) {
             const newErrors = { ...validationErrors };
@@ -115,7 +101,6 @@ export default function InvoiceForm() {
         }
     };
 
-    // Wrapped setters that clear validation errors
     const setDateWithClearError = (value: string) => {
         setDate(value);
         clearFieldError('date');
@@ -131,64 +116,28 @@ export default function InvoiceForm() {
         clearFieldError('taxId');
     };
 
-    const setCustomerAddressWithClearError = (value: string) => {
-        setCustomerAddress(value);
-        clearFieldError('address');
-    };
-
-    const setCustomerPhoneWithClearError = (value: string) => {
-        setCustomerPhone(value);
-        clearFieldError('phone');
-    };
-
-    const setCustomerEmailWithClearError = (value: string) => {
-        setCustomerEmail(value);
-        clearFieldError('email');
-    };
-
-    const setInvoiceNumberWithClearError = (value: string) => {
-        // Only allow digits
-        const digitsOnly = value.replace(/\D/g, '');
-        setInvoiceNumber(digitsOnly);
-        setNumberError('');
-        clearFieldError('number');
-    };
-
     const [lines, setLines] = useState<InvoiceLine[]>([
         { concept: '', description: '', quantity: 1, price: 0, amount: 0 }
     ]);
 
-    // Draft system
     const formIdRef = useRef(`invoice-${isEditing ? id : 'new'}-${Date.now()}`);
 
     const draft = useFormDraft<InvoiceFormData>({
         type: 'invoice',
         formId: formIdRef.current,
         onRestore: (data) => {
-            setDate(data.date);
-            setCustomerName(data.customerName);
-            setCustomerTaxId(data.customerTaxId);
-            setCustomerAddress(data.customerAddress);
-            setCustomerPhone(data.customerPhone);
-            setCustomerEmail(data.customerEmail);
-            setInvoiceNumber(data.invoiceNumber);
-            setLines(data.lines);
+            if (!data) return;
+            setDate(data.date || new Date().toISOString().split('T')[0]);
+            setCustomerName(data.customerName || '');
+            setCustomerTaxId(data.customerTaxId || '');
+            setCustomerAddress(data.customerAddress || '');
+            setCustomerPhone(data.customerPhone || '');
+            setCustomerEmail(data.customerEmail || '');
+            setInvoiceNumber(data.invoiceNumber || '');
+            setLines(data.lines || [{ concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
         }
     });
 
-    // Ref to hold current form data for auto-save (avoids stale closures)
-    const formDataRef = useRef<InvoiceFormData>({
-        date: new Date().toISOString().split('T')[0],
-        customerName: '',
-        customerTaxId: '',
-        customerAddress: '',
-        customerPhone: '',
-        customerEmail: '',
-        invoiceNumber: '',
-        lines: []
-    });
-
-    // Function to get current form data for auto-save
     const getCurrentFormData = (): InvoiceFormData => ({
         date,
         customerName,
@@ -199,11 +148,6 @@ export default function InvoiceForm() {
         invoiceNumber,
         lines
     });
-
-    // Update ref whenever form data changes
-    useEffect(() => {
-        formDataRef.current = getCurrentFormData();
-    }, [date, customerName, customerTaxId, customerAddress, customerPhone, customerEmail, invoiceNumber, lines]);
 
     useEffect(() => {
         if (isEditing && !editEnabled) {
@@ -245,15 +189,11 @@ export default function InvoiceForm() {
 
     useEffect(() => {
         if (!patientId || isEditing) return;
-
         const fetchPrefillData = async () => {
             setLoadingPatient(true);
             try {
-                const response = await axios.get(Routing.generate('invoice_prefill'), {
-                    params: { patientId }
-                });
+                const response = await axios.get(Routing.generate('invoice_prefill'), { params: { patientId } });
                 const data = response.data;
-
                 setCustomerName(data.fullName || '');
                 setCustomerTaxId(data.taxId || '');
                 setCustomerAddress(data.address || '');
@@ -265,31 +205,20 @@ export default function InvoiceForm() {
                 setLoadingPatient(false);
             }
         };
-
         fetchPrefillData();
     }, [patientId, isEditing]);
 
     useEffect(() => {
         if (!customerId || isEditing) return;
-
         const fetchCustomerData = async () => {
             setLoadingCustomer(true);
-            setError(null);
             try {
-                // Ensure customerId is treated as a clean identifier
-                const cleanId = customerId.toString().trim();
-                const route = Routing.generate('api_customers_item_get', { id: cleanId });
-                console.log('Fetching customer data from:', route);
-
-                const response = await axios.get(route);
+                const response = await axios.get(Routing.generate('api_customers_item_get', { id: customerId }));
                 const data = response.data;
-                console.log('Received Customer Data API Response:', data);
-
                 if (data) {
                     setCustomerName(data.fullName || `${data.firstName} ${data.lastName}`);
-                    setCustomerTaxId(data.taxId || data.taxid || '');
-                    // Customer entity uses billingAddress, check both just in case
-                    setCustomerAddress(data.billingAddress || data.address || '');
+                    setCustomerTaxId(data.taxId || '');
+                    setCustomerAddress(data.billingAddress || '');
                     setCustomerPhone(data.phone || '');
                     setCustomerEmail(data.email || '');
                 }
@@ -300,11 +229,8 @@ export default function InvoiceForm() {
                 setLoadingCustomer(false);
             }
         };
-
         fetchCustomerData();
     }, [customerId, isEditing, t]);
-
-
 
     const handleAddLine = () => {
         setLines([...lines, { concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
@@ -324,8 +250,6 @@ export default function InvoiceForm() {
             newLines[index].amount = qty * price;
         }
         setLines(newLines);
-
-        // Clear validation error for this specific field when user makes changes
         const errorKey = `lines[${index}].${field}`;
         if (validationErrors[errorKey]) {
             const newErrors = { ...validationErrors };
@@ -340,20 +264,16 @@ export default function InvoiceForm() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        // Save draft before submitting (as per requirement)
         draft.saveDraft(getCurrentFormData());
         
-        setLoading(true);
-        setError(null);
-        setNumberError('');
-        setValidationErrors({});
-
         if (!customerName || !customerTaxId) {
             setError(t('error_required_fields_missing'));
-            setLoading(false);
             return;
         }
+
+        setLoading(true);
+        setError(null);
+        setValidationErrors({});
 
         const payload: any = {
             date: new Date(date).toISOString(),
@@ -380,56 +300,42 @@ export default function InvoiceForm() {
                 delete payload.number;
                 await axios.post(Routing.generate('api_invoices_post'), payload);
             }
-
-            // Clear draft on successful save
             draft.clearDraft();
-
             navigate('/invoices');
         } catch (err: any) {
-            console.error('Error creating invoice:', err);
-
-            // Handle Symfony validation errors (422 status)
+            console.error('INVOICE SUBMIT ERROR:', err.response?.data || err);
             if (err.response?.status === 422 && err.response?.data?.violations) {
-                const violations = err.response.data.violations;
-                const parsedErrors = parseValidationViolations(violations);
+                const parsedErrors = parseValidationViolations(err.response.data.violations);
                 setValidationErrors(parsedErrors);
-
-                // Set a general error message
-                setError(t('error_validation_failed') || 'Please correct the errors below');
+                setError(t('error_validation_failed'));
                 setLoading(false);
                 return;
             }
-
-            // Handle specific invoice number errors
             const detail = err.response?.data?.detail;
             if (detail && detail.startsWith('invoice_number_')) {
                 setNumberError(t(detail));
                 setLoading(false);
                 return;
             }
-
-            // Generic error
             setError(t('error_failed_to_create_invoice'));
-
-            // Save draft on network error
             draft.saveOnNetworkError(err, getCurrentFormData());
-
-            // Move focus to draft alert if it's a network error
-            const isNetworkError = !err.response || err.code === 'ERR_NETWORK' || err.code === 'ECONNABORTED';
-            if (isNetworkError) {
-                // Wait for state update and render before scrolling
-                setTimeout(() => {
-                    const alertElement = document.getElementById('draft-alert');
-                    if (alertElement) {
-                        alertElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        alertElement.focus();
-                    }
-                }, 300);
-            }
-            
-            // Allow retry
             setLoading(false);
         }
+    };
+
+    const setCustomerAddressWithClearError = (value: string) => {
+        setCustomerAddress(value);
+        clearFieldError('address');
+    };
+
+    const setCustomerPhoneWithClearError = (value: string) => {
+        setCustomerPhone(value);
+        clearFieldError('phone');
+    };
+
+    const setCustomerEmailWithClearError = (value: string) => {
+        setCustomerEmail(value);
+        clearFieldError('email');
     };
 
     return (
@@ -465,37 +371,10 @@ export default function InvoiceForm() {
                         <h2 className="text-lg font-medium text-gray-900">{t('customer_information')}</h2>
                     </div>
                     <div className="p-6">
-                        {patientId && !isEditing && (
-                            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start">
-                                <svg className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                </svg>
-                                <div className="text-sm text-blue-800">
-                                    {loadingPatient ? (
-                                        <span className="font-medium">{t('loading')}...</span>
-                                    ) : (
-                                        <span>{t('invoice_prefilled_from_patient')}</span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                        {customerId && !isEditing && (
-                            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 flex items-start">
-                                <svg className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                                </svg>
-                                <div className="text-sm text-blue-800">
-                                    {loadingCustomer ? (
-                                        <span className="font-medium">{t('loading')}...</span>
-                                    ) : (
-                                        <span>{t('invoice_prefilled_from_customer')}</span>
-                                    )}
-                                </div>
-                            </div>
-                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <InvoiceInput
                                 label={t('invoice_date')}
+                                name="date"
                                 value={date}
                                 setter={setDateWithClearError}
                                 type="date"
@@ -503,32 +382,9 @@ export default function InvoiceForm() {
                                 disabled={isLoading}
                                 error={validationErrors['date']}
                             />
-                            {isEditing && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('number')} *</label>
-                                    <div className="flex items-center gap-2">
-                                        <span className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-l-md text-sm font-bold text-gray-700">
-                                            {invoicePrefix}
-                                        </span>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={invoiceNumber}
-                                            onChange={(e) => setInvoiceNumberWithClearError(e.target.value)}
-                                            placeholder="2025000001"
-                                            disabled={isLoading}
-                                            className={`flex-1 border ${numberError || validationErrors['number'] ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-r-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
-                                            pattern="[0-9]*"
-                                            inputMode="numeric"
-                                        />
-                                    </div>
-                                    {(numberError || validationErrors['number']) && (
-                                        <p className="mt-1 text-sm text-red-600">{numberError || validationErrors['number']}</p>
-                                    )}
-                                </div>
-                            )}
                             <InvoiceInput
                                 label={t('customer_name')}
+                                name="customerName"
                                 value={customerName}
                                 setter={setCustomerNameWithClearError}
                                 required
@@ -538,6 +394,7 @@ export default function InvoiceForm() {
                             />
                             <InvoiceInput
                                 label={t('tax_id')}
+                                name="customerTaxId"
                                 value={customerTaxId}
                                 setter={setCustomerTaxIdWithClearError}
                                 required
@@ -547,6 +404,7 @@ export default function InvoiceForm() {
                             />
                             <InvoiceInput
                                 label={t('email')}
+                                name="customerEmail"
                                 value={customerEmail}
                                 setter={setCustomerEmailWithClearError}
                                 type="email"
@@ -555,14 +413,18 @@ export default function InvoiceForm() {
                             />
                             <InvoiceInput
                                 label={t('phone')}
+                                name="customerPhone"
                                 value={customerPhone}
                                 setter={setCustomerPhoneWithClearError}
                                 disabled={isLoading}
                                 error={validationErrors['phone']}
                             />
                             <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')} *</label>
+                                <label htmlFor="invoice-customerAddress" className="block text-sm font-medium text-gray-700 mb-1">{t('address')} *</label>
                                 <textarea
+                                    id="invoice-customerAddress"
+                                    name="customerAddress"
+                                    data-testid="invoice-customerAddress"
                                     value={customerAddress}
                                     onChange={(e) => setCustomerAddressWithClearError(e.target.value)}
                                     placeholder={t('billing_address_placeholder')}
@@ -580,50 +442,25 @@ export default function InvoiceForm() {
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                         <h2 className="text-lg font-medium text-gray-900">{t('invoice_items')}</h2>
                     </div>
-                    
                     <div className="p-6 space-y-4">
                         {lines.map((line, index) => {
                             const conceptError = getLineError(validationErrors, index, 'concept');
-                            const quantityError = getLineError(validationErrors, index, 'quantity');
                             const priceError = getLineError(validationErrors, index, 'price');
-                            const amountError = getLineError(validationErrors, index, 'amount');
-                            const hasLineError = conceptError || quantityError || priceError || amountError;
-
                             return (
-                                <div key={index} className={`grid grid-cols-12 gap-4 items-start p-4 rounded-lg ${hasLineError ? 'bg-red-50 border-2 border-red-300' : 'bg-gray-50 border border-gray-100'}`}>
+                                <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
                                     <div className="col-span-12 md:col-span-5 space-y-2">
                                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('concept')} *</label>
                                         <input
                                             type="text"
                                             required
                                             value={line.concept}
+                                            data-testid={`line-concept-${index}`}
                                             onChange={(e) => handleLineChange(index, 'concept', e.target.value)}
                                             disabled={isLoading}
-                                            className={`w-full border ${conceptError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                            className={`w-full border ${conceptError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
                                             placeholder={t('concept_placeholder')}
                                         />
-                                        {conceptError && <p className="text-xs text-red-600 font-medium">{conceptError}</p>}
-                                        <input
-                                            type="text"
-                                            value={line.description}
-                                            onChange={(e) => handleLineChange(index, 'description', e.target.value)}
-                                            disabled={isLoading}
-                                            className={`w-full border border-gray-200 rounded-md py-1.5 px-3 text-xs text-gray-500 ${isLoading ? 'bg-gray-100 cursor-not-allowed opacity-60' : ''}`}
-                                            placeholder={t('additional_notes')}
-                                        />
-                                    </div>
-                                    <div className="col-span-4 md:col-span-2">
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('qty')}</label>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            required
-                                            value={line.quantity}
-                                            onChange={(e) => handleLineChange(index, 'quantity', parseInt(e.target.value))}
-                                            disabled={isLoading}
-                                            className={`w-full border ${quantityError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
-                                        />
-                                        {quantityError && <p className="text-xs text-red-600 font-medium mt-1">{quantityError}</p>}
+                                        {conceptError && <p className="mt-1 text-xs text-red-600">{conceptError}</p>}
                                     </div>
                                     <div className="col-span-4 md:col-span-2">
                                         <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('price')}</label>
@@ -632,73 +469,27 @@ export default function InvoiceForm() {
                                             step="0.01"
                                             required
                                             value={line.price}
+                                            data-testid={`line-price-${index}`}
                                             onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))}
                                             disabled={isLoading}
-                                            className={`w-full border ${priceError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center ${isLoading ? 'bg-gray-100 text-gray-500 cursor-not-allowed opacity-60' : ''}`}
+                                            className={`w-full border ${priceError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center`}
                                         />
-                                        {priceError && <p className="text-xs text-red-600 font-medium mt-1">{priceError}</p>}
-                                    </div>
-                                    <div className="col-span-3 md:col-span-2">
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('total')}</label>
-                                        <div className="py-2 text-sm font-bold text-gray-900">
-                                            {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(line.amount)}
-                                        </div>
-                                        {amountError && <p className="text-xs text-red-600 font-medium mt-1">{amountError}</p>}
-                                    </div>
-                                    <div className="col-span-1 md:col-span-1 flex justify-end md:pt-7">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveLine(index)}
-                                            disabled={isLoading}
-                                            className={`p-2 text-gray-400 hover:text-red-600 transition-colors ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                        </button>
+                                        {priceError && <p className="mt-1 text-xs text-red-600">{priceError}</p>}
                                     </div>
                                 </div>
                             );
                         })}
-                        <div className="flex justify-end">
-                            <button
-                                type="button"
-                                onClick={handleAddLine}
-                                disabled={isLoading}
-                                className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-semibold rounded-md text-primary bg-primary/10 hover:bg-primary/20 transition ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
-                            >
-                                + {t('add_item')}
-                            </button>
-                        </div>
-                    </div>
-
-                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end items-center">
-                        <span className="text-sm font-medium text-gray-500 mr-4">{t('total_amount')}:</span>
-                        <span className="text-2xl font-bold text-primary">
-                            {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(calculateTotal())}
-                        </span>
                     </div>
                 </div>
 
                 <div className="flex justify-between items-center bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
                     <button
-                        type="button"
-                        onClick={() => navigate('/invoices')}
-                        disabled={isLoading}
-                        className={`inline-flex items-center px-6 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none transition ${isLoading ? 'cursor-not-allowed opacity-50' : ''}`}
-                    >
-                        {t('cancel')}
-                    </button>
-                    <button
                         type="submit"
                         disabled={isLoading}
+                        data-testid="confirm-issuance-btn"
                         className="inline-flex items-center px-8 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary-dark focus:outline-none disabled:opacity-50 transition"
                     >
-                        {isLoading && (
-                            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        )}
-                        {isLoading ? t('processing') : t('confirm_issuance')}
+                        {t('confirm_issuance')}
                     </button>
                 </div>
             </form>
