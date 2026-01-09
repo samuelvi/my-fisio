@@ -1966,56 +1966,6 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         default_namespace?: scalar|null, // Default namespace where stories will be created by maker. // Default: "Story"
  *     },
  * }
- * @psalm-type SncRedisConfig = array{
- *     class?: array{
- *         client?: scalar|null, // Default: "Predis\\Client"
- *         client_options?: scalar|null, // Default: "Predis\\Configuration\\Options"
- *         connection_parameters?: scalar|null, // Default: "Predis\\Connection\\Parameters"
- *         connection_factory?: scalar|null, // Default: "Snc\\RedisBundle\\Client\\Predis\\Connection\\ConnectionFactory"
- *         connection_wrapper?: scalar|null, // Default: "Snc\\RedisBundle\\Client\\Predis\\Connection\\ConnectionWrapper"
- *         phpredis_client?: scalar|null, // Default: "Redis"
- *         relay_client?: scalar|null, // Default: "Relay\\Relay"
- *         phpredis_clusterclient?: scalar|null, // Default: "RedisCluster"
- *         logger?: scalar|null, // Default: "Snc\\RedisBundle\\Logger\\RedisLogger"
- *         data_collector?: scalar|null, // Default: "Snc\\RedisBundle\\DataCollector\\RedisDataCollector"
- *         monolog_handler?: scalar|null, // Default: "Monolog\\Handler\\RedisHandler"
- *     },
- *     clients?: array<string, array{ // Default: []
- *         type: scalar|null,
- *         alias: scalar|null,
- *         logging?: bool, // Default: true
- *         dsns: list<mixed>,
- *         options?: array{
- *             commands?: array<string, scalar|null>,
- *             connection_async?: bool, // Default: false
- *             connection_persistent?: mixed, // Default: false
- *             connection_timeout?: scalar|null, // Default: 5
- *             read_write_timeout?: scalar|null, // Default: null
- *             iterable_multibulk?: bool, // Default: false
- *             throw_errors?: bool, // Default: true
- *             serialization?: scalar|null, // Default: "default"
- *             cluster?: scalar|null, // Default: null
- *             prefix?: scalar|null, // Default: null
- *             replication?: true|"predis"|"sentinel",
- *             service?: scalar|null, // Default: null
- *             slave_failover?: "none"|"error"|"distribute"|"distribute_slaves",
- *             parameters?: array{
- *                 database?: scalar|null, // Default: null
- *                 username?: scalar|null, // Default: null
- *                 password?: scalar|null, // Default: null
- *                 sentinel_username?: scalar|null, // Default: null
- *                 sentinel_password?: scalar|null, // Default: null
- *                 logging?: bool, // Default: true
- *                 ssl_context?: mixed, // Default: null
- *             },
- *         },
- *     }>,
- *     monolog?: array{
- *         client: scalar|null,
- *         key: scalar|null,
- *         formatter?: scalar|null,
- *     },
- * }
  * @psalm-type FosJsRoutingConfig = array{
  *     serializer?: scalar|null,
  *     routes_to_expose?: list<scalar|null>,
@@ -2044,7 +1994,6 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *     api_platform?: ApiPlatformConfig,
  *     lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *     pentatrion_vite?: PentatrionViteConfig,
- *     snc_redis?: SncRedisConfig,
  *     fos_js_routing?: FosJsRoutingConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
@@ -2065,7 +2014,6 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *         pentatrion_vite?: PentatrionViteConfig,
  *         zenstruck_foundry?: ZenstruckFoundryConfig,
- *         snc_redis?: SncRedisConfig,
  *         fos_js_routing?: FosJsRoutingConfig,
  *     },
  *     "when@prod"?: array{
@@ -2083,7 +2031,6 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         api_platform?: ApiPlatformConfig,
  *         lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *         pentatrion_vite?: PentatrionViteConfig,
- *         snc_redis?: SncRedisConfig,
  *         fos_js_routing?: FosJsRoutingConfig,
  *     },
  *     "when@test"?: array{
@@ -2103,7 +2050,6 @@ namespace Symfony\Component\DependencyInjection\Loader\Configurator;
  *         lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *         pentatrion_vite?: PentatrionViteConfig,
  *         zenstruck_foundry?: ZenstruckFoundryConfig,
- *         snc_redis?: SncRedisConfig,
  *         fos_js_routing?: FosJsRoutingConfig,
  *     },
  *     ...<string, ExtensionType|array{ // extra keys must follow the when@%env% pattern or match an extension alias

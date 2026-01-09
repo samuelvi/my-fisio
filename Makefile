@@ -230,7 +230,7 @@ db-validate: ## Validate doctrine mapping
 
 ##@ Symfony Package Installation
 
-install-all-packages: composer-install ## Install all recommended packages (Redis, Event Store, API)
+install-packages: composer-install ## Install recommended packages (Redis, Event Store, API)
 	@echo "$(GREEN)Installing recommended packages...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php composer require snc/redis-bundle broadway/broadway broadway/event-store-dbal api
 
@@ -268,15 +268,13 @@ rector-fix: ## Run Rector and apply changes
 	@echo "$(GREEN)Running Rector with fixes...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php vendor/bin/rector process src
 
-quality-tools: phpstan-install cs-fixer-install ## Install all quality tools
+quality-tools: phpstan-install cs-fixer-install rector-install ## Install all quality tools (PHPStan, CS Fixer, Rector)
 
-quality-check: phpstan cs-check ## Run all quality checks
+quality-check: phpstan cs-check ## Run all quality checks (PHPStan + CS Fixer)
 
 ##@ Testing (PHPUnit)
 
-test: test-all ## Run full test suite (unit + E2E)
-
-test-unit: ## Run PHPUnit tests (Test containers)
+test: ## Run PHPUnit unit tests
 	@echo "$(GREEN)Running PHPUnit tests...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
@@ -287,6 +285,8 @@ test-unit: ## Run PHPUnit tests (Test containers)
 	$(DOCKER_COMPOSE_TEST) exec -T php_test mkdir -p config/jwt
 	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
 	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/phpunit
+
+test-unit: test ## Alias for 'test' (Run PHPUnit tests)
 
 test-coverage: ## Run tests with coverage
 	@echo "$(GREEN)Running tests with coverage...$(NC)"
@@ -356,11 +356,11 @@ test-e2e-video: ## Run E2E test with video recording (use: make test-e2e-video f
 		echo "$(YELLOW)⚠ No video found. Test may have been skipped or failed to record.$(NC)"; \
 	fi
 
-test-all: test-unit test-e2e ## Run full test suite (unit + E2E)
+test-all: test test-e2e ## Run full test suite (unit + E2E)
 
 ##@ Project Setup
 
-dev-install: dev-build dev-up wait-for-services init-symfony install-all-packages db-setup dump-routes success-message ## Full project installation (Dev)
+dev-install: dev-build dev-up wait-for-services init-symfony install-packages db-setup dump-routes success-message ## Full project installation (Dev)
 
 init-symfony: ## Initialize Symfony application
 	@echo "$(GREEN)Initializing Symfony application...$(NC)"
