@@ -46,7 +46,7 @@ See [AGENTS_TESTING.md](./AGENTS_TESTING.md) for testing conventions and UI vali
 - **Architecture**: DDD (Domain-Driven Design) with Event Sourcing
 - **API**: RESTful (JSON)
 - **Authentication**: JWT (LexikJWTAuthenticationBundle)
-- **Database**: PostgreSQL 16
+- **Database**: MariaDB 11
 - **Cache/Sessions**: Redis 7
 - **Event Store**: For Event Sourcing
 - **Web Server**: Nginx (Alpine)
@@ -259,8 +259,8 @@ The project uses Docker Compose with **separate configurations for each environm
 - **Production** (`docker/prod/`): Optimized configuration with security hardening and resource limits
 
 **Configured services:**
-- **PHP-FPM 8.4**: Container with necessary extensions (pgsql, redis, intl, opcache, etc.)
-- **PostgreSQL 16**: Main database with automatic extension initialization
+- **PHP-FPM 8.4**: Container with necessary extensions (pdo_mysql, redis, intl, opcache, etc.)
+- **MariaDB 11**: Main database with utf8mb4_unicode_ci collation
 - **Redis 7**: Cache and session management
 - **Nginx**: Web server configured for Symfony
 - **MailPit** (dev/test only): Email capture for testing (UI at http://localhost:8025)
@@ -270,9 +270,8 @@ The project uses Docker Compose with **separate configurations for each environm
 ```
 docker/
 ├── common/
-│   └── postgres/
-│       ├── 01-init-extensions.sql  # PostgreSQL extensions (unaccent, pg_trgm, fuzzystrmatch)
-│       └── README.md               # Extension initialization docs
+│   └── mariadb/
+│       └── README.md               # Database initialization docs
 ├── dev/
 │   ├── docker-compose.yaml     # Development configuration
 │   ├── php/
@@ -301,7 +300,7 @@ docker/
 
 **Development**
 - `make dev-shell-php`: Access PHP container shell.
-- `make dev-shell-db`: Access PostgreSQL shell.
+- `make dev-shell-db`: Access MariaDB shell.
 - `make dev-shell-redis`: Access Redis CLI.
 - `make build-assets`: Full asset build (Composer + npm + Vite + Routes).
 - `make composer cmd="..."`: Run Composer (e.g., `cmd="require symfony/mailer"`).
@@ -328,7 +327,7 @@ See `make help` for complete command list.
 
 ### Exposed Ports
 - **80**: Web application (Nginx)
-- **5432**: PostgreSQL
+- **3306**: MariaDB
 - **6379**: Redis
 - **8025**: MailPit Web UI
 - **1025**: MailPit SMTP

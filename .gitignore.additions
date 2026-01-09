@@ -1,0 +1,23 @@
+# ============================================================================
+# LLM Documentation Structure
+# ============================================================================
+#
+# These symlinks provide multi-LLM compatibility
+# Keep them in git for portability across environments
+#
+# If you want to exclude them, uncomment the lines below:
+# claude-agents
+# claude-skills
+# gemini-agents
+# gemini-skills
+# openai-agents
+# openai-skills
+# agents
+# skills
+
+# Backup directories
+backup-docs-*/
+
+# Reorganization logs
+reorganize-docs.log
+.last-backup
