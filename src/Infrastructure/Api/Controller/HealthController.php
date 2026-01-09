@@ -20,7 +20,7 @@ final class HealthController
     public function __construct(
         private EntityManagerInterface $entityManager,
         #[Autowire(service: 'snc_redis.default')]
-        private Redis $redis,
+        private ?Redis $redis = null,
     ) {
     }
 
@@ -29,8 +29,12 @@ final class HealthController
     {
         $checks = [
             'database' => $this->checkDatabase(),
-            'redis' => $this->checkRedis(),
         ];
+
+        // Solo comprobar Redis si está disponible (dev/test)
+        if (null !== $this->redis) {
+            $checks['redis'] = $this->checkRedis();
+        }
 
         $isHealthy = !in_array(false, array_column($checks, 'ok'), true);
 

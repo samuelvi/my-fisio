@@ -3,7 +3,10 @@ snc_redis:
         default:
             type: phpredis
             alias: default
-            dsn: '%env(REDIS_URL)%'
+            dsn: '%env(default::REDIS_URL)%'
             logging: false
             options:
                 prefix: 'physio_'
+                # Configuración para evitar fallos en producción si Redis no está disponible
+                timeout: 2.0
+                read_timeout: 2.0

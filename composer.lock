@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c57929e6873bf33573bf0dda4068942e",
+    "content-hash": "d6a805c105a8c82219de35323b440876",
     "packages": [
         {
             "name": "api-platform/doctrine-common",
@@ -3792,97 +3792,6 @@
                 "source": "https://github.com/MyIntervals/PHP-CSS-Parser/tree/v8.9.0"
             },
             "time": "2025-07-11T13:20:48+00:00"
-        },
-        {
-            "name": "snc/redis-bundle",
-            "version": "4.10.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/snc/SncRedisBundle.git",
-                "reference": "05bfb149e57dcc206025a920be6b420259106fde"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/snc/SncRedisBundle/zipball/05bfb149e57dcc206025a920be6b420259106fde",
-                "reference": "05bfb149e57dcc206025a920be6b420259106fde",
-                "shasum": ""
-            },
-            "require": {
-                "php": "^7.4 || ^8.0",
-                "symfony/deprecation-contracts": "^2 || ^3",
-                "symfony/framework-bundle": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/http-foundation": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/service-contracts": ">=1.0",
-                "symfony/var-dumper": "^5.4.20 ||^6.0 || ^7.0"
-            },
-            "conflict": {
-                "ext-redis": "<5.3.2",
-                "predis/predis": "<2.0"
-            },
-            "require-dev": {
-                "doctrine/annotations": "^2.0",
-                "doctrine/coding-standard": "^12.0",
-                "ext-pdo_sqlite": "*",
-                "ext-redis": "*",
-                "friendsofphp/proxy-manager-lts": "^1.0.6",
-                "monolog/monolog": "*",
-                "phpunit/phpunit": "^9.5.28 || ^10",
-                "predis/predis": "^2.0 || ^3.0 ",
-                "seec/phpunit-consecutive-params": "^1.1.4",
-                "symfony/browser-kit": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/cache": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/config": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/console": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/dom-crawler": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/filesystem": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/stopwatch": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/twig-bundle": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/web-profiler-bundle": "^5.4.20 ||^6.0 || ^7.0",
-                "symfony/yaml": "^5.4.20 ||^6.0 || ^7.0",
-                "vimeo/psalm": "^5|^6"
-            },
-            "suggest": {
-                "monolog/monolog": "If you want to use the monolog redis handler.",
-                "predis/predis": "If you want to use predis.",
-                "symfony/console": "If you want to use commands to interact with the redis database"
-            },
-            "type": "symfony-bundle",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "3.x-dev"
-                }
-            },
-            "autoload": {
-                "psr-4": {
-                    "Snc\\RedisBundle\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Henrik Westphal",
-                    "email": "henrik.westphal@gmail.com"
-                },
-                {
-                    "name": "Community contributors",
-                    "homepage": "https://github.com/snc/SncRedisBundle/contributors"
-                }
-            ],
-            "description": "A Redis bundle for Symfony",
-            "homepage": "https://github.com/snc/SncRedisBundle",
-            "keywords": [
-                "nosql",
-                "redis",
-                "symfony"
-            ],
-            "support": {
-                "issues": "https://github.com/snc/SncRedisBundle/issues",
-                "source": "https://github.com/snc/SncRedisBundle/tree/4.10.0"
-            },
-            "time": "2025-06-29T12:30:01+00:00"
         },
         {
             "name": "symfony/asset",
@@ -13843,5 +13752,5 @@
         "ext-redis": "*"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.9.0"
+    "plugin-api-version": "2.6.0"
 }
