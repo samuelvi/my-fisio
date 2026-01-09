@@ -98,4 +98,14 @@ sync-server.sh
 phpstan.neon
 ###< phpstan/phpstan ###
 
+###> Documentation Reorganization ###
+# Backup directories from documentation reorganization
+backup-docs-*/
 
+# Temporary files from reorganization scripts
+.last-backup
+reorganize-docs.log
+
+# .gitignore additions review file (merge manually to .gitignore)
+.gitignore.additions
+###< Documentation Reorganization ###
