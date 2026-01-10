@@ -8,5 +8,5 @@ snc_redis:
             options:
                 prefix: 'physio_'
                 # Configuración para evitar fallos en producción si Redis no está disponible
-                timeout: 2.0
-                read_timeout: 2.0
+                connection_timeout: 2.0
+                read_write_timeout: 2.0
