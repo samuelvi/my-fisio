@@ -1,3 +1,32 @@
+---
+type: agent
+category: project-specific
+version: 1.0.0
+status: production
+compatibility:
+  llms:
+    - claude
+    - gemini
+    - openai
+  frameworks:
+    - symfony
+    - react
+    - doctrine
+    - api-platform
+dependencies: []
+tags:
+  - documentation
+  - reverse-engineering
+  - specifications
+created: 2026-01-09
+updated: 2026-01-09
+author: MyPhysio Team
+license: MIT
+description: |
+  Agent instructions for maintaining project specifications and documentation
+  through reverse engineering approach.
+---
+
 # AGENTS.md - Guía para Agentes de IA
 
 ## Objetivo

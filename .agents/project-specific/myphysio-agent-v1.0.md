@@ -1,3 +1,27 @@
+---
+type: agent
+category: project-specific
+version: 1.0.0
+status: production
+compatibility:
+  llms:
+    - claude
+    - gemini
+    - openai
+  frameworks:
+    - symfony
+    - react
+    - doctrine
+    - api-platform
+dependencies: []
+tags: []
+created: 2026-01-10
+updated: 2026-01-10
+author: MyPhysio Team
+license: MIT
+description: |
+  Auto-generated metadata. Update description with actual content summary.
+---
 # AGENTS.md - Physiotherapy Clinic Management System
 
 > **IMPORTANT**: All code, documentation, comments, database schema, API endpoints, and any project-related content MUST be written in **English**. This is a strict requirement for consistency and collaboration.
