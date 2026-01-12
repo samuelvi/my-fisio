@@ -441,44 +441,143 @@ export default function InvoiceForm() {
                 <div className="bg-white shadow-sm rounded-lg border border-gray-200 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                         <h2 className="text-lg font-medium text-gray-900">{t('invoice_items')}</h2>
+                        <button
+                            type="button"
+                            onClick={handleAddLine}
+                            disabled={isLoading}
+                            data-testid="add-line-btn"
+                            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50 transition"
+                        >
+                            <svg className="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            {t('add_item')}
+                        </button>
                     </div>
                     <div className="p-6 space-y-4">
                         {lines.map((line, index) => {
                             const conceptError = getLineError(validationErrors, index, 'concept');
                             const priceError = getLineError(validationErrors, index, 'price');
+                            const quantityError = getLineError(validationErrors, index, 'quantity');
                             return (
-                                <div key={index} className="grid grid-cols-12 gap-4 items-start p-4 bg-gray-50 rounded-lg border border-gray-100">
-                                    <div className="col-span-12 md:col-span-5 space-y-2">
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider">{t('concept')} *</label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={line.concept}
-                                            data-testid={`line-concept-${index}`}
-                                            onChange={(e) => handleLineChange(index, 'concept', e.target.value)}
-                                            disabled={isLoading}
-                                            className={`w-full border ${conceptError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
-                                            placeholder={t('concept_placeholder')}
-                                        />
-                                        {conceptError && <p className="mt-1 text-xs text-red-600">{conceptError}</p>}
-                                    </div>
-                                    <div className="col-span-4 md:col-span-2">
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('price')}</label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            required
-                                            value={line.price}
-                                            data-testid={`line-price-${index}`}
-                                            onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))}
-                                            disabled={isLoading}
-                                            className={`w-full border ${priceError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center`}
-                                        />
-                                        {priceError && <p className="mt-1 text-xs text-red-600">{priceError}</p>}
+                                <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="space-y-3">
+                                        {/* Concept - Full width */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('concept')} *</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={line.concept}
+                                                data-testid={`line-concept-${index}`}
+                                                onChange={(e) => handleLineChange(index, 'concept', e.target.value)}
+                                                disabled={isLoading}
+                                                className={`w-full border ${conceptError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm`}
+                                                placeholder={t('concept_placeholder')}
+                                            />
+                                            {conceptError && <p className="mt-1 text-xs text-red-600">{conceptError}</p>}
+                                        </div>
+
+                                        {/* Description - Full width */}
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('description')}</label>
+                                            <textarea
+                                                value={line.description}
+                                                data-testid={`line-description-${index}`}
+                                                onChange={(e) => handleLineChange(index, 'description', e.target.value)}
+                                                disabled={isLoading}
+                                                rows={3}
+                                                className="w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm resize-none"
+                                                placeholder={t('description_placeholder')}
+                                            />
+                                        </div>
+
+                                        {/* Quantity, Price, Amount, Delete button - Single row */}
+                                        <div className="flex items-end gap-3 flex-wrap">
+                                            {/* Left side: Quantity and Price */}
+                                            <div className="flex gap-3 items-end">
+                                                <div className="w-24">
+                                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('quantity')}</label>
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        required
+                                                        value={line.quantity}
+                                                        data-testid={`line-quantity-${index}`}
+                                                        onChange={(e) => handleLineChange(index, 'quantity', parseInt(e.target.value))}
+                                                        disabled={isLoading}
+                                                        className={`w-full border ${quantityError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-center`}
+                                                    />
+                                                    {quantityError && <p className="mt-1 text-xs text-red-600">{quantityError}</p>}
+                                                </div>
+
+                                                <div className="w-32 sm:w-40">
+                                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{t('price')}</label>
+                                                    <input
+                                                        type="number"
+                                                        step="0.01"
+                                                        min="0"
+                                                        required
+                                                        value={line.price}
+                                                        data-testid={`line-price-${index}`}
+                                                        onChange={(e) => handleLineChange(index, 'price', parseFloat(e.target.value))}
+                                                        disabled={isLoading}
+                                                        className={`w-full border ${priceError ? 'border-red-500 ring-2 ring-red-200' : 'border-gray-300'} rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm text-right`}
+                                                    />
+                                                    {priceError && <p className="mt-1 text-xs text-red-600">{priceError}</p>}
+                                                </div>
+                                            </div>
+
+                                            {/* Right side: Amount and Delete button */}
+                                            <div className="flex gap-3 items-end ml-auto">
+                                                <div className="w-32 sm:w-40">
+                                                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-right">{t('amount')}</label>
+                                                    <div className="w-full border border-gray-200 rounded-md bg-gray-100 py-2 px-3 text-sm text-right font-medium text-gray-700">
+                                                        {line.amount.toFixed(2)}€
+                                                    </div>
+                                                </div>
+
+                                                {lines.length > 1 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleRemoveLine(index)}
+                                                        disabled={isLoading}
+                                                        data-testid={`remove-line-${index}`}
+                                                        className="p-2 text-red-600 hover:bg-red-50 rounded-md transition disabled:opacity-50"
+                                                        title={t('remove_line')}
+                                                    >
+                                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             );
                         })}
+
+                        {lines.length === 0 && (
+                            <div className="text-center py-8 text-gray-500">
+                                <p>{t('no_lines_yet')}</p>
+                                <button
+                                    type="button"
+                                    onClick={handleAddLine}
+                                    disabled={isLoading}
+                                    className="mt-4 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                                >
+                                    {t('add_first_line')}
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex justify-end pt-4 border-t border-gray-200">
+                            <div className="text-right">
+                                <p className="text-sm text-gray-500 mb-1">{t('total')}</p>
+                                <p className="text-2xl font-bold text-gray-900">{calculateTotal().toFixed(2)}€</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
