@@ -12,7 +12,7 @@ services:
       MARIADB_ROOT_PASSWORD: root_pass
     volumes:
       # MariaDB data persistence (bind mount to host)
-      - ./docker/common/mariadb/data:/var/lib/mysql
+      - ./docker/dev/mariadb/data:/var/lib/mysql
       # Custom MariaDB configuration (utf8mb4 defaults)
       - ./docker/common/mariadb/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
     ports:
@@ -29,7 +29,7 @@ services:
     restart: unless-stopped
     volumes:
       # Redis data persistence (bind mount to host)
-      - ./docker/common/redis/data:/data
+      - ./docker/dev/redis/data:/data
     ports:
       - "6379:6379"
     healthcheck:
