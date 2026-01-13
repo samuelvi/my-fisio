@@ -49,6 +49,9 @@ class Invoice
     #[ORM\Column(type: Types::STRING, length: 15, nullable: true)]
     public ?string $taxId = null;
 
+    #[ORM\Column(type: Types::STRING, length: 3, nullable: false)]
+    public string $currency = 'EUR';
+
     #[ORM\ManyToOne(targetEntity: Customer::class)]
     #[ORM\JoinColumn(nullable: true)]
     public ?Customer $customer = null;
@@ -67,6 +70,7 @@ class Invoice
         float $amount,
         string $fullName,
         DateTimeInterface $date,
+        string $currency = 'EUR',
         ?string $phone = null,
         ?string $address = null,
         ?string $email = null,
@@ -77,6 +81,7 @@ class Invoice
         $this->amount = $amount;
         $this->fullName = $fullName;
         $this->date = $date;
+        $this->currency = $currency;
         $this->phone = $phone;
         $this->address = $address;
         $this->email = $email;
@@ -91,12 +96,13 @@ class Invoice
         float $amount,
         string $fullName,
         DateTimeInterface $date,
+        string $currency = 'EUR',
         ?string $phone = null,
         ?string $address = null,
         ?string $email = null,
         ?string $taxId = null,
         ?Customer $customer = null,
     ): self {
-        return new self($number, $amount, $fullName, $date, $phone, $address, $email, $taxId, $customer);
+        return new self($number, $amount, $fullName, $date, $currency, $phone, $address, $email, $taxId, $customer);
     }
 }

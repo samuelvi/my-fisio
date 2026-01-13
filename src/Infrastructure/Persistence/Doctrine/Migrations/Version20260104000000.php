@@ -87,6 +87,7 @@ final class Version20260104000000 extends AbstractMigration
             address VARCHAR(250) DEFAULT NULL,
             email VARCHAR(100) DEFAULT NULL,
             tax_id VARCHAR(15) DEFAULT NULL,
+            currency VARCHAR(3) NOT NULL,
             created_at DATE NOT NULL,
             INDEX IDX_6A2F2F959395C3F3 (customer_id),
             PRIMARY KEY (id)
@@ -157,16 +158,34 @@ final class Version20260104000000 extends AbstractMigration
             entity_id VARCHAR(100) NOT NULL,
             operation VARCHAR(20) NOT NULL,
             changes JSON NOT NULL,
-            changed_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\',
+            changed_at DATETIME NOT NULL,
             ip_address VARCHAR(45) DEFAULT NULL,
             user_agent LONGTEXT DEFAULT NULL,
             INDEX idx_entity (entity_type, entity_id, changed_at),
             INDEX idx_operation (operation, changed_at),
             INDEX idx_changed_by (changed_by, changed_at),
             INDEX idx_changed_at (changed_at),
-            INDEX IDX_6A31EBED895FB3A1 (changed_by),
+            INDEX IDX_B523E17810BC6D9F (changed_by),
             PRIMARY KEY(id)
         ) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
+
+        // Event Store table (for event sourcing)
+        $this->addSql('CREATE TABLE event_store (
+            id BIGINT AUTO_INCREMENT NOT NULL,
+            aggregate_id VARCHAR(36) NOT NULL,
+            event_name VARCHAR(255) NOT NULL,
+            payload JSON NOT NULL,
+            occurred_on DATETIME NOT NULL,
+            version INT NOT NULL,
+            INDEX idx_es_aggregate_id (aggregate_id),
+            INDEX idx_es_event_name (event_name),
+            INDEX idx_es_occurred_on (occurred_on),
+            PRIMARY KEY(id)
+        ) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
+
+        // Performance indexes for appointments
+        $this->addSql('CREATE INDEX idx_appointments_starts_at ON appointments (starts_at)');
+        $this->addSql('CREATE INDEX idx_appointments_ends_at ON appointments (ends_at)');
 
         // Foreign keys
         $this->addSql('ALTER TABLE appointments ADD CONSTRAINT FK_6A41727A6B899279 FOREIGN KEY (patient_id) REFERENCES patients (id)');
@@ -174,18 +193,22 @@ final class Version20260104000000 extends AbstractMigration
         $this->addSql('ALTER TABLE invoices ADD CONSTRAINT FK_6A2F2F959395C3F3 FOREIGN KEY (customer_id) REFERENCES customers (id)');
         $this->addSql('ALTER TABLE patients ADD CONSTRAINT FK_2CCC2E2C9395C3F3 FOREIGN KEY (customer_id) REFERENCES customers (id)');
         $this->addSql('ALTER TABLE records ADD CONSTRAINT FK_9C9D58466B899279 FOREIGN KEY (patient_id) REFERENCES patients (id)');
-        $this->addSql('ALTER TABLE audit_trail ADD CONSTRAINT FK_6A31EBED895FB3A1 FOREIGN KEY (changed_by) REFERENCES users (id) ON DELETE SET NULL');
+        $this->addSql('ALTER TABLE audit_trail ADD CONSTRAINT FK_B523E17810BC6D9F FOREIGN KEY (changed_by) REFERENCES users (id) ON DELETE SET NULL');
     }
 
     public function down(Schema $schema): void
     {
+        // Drop indexes
+        $this->addSql('DROP INDEX idx_appointments_starts_at ON appointments');
+        $this->addSql('DROP INDEX idx_appointments_ends_at ON appointments');
+
         // Drop foreign keys
         $this->addSql('ALTER TABLE appointments DROP FOREIGN KEY FK_6A41727A6B899279');
         $this->addSql('ALTER TABLE invoice_lines DROP FOREIGN KEY FK_72DBDC232989F1FD');
         $this->addSql('ALTER TABLE invoices DROP FOREIGN KEY FK_6A2F2F959395C3F3');
         $this->addSql('ALTER TABLE patients DROP FOREIGN KEY FK_2CCC2E2C9395C3F3');
         $this->addSql('ALTER TABLE records DROP FOREIGN KEY FK_9C9D58466B899279');
-        $this->addSql('ALTER TABLE audit_trail DROP FOREIGN KEY FK_6A31EBED895FB3A1');
+        $this->addSql('ALTER TABLE audit_trail DROP FOREIGN KEY FK_B523E17810BC6D9F');
 
         // Drop tables
         $this->addSql('DROP TABLE appointments');
@@ -197,5 +220,6 @@ final class Version20260104000000 extends AbstractMigration
         $this->addSql('DROP TABLE records');
         $this->addSql('DROP TABLE users');
         $this->addSql('DROP TABLE audit_trail');
+        $this->addSql('DROP TABLE event_store');
     }
 }

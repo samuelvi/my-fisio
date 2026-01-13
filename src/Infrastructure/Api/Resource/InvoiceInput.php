@@ -35,6 +35,9 @@ final class InvoiceInput
     #[Groups(['invoice:write'])]
     public ?string $taxId = null;
 
+    #[Groups(['invoice:write'])]
+    public ?string $currency = null;
+
     /**
      * @var array<int, array<string, mixed>|InvoiceLineInput>
      */

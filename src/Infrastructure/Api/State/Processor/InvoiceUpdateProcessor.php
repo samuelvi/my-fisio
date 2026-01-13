@@ -104,6 +104,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         $invoice->address = $data->address;
         $invoice->email = $data->email;
         $invoice->taxId = $data->taxId;
+        $invoice->currency = $data->currency ?? $invoice->currency ?? 'EUR';
         $invoice->customer = $customer;
         if ($data->date instanceof DateTimeImmutable) {
             $invoice->date = $data->date;
@@ -144,6 +145,7 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         $resource->fullName = $invoice->fullName;
         $resource->taxId = $invoice->taxId;
         $resource->amount = $invoice->amount;
+        $resource->currency = $invoice->currency;
         $resource->phone = $invoice->phone;
         $resource->address = $invoice->address;
         $resource->email = $invoice->email;

@@ -333,6 +333,13 @@ final class MigrateLegacyDataCommand extends Command
             $parameters['created_at'] = new DateTime()->format('Y-m-d');
         }
 
+        if ('invoices' === $targetTable) {
+            // Legacy invoices don't have currency field, use default from environment
+            $targetColumns[] = 'currency';
+            $queryValues[] = ':currency';
+            $parameters['currency'] = $_ENV['DEFAULT_CURRENCY'] ?? 'EUR';
+        }
+
         $sql = sprintf(
             'INSERT INTO %s (%s) VALUES (%s)',
             $targetTable,

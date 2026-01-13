@@ -63,6 +63,9 @@ class InvoiceResource
     public ?string $taxId = null;
 
     #[Groups(['invoice:read', 'invoice:write'])]
+    public string $currency = 'EUR';
+
+    #[Groups(['invoice:read', 'invoice:write'])]
     public ?string $customer = null; // IRI
 
     /**

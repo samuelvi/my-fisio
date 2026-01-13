@@ -57,6 +57,7 @@ final class InvoiceProvider implements ProviderInterface
         $resource->fullName = $data['fullName'];
         $resource->taxId = $data['taxId'] ?? null;
         $resource->amount = (float) $data['amount'];
+        $resource->currency = $data['currency'] ?? 'EUR';
         $resource->phone = $data['phone'] ?? null;
         $resource->address = $data['address'] ?? null;
         $resource->email = $data['email'] ?? null;

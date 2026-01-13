@@ -102,11 +102,13 @@ final class InvoiceCreateProcessor implements ProcessorInterface
         }
 
         // 4. Create Invoice with required fields
+        $currency = $data->currency ?? $_ENV['DEFAULT_CURRENCY'] ?? 'EUR';
         $invoice = Invoice::create(
             number: $number,
             amount: $totalAmount,
             fullName: $data->fullName,
             date: $date,
+            currency: $currency,
             phone: $data->phone,
             address: $data->address,
             email: $data->email,
@@ -142,6 +144,7 @@ final class InvoiceCreateProcessor implements ProcessorInterface
         $resource->fullName = $invoice->fullName;
         $resource->taxId = $invoice->taxId;
         $resource->amount = $invoice->amount;
+        $resource->currency = $invoice->currency;
         $resource->phone = $invoice->phone;
         $resource->address = $invoice->address;
         $resource->email = $invoice->email;

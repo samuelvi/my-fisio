@@ -6,6 +6,7 @@ import Routing from '../../routing/init';
 import { Invoice, InvoiceLine } from '../../types';
 import { useFormDraft } from '../../presentation/hooks/useFormDraft';
 import FormDraftUI from '../shared/FormDraftUI';
+import { getCurrencySymbol, getDefaultCurrency } from '../../utils/currency';
 
 interface InvoiceInputProps {
     label: string;
@@ -50,6 +51,7 @@ interface InvoiceFormData {
     customerPhone: string;
     customerEmail: string;
     invoiceNumber: string;
+    currency: string;
     lines: InvoiceLine[];
 }
 
@@ -92,6 +94,7 @@ export default function InvoiceForm() {
     const [customerPhone, setCustomerPhone] = useState<string>('');
     const [customerEmail, setCustomerEmail] = useState<string>('');
     const [invoiceNumber, setInvoiceNumber] = useState<string>('');
+    const [currency, setCurrency] = useState<string>(getDefaultCurrency());
 
     const clearFieldError = (fieldName: string) => {
         if (validationErrors[fieldName]) {
@@ -134,6 +137,7 @@ export default function InvoiceForm() {
             setCustomerPhone(data.customerPhone || '');
             setCustomerEmail(data.customerEmail || '');
             setInvoiceNumber(data.invoiceNumber || '');
+            setCurrency(data.currency || getDefaultCurrency());
             setLines(data.lines || [{ concept: '', description: '', quantity: 1, price: 0, amount: 0 }]);
         }
     });
@@ -146,6 +150,7 @@ export default function InvoiceForm() {
         customerPhone,
         customerEmail,
         invoiceNumber,
+        currency,
         lines
     });
 
@@ -169,6 +174,7 @@ export default function InvoiceForm() {
                 setCustomerPhone(data.phone || '');
                 setCustomerEmail(data.email || '');
                 setInvoiceNumber(data.number || '');
+                setCurrency(data.currency || getDefaultCurrency());
                 const mappedLines = (data.lines || []).map((line) => ({
                     concept: line.concept || '',
                     description: line.description || '',
@@ -284,6 +290,7 @@ export default function InvoiceForm() {
             email: customerEmail,
             number: invoiceNumber,
             amount: calculateTotal(),
+            currency: currency,
             lines: lines.map(line => ({
                 concept: line.concept,
                 description: line.description,
@@ -533,7 +540,7 @@ export default function InvoiceForm() {
                                                 <div className="w-32 sm:w-40">
                                                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-right">{t('amount')}</label>
                                                     <div className="w-full border border-gray-200 rounded-md bg-gray-100 py-2 px-3 text-sm text-right font-medium text-gray-700">
-                                                        {line.amount.toFixed(2)}€
+                                                        {line.amount.toFixed(2)}{getCurrencySymbol(currency)}
                                                     </div>
                                                 </div>
 
@@ -575,7 +582,7 @@ export default function InvoiceForm() {
                         <div className="flex justify-end pt-4 border-t border-gray-200">
                             <div className="text-right">
                                 <p className="text-sm text-gray-500 mb-1">{t('total')}</p>
-                                <p className="text-2xl font-bold text-gray-900">{calculateTotal().toFixed(2)}€</p>
+                                <p className="text-2xl font-bold text-gray-900">{calculateTotal().toFixed(2)}{getCurrencySymbol(currency)}</p>
                             </div>
                         </div>
                     </div>

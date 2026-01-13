@@ -81,6 +81,7 @@ export interface Invoice {
     phone?: string;
     email?: string;
     amount: number;
+    currency: string; // ISO 4217 currency code (e.g., 'EUR', 'USD')
     createdAt?: string;
     lines: InvoiceLine[];
 }
