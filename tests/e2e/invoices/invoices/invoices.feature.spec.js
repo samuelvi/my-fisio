@@ -1,5 +1,5 @@
-// Generated from: tests/e2e/features/invoices.feature
-import { test } from "../common/bdd.ts";
+// Generated from: tests/e2e/invoices/invoices/invoices.feature
+import { test } from "../../common/bdd.ts";
 
 test.describe('Invoice Management', () => {
 
@@ -30,7 +30,7 @@ test.describe('Invoice Management', () => {
 
 test.use({
   $test: [({}, use) => use(test), { scope: 'test', box: true }],
-  $uri: [({}, use) => use('tests/e2e/features/invoices.feature'), { scope: 'test', box: true }],
+  $uri: [({}, use) => use('tests/e2e/invoices/invoices/invoices.feature'), { scope: 'test', box: true }],
   $bddFileData: [({}, use) => use(bddFileData), { scope: "test", box: true }],
 });
 

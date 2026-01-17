@@ -32,15 +32,22 @@ npx playwright install
 
 ### Project Structure
 
+**Domain-Centric Organization**
+We organize tests by Domain and Use Case (Context). Each folder contains the feature documentation, step implementation, and generated specs.
+
 ```
 tests/e2e/
 ├── common/                # Shared fixtures and helpers
 │   ├── bdd.ts            # Main BDD fixture (Given/When/Then)
 │   └── auth.ts           # Auth helpers
-├── features/              # .feature files and colocated steps
-│   ├── invoices.feature
-│   ├── invoices.steps.ts
-│   └── .gen/             # Generated test files
+├── invoices/              # Domain: Invoices
+│   └── invoices/         # Context: General Management
+│       ├── invoices.feature          # Documentation (Gherkin)
+│       ├── invoices.steps.ts         # Implementation (Steps)
+│       └── invoices.feature.spec.js  # Generated Test (Do not edit manually)
+├── patients/              # Domain: Patients
+│   └── management/       # Context: Patient Management
+│       ├── ...
 └── playwright.config.ts
 ```
 
