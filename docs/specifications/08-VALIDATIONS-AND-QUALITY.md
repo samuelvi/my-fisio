@@ -357,17 +357,17 @@ DATABASE_URL="mysql://physiotherapy_user:physiotherapy_pass@mariadb_test:5433/ph
 ```
 tests/
 ├── e2e/
-│   ├── login.spec.js              # Authentication flow
-│   ├── patients-create.spec.js    # Patient creation workflow
-│   ├── patients-search.spec.js    # Patient search functionality
-│   ├── appointments.spec.js       # Appointment scheduling
-│   ├── records.spec.js            # Clinical record creation
-│   ├── customers-create.spec.js   # Customer management
-│   ├── customers-search.spec.js   # Customer search
-│   ├── invoices.spec.js           # Invoice generation
-│   ├── invoices-search.spec.js    # Invoice search
-│   ├── security.spec.js           # Security controls (unauthorized access)
-│   └── security-auth.spec.js      # Authentication edge cases
+│   ├── login.spec.ts              # Authentication flow
+│   ├── patients-create.spec.ts    # Patient creation workflow
+│   ├── patients-search.spec.ts    # Patient search functionality
+│   ├── appointments.spec.ts       # Appointment scheduling
+│   ├── records.spec.ts            # Clinical record creation
+│   ├── customers-create.spec.ts   # Customer management
+│   ├── customers-search.spec.ts   # Customer search
+│   ├── invoices.spec.ts           # Invoice generation
+│   ├── invoices-search.spec.ts    # Invoice search
+│   ├── security.spec.ts           # Security controls (unauthorized access)
+│   └── security-auth.spec.ts      # Authentication edge cases
 ```
 
 **Total E2E Tests:** 11 files, ~30-40 individual test cases
@@ -375,7 +375,7 @@ tests/
 ### 4.3 Example E2E Test
 
 ```javascript
-// tests/e2e/patients-create.spec.js
+// tests/e2e/patients-create.spec.ts
 import { test, expect } from '@playwright/test';
 
 async function resetDbEmpty(request) {
@@ -450,9 +450,9 @@ npx playwright test
 
 **Run Single Test:**
 ```bash
-make test-e2e file=tests/e2e/patients-create.spec.js
+make test-e2e file=tests/e2e/patients-create.spec.ts
 # OR
-npx playwright test tests/e2e/patients-create.spec.js
+npx playwright test tests/e2e/patients-create.spec.ts
 ```
 
 **Run in UI Mode (Debug):**
@@ -512,18 +512,18 @@ module.exports = {
 
 | Workflow | Test File | Status |
 |----------|-----------|--------|
-| **Login (success/failure)** | `login.spec.js` | ✅ Complete |
-| **Patient Creation** | `patients-create.spec.js` | ✅ Complete |
-| **Patient Search (fuzzy)** | `patients-search.spec.js` | ✅ Complete |
-| **Appointment Scheduling** | `appointments.spec.js` | ✅ Complete |
-| **Appointment Conflict Detection** | `appointments.spec.js` | ✅ Complete |
-| **Clinical Record Creation** | `records.spec.js` | ✅ Complete |
-| **Customer Creation** | `customers-create.spec.js` | ✅ Complete |
-| **Customer Search** | `customers-search.spec.js` | ✅ Complete |
-| **Invoice Generation** | `invoices.spec.js` | ✅ Complete |
-| **Invoice Search** | `invoices-search.spec.js` | ✅ Complete |
-| **Unauthorized Access (security)** | `security.spec.js` | ✅ Complete |
-| **JWT Token Expiration** | `security-auth.spec.js` | ✅ Complete |
+| **Login (success/failure)** | `login.spec.ts` | ✅ Complete |
+| **Patient Creation** | `patients-create.spec.ts` | ✅ Complete |
+| **Patient Search (fuzzy)** | `patients-search.spec.ts` | ✅ Complete |
+| **Appointment Scheduling** | `appointments.spec.ts` | ✅ Complete |
+| **Appointment Conflict Detection** | `appointments.spec.ts` | ✅ Complete |
+| **Clinical Record Creation** | `records.spec.ts` | ✅ Complete |
+| **Customer Creation** | `customers-create.spec.ts` | ✅ Complete |
+| **Customer Search** | `customers-search.spec.ts` | ✅ Complete |
+| **Invoice Generation** | `invoices.spec.ts` | ✅ Complete |
+| **Invoice Search** | `invoices-search.spec.ts` | ✅ Complete |
+| **Unauthorized Access (security)** | `security.spec.ts` | ✅ Complete |
+| **JWT Token Expiration** | `security-auth.spec.ts` | ✅ Complete |
 | **Multi-language Switching** | N/A | ⚠️ Not implemented |
 | **Mobile Responsiveness** | N/A | ⚠️ Not implemented |
 
@@ -783,7 +783,7 @@ module.exports = {
 
 **Example Failure Output:**
 ```
-❌ tests/e2e/patients-create.spec.js:42:5 › patient creation flow
+❌ tests/e2e/patients-create.spec.ts:42:5 › patient creation flow
 
 Error: Timed out 5000ms waiting for expect(locator).toBeVisible()
 Locator: getByText('Patient created successfully')

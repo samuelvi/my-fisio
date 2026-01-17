@@ -585,9 +585,9 @@ npx playwright test
 
 **Run Single Test:**
 ```bash
-make test-e2e file=tests/e2e/patients-create.spec.js
+make test-e2e file=tests/e2e/patients-create.spec.ts
 # OR
-npx playwright test tests/e2e/patients-create.spec.js
+npx playwright test tests/e2e/patients-create.spec.ts
 ```
 
 **Run in UI Mode (Debug):**

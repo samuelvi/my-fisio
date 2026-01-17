@@ -439,7 +439,7 @@ Implemented configurable invoice prefix system to display formatted invoice numb
 - `assets/types/index.ts` (Invoice.formattedNumber)
 - `assets/components/invoices/InvoiceList.tsx`
 - `assets/components/invoices/InvoiceForm.tsx`
-- `tests/e2e/invoices.spec.js`
+- `tests/e2e/invoices.spec.ts`
 - `translations/validators.{es,en}.yaml`
 
 **Test Results:**

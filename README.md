@@ -263,11 +263,11 @@ make test-up
 make test-e2e
 
 # Run a SPECIFIC E2E Test (Headless)
-make test-e2e file=tests/e2e/security-auth.spec.js
+make test-e2e file=tests/e2e/security-auth.spec.ts
 
 # Run E2E Tests (UI Mode)
 make test-e2e-ui
-# Or for a specific file: make test-e2e-ui file=tests/e2e/login.spec.js
+# Or for a specific file: make test-e2e-ui file=tests/e2e/login.spec.ts
 
 # Stop Test Environment
 make test-down
@@ -514,7 +514,7 @@ make test-reset-db
 npx playwright test
 
 # Run a single E2E test
-npx playwright test tests/e2e/patients-create.spec.js
+npx playwright test tests/e2e/patients-create.spec.ts
 ```
 
 ## Help and Available Commands
