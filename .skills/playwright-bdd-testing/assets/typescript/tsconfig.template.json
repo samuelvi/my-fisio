@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": false,
+    "noEmit": true,
+    "types": [
+      "@playwright/test",
+      "@cucumber/cucumber",
+      "node"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@fixtures/*": ["tests/fixtures/*"],
+      "@factories/*": ["tests/factories/*"],
+      "@steps/*": ["tests/steps/*"],
+      "@support/*": ["tests/support/*"]
+    }
+  },
+  "include": ["tests/**/*"],
+  "exclude": ["node_modules", "test-results", "playwright-report"]
+}

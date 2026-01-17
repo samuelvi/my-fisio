@@ -1,0 +1,32 @@
+{
+  "name": "e2e-tests",
+  "version": "1.0.0",
+  "description": "E2E tests with Playwright BDD",
+  "scripts": {
+    "test": "npx bddgen && npx playwright test",
+    "test:headed": "npx bddgen && npx playwright test --headed",
+    "test:debug": "npx bddgen && npx playwright test --debug",
+    "test:ui": "npx bddgen && npx playwright test --ui",
+    "test:chrome": "npx bddgen && npx playwright test --project=chromium",
+    "test:firefox": "npx bddgen && npx playwright test --project=firefox",
+    "test:mobile": "npx bddgen && npx playwright test --project=mobile-chrome",
+    "bddgen": "npx bddgen",
+    "bddgen:export": "npx bddgen export",
+    "report": "npx playwright show-report",
+    "codegen": "npx playwright codegen",
+    "lint": "eslint tests/**/*.ts",
+    "format": "prettier --write tests/**/*.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "playwright-bdd": "^7.0.0",
+    "@cucumber/cucumber": "^10.0.0",
+    "@faker-js/faker": "^8.0.0",
+    "fishery": "^2.2.0",
+    "typescript": "^5.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "prettier": "^3.0.0"
+  }
+}
