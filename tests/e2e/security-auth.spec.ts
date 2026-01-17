@@ -1,6 +1,6 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin } from './helpers/auth';
+import { loginAsAdmin } from './common/auth';
 
 const protectedRoutes = [
   '/dashboard',

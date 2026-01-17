@@ -109,5 +109,6 @@ reorganize-docs.log
 # .gitignore additions review file (merge manually to .gitignore)
 .gitignore.additions
 ###< Documentation Reorganization ###
-tests/e2e/bdd-gen/
+tests/e2e/features/.gen/
+tests/e2e/features/tests/
 .features-gen/

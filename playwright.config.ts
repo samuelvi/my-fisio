@@ -2,10 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 import { defineBddConfig } from 'playwright-bdd';
 
 const bddDir = defineBddConfig({
+  rootDir: 'tests/e2e/features',
   paths: ['tests/e2e/features/*.feature'],
-  require: ['tests/e2e/steps/*.ts'],
-  outputDir: 'tests/e2e/bdd-gen',
-  importTestFrom: 'tests/e2e/fixtures/bdd.ts',
+  require: ['tests/e2e/common/bdd.ts', 'tests/e2e/features/*.ts'], 
+  outputDir: 'tests/e2e/features',
 });
 
 export default defineConfig({
@@ -37,7 +37,7 @@ export default defineConfig({
       name: 'e2e',
       testDir: './tests/e2e',
       testMatch: '**/*.spec.ts',
-      testIgnore: '**/bdd-gen/**',
+      testIgnore: ['**/bdd-gen/**', '**/features/.gen/**'],
       use: { ...devices['Desktop Chrome'] },
     },
   ],

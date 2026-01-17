@@ -1,6 +1,6 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
-import { loginAsAdmin } from './helpers/auth';
+import { loginAsAdmin } from './common/auth';
 
 async function resetDbEmpty(request) {
   const response = await request.post('/api/test/reset-db-empty');

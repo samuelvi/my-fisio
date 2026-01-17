@@ -33,18 +33,14 @@ npx playwright install
 ### Project Structure
 
 ```
-tests/
-├── features/              # .feature files in Gherkin
-│   ├── auth/
-│   └── products/
-├── steps/                 # Step definitions
-│   ├── common/           # Shared steps
-│   └── domain/           # Domain-specific steps
-├── fixtures/              # Playwright fixtures & DB hooks
-├── factories/             # Test data factories (Fishery)
-├── support/
-│   ├── pages/            # Page Objects
-│   └── database.ts       # DB utilities
+tests/e2e/
+├── common/                # Shared fixtures and helpers
+│   ├── bdd.ts            # Main BDD fixture (Given/When/Then)
+│   └── auth.ts           # Auth helpers
+├── features/              # .feature files and colocated steps
+│   ├── invoices.feature
+│   ├── invoices.steps.ts
+│   └── .gen/             # Generated test files
 └── playwright.config.ts
 ```
 

@@ -5,7 +5,7 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
-import { loginAsAdmin } from '../helpers/auth';
+import { loginAsAdmin } from '../common/auth';
 
 test.describe('Clinical Record Draft System', () => {
   let page: Page;

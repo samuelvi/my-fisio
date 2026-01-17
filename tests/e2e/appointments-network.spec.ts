@@ -6,7 +6,7 @@
  */
 
 import { test, expect, Page } from '@playwright/test';
-import { loginAsAdmin } from './helpers/auth';
+import { loginAsAdmin } from './common/auth';
 
 test.describe('Appointment Error Handling', () => {
   let page: Page;

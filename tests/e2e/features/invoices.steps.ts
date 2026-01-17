@@ -1,6 +1,6 @@
 import { expect } from '@playwright/test';
-import { Given, When, Then } from '../fixtures/bdd';
-import { loginAsAdmin } from '../helpers/auth';
+import { Given, When, Then } from '../common/bdd';
+import { loginAsAdmin } from '../common/auth';
 
 Given('the database is empty', async () => {
   // Handled automatically by the dbReset fixture defined in fixtures/bdd.ts
