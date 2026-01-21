@@ -7,12 +7,16 @@ Tests E2E con Playwright-BDD. Stack: Playwright + Gherkin + TypeScript.
 ```
 tests/e2e/
 ├── common/
-│   ├── bdd.ts          # Fixtures y exports de Given/When/Then
-│   └── auth.ts         # Helpers de autenticación
+│   ├── bdd.ts              # Fixtures y exports de Given/When/Then
+│   ├── auth.ts             # Helpers de autenticación
+│   └── steps/              # Steps genéricos reutilizables
+│       ├── navigation.steps.ts   # "I navigate to", "I should be on"
+│       ├── forms.steps.ts        # "I fill in", "I click the button"
+│       └── assertions.steps.ts   # "I should see", "table should contain"
 └── <domain>/
     └── <feature>/
         ├── feature.feature     # Escenarios Gherkin
-        └── feature.steps.ts    # Step definitions
+        └── feature.steps.ts    # Step definitions específicos
 ```
 
 ## Ejecución
@@ -92,16 +96,49 @@ Given('I am logged in as an administrator', async ({ page, context }) => {
 3. **Steps atómicos** - Una acción o aserción por step
 4. **Sin cleanup** - Los datos persisten para debugging post-fallo
 
+## Steps Genéricos Disponibles
+
+### Navigation (`common/steps/navigation.steps.ts`)
+
+```gherkin
+Given I am on the "{path}" page
+Given I am on the login page
+When I navigate to "{path}"
+When I reload the page
+Then I should be on "{path}"
+Then I should be redirected to "{path}"
+```
+
+### Forms (`common/steps/forms.steps.ts`)
+
+```gherkin
+When I fill in "{field}" with "{value}"
+When I click the "{name}" button
+When I click the "{name}" link
+When I select "{option}" from "{field}"
+When I check "{label}"
+Then the field "{field}" should have value "{value}"
+```
+
+### Assertions (`common/steps/assertions.steps.ts`)
+
+```gherkin
+Then I should see "{text}"
+Then I should see text matching "{pattern}"
+Then I should see {n} rows in the table
+Then the table should contain "{text}"
+Then the "{name}" button should be visible
+Then the "{name}" button should be disabled
+```
+
 ## Anti-patrones
 
 ```typescript
 // MAL
 await page.waitForTimeout(5000);
 await page.locator('#submit-btn').click();
-// Handled by fixture in fixtures/bdd.ts
 
 // BIEN
 await page.waitForLoadState('networkidle');
 await page.getByRole('button', { name: 'Submit' }).click();
-// No-op: handled by dbReset fixture
 ```
