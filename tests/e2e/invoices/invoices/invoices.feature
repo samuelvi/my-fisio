@@ -4,8 +4,7 @@ Feature: Invoice Management
   So that I can issue bills to customers
 
   Background:
-    Given the database is empty
-    And I am logged in as an administrator
+    Given I am logged in as an administrator
 
   Scenario: View empty invoice list
     When I navigate to the invoices list
@@ -25,3 +24,15 @@ Feature: Invoice Management
     Then I should be redirected to the invoices list
     And I should see "Test Invoice Customer" in the list
     And I should see 1 invoice in the table
+
+  @no-reset
+  Scenario: Edit invoice shows existing data in form
+    When I navigate to the invoices list
+    And I click edit on the first invoice
+    Then the invoice form should contain:
+      | Customer Name    | Test Invoice Customer |
+      | Customer Tax ID  | 12345678X             |
+      | Customer Address | Test Address 123      |
+    And the invoice line 1 should contain:
+      | Concept | Physio Session |
+      | Price   | 50             |

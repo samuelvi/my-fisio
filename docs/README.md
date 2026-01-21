@@ -41,6 +41,9 @@ docs/
 ├── guides/                  # User & developer guides
 │   └── audit-readme.md
 │
+├── testing/                 # Testing documentation
+│   └── e2e.md
+│
 └── archive/                 # Deprecated documentation
 ```
 
@@ -83,6 +86,10 @@ Installation, deployment, and maintenance guides:
 ### Guides
 Step-by-step guides for users and developers:
 - **audit-readme.md**: How to use the audit system
+
+### Testing
+E2E testing infrastructure and guidelines:
+- **e2e.md**: Playwright-BDD setup, fixtures, and conventions
 
 ## 🔍 Quick Reference
 

@@ -112,3 +112,4 @@ reorganize-docs.log
 tests/e2e/features/.gen/
 tests/e2e/features/tests/
 .features-gen/
+*.feature.spec.js

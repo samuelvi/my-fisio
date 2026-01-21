@@ -470,7 +470,36 @@ await page.locator('//div[@class="form"]//button[contains(text(),"Submit")]').cl
 await page.getByRole('button', { name: 'Submit' }).click();
 ```
 
-### ❌ 6. Test Interdependence
+### ❌ 6. Fragile Comments
+
+Comments with file paths or implementation details become stale and add technical debt:
+
+```typescript
+// ❌ BAD - Path reference (will become stale)
+Given('the database is empty', async () => {
+  // Handled automatically by the dbReset fixture defined in fixtures/bdd.ts
+});
+
+// ❌ BAD - Implementation details that will change
+When('I submit the form', async ({ page }) => {
+  // Uses the FormValidator class from src/validators/form.ts
+  await page.getByRole('button', { name: 'Submit' }).click();
+});
+
+// ✅ GOOD - Brief, no paths
+Given('the database is empty', async () => {
+  // No-op: handled by dbReset fixture
+});
+
+// ✅ GOOD - Self-documenting code, no comment needed
+When('I submit the form', async ({ page }) => {
+  await page.getByRole('button', { name: 'Submit' }).click();
+});
+```
+
+**Rule**: If a comment references a file path, it will become stale. Either remove it or make it generic.
+
+### ❌ 7. Test Interdependence
 
 ```typescript
 // Bad - Tests affect each other
@@ -493,6 +522,64 @@ test.describe('User Journey', () => {
     await updateUser(userId);
   });
 });
+```
+
+### ❌ 8. Deeply Nested Conditionals
+
+Use early returns to flatten decision logic:
+
+```typescript
+// ❌ BAD - Nested if/else, hard to follow
+function shouldResetDatabase(context) {
+  let shouldReset = false;
+
+  if (context.isCI) {
+    shouldReset = true;
+  } else if (context.tags.includes('@reset')) {
+    shouldReset = true;
+  } else if (context.tags.includes('@no-reset')) {
+    shouldReset = false;
+  } else if (!resetFeatures.has(context.featureTitle)) {
+    shouldReset = true;
+  }
+
+  return shouldReset;
+}
+
+// ✅ GOOD - Early returns, each condition is independent
+function shouldResetDatabase({ tags, featureTitle, isCI }: ResetContext): boolean {
+  if (isCI) return true;
+  if (tags.includes('@reset')) return true;
+  if (tags.includes('@no-reset')) return false;
+  return !resetFeatures.has(featureTitle);
+}
+```
+
+Same principle applies to async fixture code:
+
+```typescript
+// ❌ BAD - Nested branches
+async ({ request }, use, testInfo) => {
+  if (shouldReset) {
+    // reset logic...
+    await use();
+  } else {
+    console.log('Reusing...');
+    await use();
+  }
+}
+
+// ✅ GOOD - Early return for skip case
+async ({ request }, use, testInfo) => {
+  if (!shouldResetDatabase(context)) {
+    console.log('Reusing...');
+    await use();
+    return;
+  }
+
+  // reset logic...
+  await use();
+}
 ```
 
 ## Parallelism Strategy
@@ -690,6 +777,7 @@ Before merging tests:
 - [ ] Early returns used (no deeply nested if/else)
 - [ ] No getters/setters (use property access)
 - [ ] Code follows project conventions
+- [ ] **No path references in comments** (become stale, add tech debt)
 
 ### CI/CD Compatibility
 - [ ] Tests work in both dev and CI modes

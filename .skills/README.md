@@ -36,6 +36,10 @@ Skills follow the [official Anthropic skills specification](https://github.com/a
 - **audit-trail-pattern** - Compliance-focused change tracking
 - **draft-recovery-pattern** - Network error resilience for forms
 
+### Code Quality
+- **clean-code** - Clean Code principles (Robert C. Martin) for TypeScript/JavaScript
+- **playwright-bdd-testing** - E2E testing with Playwright-BDD and best practices
+
 ### Utilities
 - **skill-creator** - Official guide for creating effective skills
 
