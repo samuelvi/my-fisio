@@ -1,14 +1,5 @@
 import { expect } from '@playwright/test';
-import { Given, When, Then } from '../../common/bdd';
-import { loginAsAdmin } from '../../common/auth';
-
-// =============================================================================
-// Auth (domain-specific)
-// =============================================================================
-
-Given('I am logged in as an administrator', async ({ page, context }) => {
-  await loginAsAdmin(page, context);
-});
+import { When, Then } from '../../common/bdd';
 
 // =============================================================================
 // Invoice Form Steps (domain-specific)
