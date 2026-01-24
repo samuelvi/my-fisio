@@ -41,6 +41,9 @@ Skills follow the [official Anthropic skills specification](https://github.com/a
 - **dangerous-defaults** - Avoid dangerous default values in method parameters (user IDs, etc.)
 - **playwright-bdd-testing** - E2E testing with Playwright-BDD and best practices
 
+### Security
+- **secrets-management** - Secure handling of credentials and secrets (never commit real credentials)
+
 ### Utilities
 - **skill-creator** - Official guide for creating effective skills
 
