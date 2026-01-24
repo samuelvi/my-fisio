@@ -8,15 +8,18 @@ use ApiPlatform\Metadata\DeleteOperationInterface;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Domain\Entity\Appointment;
+use App\Domain\Entity\User;
 use App\Domain\Repository\AppointmentRepositoryInterface;
 use App\Domain\Repository\PatientRepositoryInterface;
 use App\Infrastructure\Api\Resource\AppointmentResource;
+use Symfony\Bundle\SecurityBundle\Security;
 
 class AppointmentProcessor implements ProcessorInterface
 {
     public function __construct(
         private AppointmentRepositoryInterface $appointmentRepo,
         private PatientRepositoryInterface $patientRepo,
+        private Security $security,
     ) {
     }
 
@@ -35,9 +38,12 @@ class AppointmentProcessor implements ProcessorInterface
         if (isset($uriVariables['id'])) {
             $appointment = $this->appointmentRepo->get((int) $uriVariables['id']);
         } else {
+            /** @var User $user */
+            $user = $this->security->getUser();
+
             $appointment = Appointment::create(
                 patient: null,
-                userId: $data->userId,
+                userId: $user->getId(),
                 startsAt: $data->startsAt,
                 endsAt: $data->endsAt,
                 title: $data->title,
@@ -68,6 +74,7 @@ class AppointmentProcessor implements ProcessorInterface
         $this->appointmentRepo->save($appointment);
 
         $data->id = $appointment->id;
+        $data->userId = $appointment->userId;
         $data->patientName = $appointment->patient ? $appointment->patient->firstName.' '.$appointment->patient->lastName : null;
         $data->createdAt = $appointment->createdAt;
 

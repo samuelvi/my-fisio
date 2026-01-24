@@ -45,8 +45,8 @@ class AppointmentResource
     #[Groups(['appointment:read'])]
     public ?string $patientName = null;
 
-    #[Groups(['appointment:read', 'appointment:write'])]
-    public int $userId = 0;
+    #[Groups(['appointment:read'])]
+    public ?int $userId = null;
 
     #[Groups(['appointment:read', 'appointment:write'])]
     public ?string $title = null;
