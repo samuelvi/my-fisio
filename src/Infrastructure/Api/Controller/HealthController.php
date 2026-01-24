@@ -12,6 +12,7 @@ use function in_array;
 use Redis;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Attribute\Route;
 use Throwable;
 
@@ -21,17 +22,28 @@ final class HealthController
         private EntityManagerInterface $entityManager,
         #[Autowire(service: 'snc_redis.default')]
         private ?Redis $redis = null,
+        #[Autowire('%env(HEALTH_CHECK_TOKEN)%')]
+        private string $healthCheckToken = '',
     ) {
     }
 
     #[Route('/api/health', name: 'api_health', methods: ['GET'], options: ['expose' => true])]
-    public function __invoke(): JsonResponse
+    public function __invoke(Request $request): JsonResponse
     {
+        $providedToken = $request->query->getString('token', '');
+        $isAuthorized = '' !== $this->healthCheckToken
+            && hash_equals($this->healthCheckToken, $providedToken);
+
+        // Without valid token, return only basic status
+        if (!$isAuthorized) {
+            return new JsonResponse(['status' => 'ok']);
+        }
+
+        // With valid token, return detailed checks
         $checks = [
             'database' => $this->checkDatabase(),
         ];
 
-        // Solo comprobar Redis si está disponible (dev/test)
         if (null !== $this->redis) {
             $checks['redis'] = $this->checkRedis();
         }
