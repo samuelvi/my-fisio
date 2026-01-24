@@ -57,8 +57,38 @@ If the application evolves to **multi-tenant** (multiple clinics):
 - Implement Doctrine Extension to filter by tenant
 - Add tenant verification in all Providers/Processors
 
+## Development Conveniences
+
+### Auto-fill Login (VITE_AUTH_EMAIL / VITE_AUTH_PASSWORD)
+
+For dev/test environments, the login form can be auto-filled:
+
+```bash
+# .env.local (dev only)
+AUTH_EMAIL=dev@example.com
+AUTH_PASSWORD=devpassword
+```
+
+**Security controls:**
+- `.env` has empty values by default
+- `.env.prod` must NOT define these variables
+- Values are only used if non-empty
+- Documented with warning comments in .env files
+
+**This is NOT a vulnerability because:**
+- Production builds have empty values (no credentials exposed)
+- It's a documented development convenience
+- The pattern is opt-in (requires explicit configuration)
+
 ## Checklist for New Endpoints
 
 - [ ] Endpoint requires `#[IsGranted('IS_AUTHENTICATED_FULLY')]` or equivalent
 - [ ] No sensitive data exposed to unauthenticated users
 - [ ] Error messages don't leak internal details in production
+
+## Checklist for Production Deployment
+
+- [ ] `AUTH_EMAIL` and `AUTH_PASSWORD` are empty or not defined
+- [ ] `JWT_PASSPHRASE` is set in `.env.local` (not committed)
+- [ ] `HEALTH_CHECK_TOKEN` is set to a secure value
+- [ ] `APP_DEBUG=0` in production

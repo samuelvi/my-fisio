@@ -17,15 +17,15 @@ export default function Login() {
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const isExpired = params.get('expired');
-        
+
         if (isExpired) {
             setSessionExpired(true);
             localStorage.removeItem('token');
         }
 
-        const envEmail = (import.meta.env.VITE_AUTH_EMAIL as string);
-        const envPassword = (import.meta.env.VITE_AUTH_PASSWORD as string);
-        
+        // Dev/test convenience: auto-fill login form (empty in production)
+        const envEmail = import.meta.env.VITE_AUTH_EMAIL as string;
+        const envPassword = import.meta.env.VITE_AUTH_PASSWORD as string;
         if (envEmail) setEmail(envEmail);
         if (envPassword) setPassword(envPassword);
     }, [location.search]);
