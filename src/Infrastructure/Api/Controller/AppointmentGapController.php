@@ -81,6 +81,7 @@ class AppointmentGapController extends AbstractController
      * Delete all empty appointment gaps (type = null) for a date range.
      */
     #[Route('/delete-empty', name: 'delete_empty', methods: ['DELETE'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function deleteEmptyGaps(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);

@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 class InvoicePrefillController extends AbstractController
 {
@@ -20,6 +21,7 @@ class InvoicePrefillController extends AbstractController
     }
 
     #[Route('/api/invoice-prefill', name: 'invoice_prefill', methods: ['GET'], options: ['expose' => true])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function __invoke(Request $request): JsonResponse
     {
         $patientId = $request->query->get('patientId');

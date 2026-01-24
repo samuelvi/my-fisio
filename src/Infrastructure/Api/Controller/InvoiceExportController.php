@@ -19,6 +19,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Messenger\HandleTrait;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 class InvoiceExportController extends AbstractController
@@ -32,6 +33,7 @@ class InvoiceExportController extends AbstractController
     }
 
     #[Route('/api/invoices/{id}/export/{format}', name: 'invoice_export', requirements: ['format' => 'pdf|html'], methods: ['GET'], options: ['expose' => true])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function __invoke(
         int $id,
         string $format,
