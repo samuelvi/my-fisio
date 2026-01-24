@@ -50,3 +50,7 @@ Then('I should be redirected to {string}', async ({ page }, path: string) => {
 Then('the URL should contain {string}', async ({ page }, text: string) => {
   await expect(page).toHaveURL(new RegExp(text));
 });
+
+When('I wait for navigation to {string}', async ({ page }, path: string) => {
+  await expect(page).toHaveURL(new RegExp(path.replace('/', '\\/')));
+});

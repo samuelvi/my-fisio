@@ -1,21 +1,9 @@
 import { expect } from '@playwright/test';
-import { Given, When, Then } from '../../common/bdd';
+import { When, Then } from '../../common/bdd';
 
 // =============================================================================
-// Appointment-specific Navigation
+// Appointment Form Steps (calendar-specific)
 // =============================================================================
-
-Given('I should see a heading matching {string}', async ({ page }, pattern: string) => {
-  await expect(page.getByRole('heading', { name: new RegExp(pattern, 'i') })).toBeVisible();
-});
-
-// =============================================================================
-// Appointment Form Steps
-// =============================================================================
-
-When('I click the new appointment button', async ({ page }) => {
-  await page.getByTestId('new-appointment-btn').click();
-});
 
 When('I fill the appointment form with:', async ({ page }, dataTable) => {
   const rows = dataTable.rowsHash();
@@ -66,38 +54,9 @@ When('I save the appointment', async ({ page }) => {
   await page.waitForTimeout(2000);
 });
 
-When('I click on the appointment {string} in the calendar', async ({ page }, titleText: string) => {
-  const event = page.locator('.fc-event').filter({ hasText: titleText }).first();
-  await expect(event).toBeVisible({ timeout: 10000 });
-  await event.click({ force: true });
-});
-
-When('I click the delete appointment button', async ({ page }) => {
-  await page.locator('button[title*="Delete"], button[title*="Borrar"]').click();
-});
-
-When('I confirm the deletion', async ({ page }) => {
-  await Promise.all([
-    page.waitForResponse((response) =>
-      response.url().includes('/api/appointments/') &&
-      response.request().method() === 'DELETE' &&
-      response.status() === 204
-    ),
-    page.getByRole('button', { name: /Delete|Borrar/i }).last().click(),
-  ]);
-});
-
 // =============================================================================
-// Calendar Assertions
+// Calendar Assertions (calendar-specific)
 // =============================================================================
-
-Then('the appointment {string} should appear in the calendar', async ({ page }, titleText: string) => {
-  await expect(page.locator('.fc-event').filter({ hasText: titleText }).first()).toBeVisible({ timeout: 15000 });
-});
-
-Then('the appointment {string} should not appear in the calendar', async ({ page }, titleText: string) => {
-  await expect(page.locator('.fc-event').filter({ hasText: titleText })).toHaveCount(0);
-});
 
 Then('the appointment {string} should be scheduled for today', async ({ page }, titleText: string) => {
   const slotInfo = await getEventSlotInfo(page, titleText);

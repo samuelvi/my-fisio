@@ -43,6 +43,7 @@ Skills follow the [official Anthropic skills specification](https://github.com/a
 
 ### Security
 - **secrets-management** - Secure handling of credentials and secrets (never commit real credentials)
+- **security-model** - Application security model (single-tenant, authorization decisions)
 
 ### Utilities
 - **skill-creator** - Official guide for creating effective skills

@@ -6,7 +6,7 @@ import { Then } from '../bdd';
 // =============================================================================
 
 Then('I should see {string}', async ({ page }, text: string) => {
-  await expect(page.getByText(text, { exact: false })).toBeVisible();
+  await expect(page.getByText(text, { exact: false }).first()).toBeVisible();
 });
 
 Then('I should not see {string}', async ({ page }, text: string) => {
