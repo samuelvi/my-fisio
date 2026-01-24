@@ -57,6 +57,47 @@ $qb->select('p');
 // Later: $patient->getInvoices() → N+1 queries
 ```
 
+### 6. Use LIMIT 1 for Existence Checks
+When checking if data exists, use `LIMIT 1` instead of `COUNT(*)`.
+
+```php
+// ✅ Efficient: stops at first match
+public function existsByEmail(string $email): bool
+{
+    $result = $this->createQueryBuilder('u')
+        ->select('1')
+        ->where('u.email = :email')
+        ->setParameter('email', $email)
+        ->setMaxResults(1)
+        ->getQuery()
+        ->getOneOrNullResult();
+
+    return $result !== null;
+}
+
+// ❌ Inefficient: counts ALL matching rows
+public function countByEmail(string $email): int
+{
+    $qb = $this->createQueryBuilder('u')
+        ->select('COUNT(u.id)')
+        ->where('u.email = :email')
+        ->setParameter('email', $email);
+
+    return (int) $qb->getQuery()->getSingleScalarResult();
+}
+// Then used as: if ($count > 0) { ... }
+```
+
+**Performance impact:**
+
+| Scenario | COUNT(*) | LIMIT 1 |
+|----------|----------|---------|
+| 0 matching rows | Scans index | Scans index |
+| 1 matching row | Scans all results | Stops at 1st |
+| 1M matching rows | Counts 1M rows | Stops at 1st |
+
+**Naming convention:** Use `exists*` methods returning `bool` instead of `count*` returning `int` when only checking existence.
+
 ## Performance Checklist
 - [ ] Use getArrayResult() for read-only queries
 - [ ] Use QueryBuilder exclusively
@@ -64,6 +105,7 @@ $qb->select('p');
 - [ ] Eager load associations with joins
 - [ ] Clear EntityManager after batch operations
 - [ ] Use indexes on frequently queried fields
+- [ ] Use LIMIT 1 for existence checks (not COUNT)
 - [ ] Monitor slow query log
 
 ## References

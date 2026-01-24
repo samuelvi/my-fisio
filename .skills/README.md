@@ -38,6 +38,7 @@ Skills follow the [official Anthropic skills specification](https://github.com/a
 
 ### Code Quality
 - **clean-code** - Clean Code principles (Robert C. Martin) for TypeScript/JavaScript
+- **dangerous-defaults** - Avoid dangerous default values in method parameters (user IDs, etc.)
 - **playwright-bdd-testing** - E2E testing with Playwright-BDD and best practices
 
 ### Utilities

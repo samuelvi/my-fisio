@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Api\Controller;
 
 use App\Application\Service\EmptySlotCreator;
+use App\Domain\Entity\User;
 use App\Domain\Repository\AppointmentRepositoryInterface;
 use DateTimeImmutable;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -12,6 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/api/appointment-gaps', name: 'api_appointment_gaps_', options: ['expose' => true])]
 class AppointmentGapController extends AbstractController
@@ -26,6 +28,7 @@ class AppointmentGapController extends AbstractController
      * Generate empty appointment gaps for a date range.
      */
     #[Route('/generate', name: 'generate', methods: ['POST'])]
+    #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function generateGaps(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -37,14 +40,15 @@ class AppointmentGapController extends AbstractController
             );
         }
 
+        /** @var User $user */
+        $user = $this->getUser();
+
         try {
             $start = new DateTimeImmutable($data['start']);
             $end = new DateTimeImmutable($data['end']);
 
             // Check if there are already appointments in this date range
-            $existingCount = $this->appointmentRepository->countAppointmentsInDateRange($start, $end);
-
-            if ($existingCount > 0) {
+            if ($this->appointmentRepository->existsAppointmentsInDateRange($start, $end)) {
                 return $this->json(
                     ['error' => 'Cannot generate gaps: appointments already exist in this date range'],
                     Response::HTTP_CONFLICT
@@ -52,7 +56,7 @@ class AppointmentGapController extends AbstractController
             }
 
             // Generate empty gaps
-            $slotsGenerated = $this->emptySlotCreator->createEmptySlotsIfNeeded($start, $end);
+            $slotsGenerated = $this->emptySlotCreator->createEmptySlotsIfNeeded($start, $end, $user->getId());
 
             if ($slotsGenerated === 0) {
                 return $this->json(

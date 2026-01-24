@@ -25,7 +25,7 @@ class EmptySlotCreator
     public function createEmptySlotsIfNeeded(
         DateTimeImmutable $start,
         DateTimeImmutable $end,
-        int $userId = 1
+        int $userId
     ): int {
         // Generate all slots for the date range
         $slots = $this->slotGenerator->generateSlotsForDateRange($start, $end);

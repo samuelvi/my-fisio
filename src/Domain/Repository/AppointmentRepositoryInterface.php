@@ -18,7 +18,7 @@ interface AppointmentRepositoryInterface
 
     public function save(Appointment $appointment): void;
 
-    public function countAppointmentsInDateRange(DateTimeInterface $start, DateTimeInterface $end): int;
+    public function existsAppointmentsInDateRange(DateTimeInterface $start, DateTimeInterface $end): bool;
 
     public function deleteEmptyGapsInDateRange(DateTimeInterface $start, DateTimeInterface $end): int;
 }
