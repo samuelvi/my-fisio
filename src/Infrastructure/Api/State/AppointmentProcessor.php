@@ -43,7 +43,7 @@ class AppointmentProcessor implements ProcessorInterface
 
             $appointment = Appointment::create(
                 patient: null,
-                userId: $user->getId(),
+                userId: $user->id,
                 startsAt: $data->startsAt,
                 endsAt: $data->endsAt,
                 title: $data->title,

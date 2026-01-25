@@ -56,7 +56,7 @@ class AppointmentGapController extends AbstractController
             }
 
             // Generate empty gaps
-            $slotsGenerated = $this->emptySlotCreator->createEmptySlotsIfNeeded($start, $end, $user->getId());
+            $slotsGenerated = $this->emptySlotCreator->createEmptySlotsIfNeeded($start, $end, $user->id);
 
             if ($slotsGenerated === 0) {
                 return $this->json(

@@ -258,7 +258,7 @@ To avoid hardcoding API URLs in React and maintain security by not exposing all 
 - **Backend PHP**: PascalCase for classes, camelCase for methods
 - **Doctrine Entities**: 
     - NO fluid interfaces.
-    - NO traditional setters and getters. Use **PHP 8.4 Property Hooks**.
+    - NO traditional setters and getters. Use **PHP 8.4 Property Hooks** and direct property access (prefer public properties over new getters).
 - **Imports**: Always import classes/interfaces (`use`) instead of using fully qualified names inside the code.
 - **Attributes**: Use `#[Override]` without the leading backslash (e.g., `#[Override]` instead of `#[\Override]`), as `Override` is a global class in the root namespace.
 - **Frontend React**: PascalCase for components, camelCase for functions
