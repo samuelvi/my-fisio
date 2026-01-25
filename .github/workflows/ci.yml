@@ -220,6 +220,11 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       # --- Tests ---
+      - name: Generate BDD tests
+        run: |
+          echo "🧩 Generating BDD tests..."
+          npx bddgen
+
       - name: Run Playwright E2E tests
         run: |
           echo "🎭 Running E2E tests..."
