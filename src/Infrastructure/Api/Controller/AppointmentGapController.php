@@ -18,10 +18,32 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[Route('/api/appointment-gaps', name: 'api_appointment_gaps_', options: ['expose' => true])]
 class AppointmentGapController extends AbstractController
 {
+    private const MAX_RANGE_DAYS = 31;
+
     public function __construct(
         private EmptySlotCreator $emptySlotCreator,
         private AppointmentRepositoryInterface $appointmentRepository,
     ) {
+    }
+
+    private function validateDateRange(DateTimeImmutable $start, DateTimeImmutable $end): ?JsonResponse
+    {
+        if ($start >= $end) {
+            return $this->json(
+                ['error' => 'Start date must be before end date'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        $diffDays = $start->diff($end)->days;
+        if ($diffDays > self::MAX_RANGE_DAYS) {
+            return $this->json(
+                ['error' => sprintf('Date range cannot exceed %d days (1 month)', self::MAX_RANGE_DAYS)],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
+
+        return null;
     }
 
     /**
@@ -46,6 +68,10 @@ class AppointmentGapController extends AbstractController
         try {
             $start = new DateTimeImmutable($data['start']);
             $end = new DateTimeImmutable($data['end']);
+
+            if ($validationError = $this->validateDateRange($start, $end)) {
+                return $validationError;
+            }
 
             // Check if there are already appointments in this date range
             if ($this->appointmentRepository->existsAppointmentsInDateRange($start, $end)) {
@@ -96,6 +122,10 @@ class AppointmentGapController extends AbstractController
         try {
             $start = new DateTimeImmutable($data['start']);
             $end = new DateTimeImmutable($data['end']);
+
+            if ($validationError = $this->validateDateRange($start, $end)) {
+                return $validationError;
+            }
 
             // Delete empty gaps (where type is null)
             $deletedCount = $this->appointmentRepository->deleteEmptyGapsInDateRange($start, $end);
