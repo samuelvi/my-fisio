@@ -13,6 +13,8 @@ use Redis;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Throwable;
 
@@ -24,6 +26,8 @@ final class HealthController
         private ?Redis $redis = null,
         #[Autowire('%env(HEALTH_CHECK_TOKEN)%')]
         private string $healthCheckToken = '',
+        #[Autowire(service: 'limiter.health_token')]
+        private ?RateLimiterFactory $healthTokenLimiter = null,
     ) {
     }
 
@@ -31,6 +35,18 @@ final class HealthController
     public function __invoke(Request $request): JsonResponse
     {
         $providedToken = $request->query->getString('token', '');
+
+        // Only apply rate limiting when a token is provided (to prevent brute force)
+        if ('' !== $providedToken && null !== $this->healthTokenLimiter) {
+            $limiter = $this->healthTokenLimiter->create($request->getClientIp() ?? 'unknown');
+            if (!$limiter->consume()->isAccepted()) {
+                return new JsonResponse(
+                    ['error' => 'Too many requests'],
+                    Response::HTTP_TOO_MANY_REQUESTS
+                );
+            }
+        }
+
         $isAuthorized = '' !== $this->healthCheckToken
             && hash_equals($this->healthCheckToken, $providedToken);
 

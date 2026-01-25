@@ -75,11 +75,16 @@ class InvoiceExportController extends AbstractController
             }
         }
 
-        // Prepare Logo
-        $logoPath = $projectDir.'/'.$companyLogoPath;
+        // Prepare Logo (with path traversal protection)
         $logoSrc = '';
-        if (file_exists($logoPath)) {
-            $logoContent = file_get_contents($logoPath);
+        $logoPath = $projectDir.'/'.$companyLogoPath;
+        $realLogoPath = realpath($logoPath);
+        $realProjectDir = realpath($projectDir);
+        // Ensure logo path is within project directory (defense-in-depth)
+        if (false !== $realLogoPath && false !== $realProjectDir
+            && str_starts_with($realLogoPath, $realProjectDir)
+            && file_exists($realLogoPath)) {
+            $logoContent = file_get_contents($realLogoPath);
             if (false !== $logoContent) {
                 $logoData = base64_encode($logoContent);
                 $logoSrc = 'data:image/png;base64,'.$logoData;
@@ -109,7 +114,8 @@ class InvoiceExportController extends AbstractController
         // PDF Generation
         $pdfOptions = new Options();
         $pdfOptions->set('defaultFont', 'Arial');
-        $pdfOptions->set('isRemoteEnabled', true);
+        // Disable remote to prevent SSRF attacks - logo is embedded as base64
+        $pdfOptions->set('isRemoteEnabled', false);
 
         $dompdf = new Dompdf($pdfOptions);
         $dompdf->loadHtml($html);
@@ -117,7 +123,9 @@ class InvoiceExportController extends AbstractController
         $dompdf->render();
 
         $formattedNumber = $invoicePrefix . $invoice->number;
-        $filename = sprintf('factura_%s.pdf', $formattedNumber);
+        // Sanitize filename to prevent Content-Disposition header injection
+        $safeFilename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $formattedNumber) ?? $formattedNumber;
+        $filename = sprintf('factura_%s.pdf', $safeFilename);
         $isDownload = $request->query->getBoolean('download', false);
 
         return new Response($dompdf->output(), 200, [

@@ -1,0 +1,22 @@
+framework:
+    rate_limiter:
+        # Login: 5 attempts per 15 minutes per IP (brute force protection)
+        login:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '15 minutes'
+            cache_pool: 'cache.app'
+
+        # Health check token: 10 attempts per hour per IP
+        health_token:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '1 hour'
+            cache_pool: 'cache.app'
+
+        # API general: 100 requests per minute per user/IP
+        api_general:
+            policy: 'sliding_window'
+            limit: 100
+            interval: '1 minute'
+            cache_pool: 'cache.app'
