@@ -40,12 +40,12 @@ final class DoctrineCustomerRepository extends ServiceEntityRepository implement
 
         if (!empty($filters['fullName'])) {
             $qb->andWhere('LOWER(c.fullName) LIKE LOWER(:fullName)')
-               ->setParameter('fullName', '%' . $filters['fullName'] . '%');
+               ->setParameter('fullName', '%' . $this->escapeLikeWildcards($filters['fullName']) . '%');
         }
 
         if (!empty($filters['taxId'])) {
             $qb->andWhere('LOWER(c.taxId) LIKE LOWER(:taxId)')
-               ->setParameter('taxId', '%' . $filters['taxId'] . '%');
+               ->setParameter('taxId', '%' . $this->escapeLikeWildcards($filters['taxId']) . '%');
         }
 
         if (!empty($filters['order']) && is_array($filters['order'])) {
@@ -83,5 +83,10 @@ final class DoctrineCustomerRepository extends ServiceEntityRepository implement
     {
         $this->getEntityManager()->remove($customer);
         $this->getEntityManager()->flush();
+    }
+
+    private function escapeLikeWildcards(string $value): string
+    {
+        return str_replace(['%', '_'], ['\\%', '\\_'], $value);
     }
 }

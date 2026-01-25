@@ -183,17 +183,17 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
 
         if (!empty($filters['fullName'])) {
             $qb->andWhere('LOWER(i.fullName) LIKE LOWER(:fullName)')
-               ->setParameter('fullName', '%' . $filters['fullName'] . '%');
+               ->setParameter('fullName', '%' . $this->escapeLikeWildcards($filters['fullName']) . '%');
         }
 
         if (!empty($filters['taxId'])) {
             $qb->andWhere('LOWER(i.taxId) LIKE LOWER(:taxId)')
-               ->setParameter('taxId', '%' . $filters['taxId'] . '%');
+               ->setParameter('taxId', '%' . $this->escapeLikeWildcards($filters['taxId']) . '%');
         }
 
         if (!empty($filters['number'])) {
             $qb->andWhere('i.number LIKE :number')
-               ->setParameter('number', '%' . $filters['number'] . '%');
+               ->setParameter('number', '%' . $this->escapeLikeWildcards($filters['number']) . '%');
         }
 
         if (!empty($filters['order']) && is_array($filters['order'])) {
@@ -210,5 +210,10 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             ->setMaxResults($limit)
             ->getQuery()
             ->getArrayResult();
+    }
+
+    private function escapeLikeWildcards(string $value): string
+    {
+        return str_replace(['%', '_'], ['\\%', '\\_'], $value);
     }
 }
