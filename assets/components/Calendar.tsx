@@ -193,9 +193,10 @@ export default function Calendar() {
             setHasAppointments(hasAnyAppointments);
 
             const events = data.map(app => {
+                const eventId = normalizeAppointmentId(app.id ?? app['@id']);
                 const colors = getEventColors(app.title, app.type);
                 return {
-                    id: String(app.id),
+                    id: eventId ?? '',
                     title: app.title,
                     start: app.startsAt,
                     end: app.endsAt,
@@ -291,7 +292,11 @@ export default function Calendar() {
         try {
             const payload = { ...formData, userId: 1 };
             if (currentEvent) {
-                await axios.put(Routing.generate('api_appointments_put', { id: currentEvent.id }), payload);
+                const eventId = normalizeAppointmentId(currentEvent.id);
+                if (!eventId) {
+                    throw new Error('Missing appointment id for update');
+                }
+                await axios.put(Routing.generate('api_appointments_put', { id: eventId }), payload);
             } else {
                 await axios.post(Routing.generate('api_appointments_post'), payload);
             }
@@ -317,8 +322,13 @@ export default function Calendar() {
 
     const handleDeleteConfirmed = async () => {
         if (!currentEvent) return;
+        const eventId = normalizeAppointmentId(currentEvent.id);
+        if (!eventId) {
+            handleApiError({ response: { data: { detail: t('unexpected_server_error') } } });
+            return;
+        }
         try {
-            await axios.delete(Routing.generate('api_appointments_delete', { id: currentEvent.id }));
+            await axios.delete(Routing.generate('api_appointments_delete', { id: eventId }));
             setModalOpen(false);
             setIsDeleteConfirmOpen(false);
             setShowAlert(false);
@@ -343,7 +353,11 @@ export default function Calendar() {
                 allDay: event.allDay,
                 userId: 1
             };
-            await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
+            const eventId = normalizeAppointmentId(event.id);
+            if (!eventId) {
+                throw new Error('Missing appointment id for update');
+            }
+            await axios.put(Routing.generate('api_appointments_put', { id: eventId }), payload);
             setShowAlert(false);
         } catch (error: any) {
             console.error('Error moving appointment:', error);
@@ -366,7 +380,11 @@ export default function Calendar() {
                 allDay: event.allDay,
                 userId: 1
             };
-            await axios.put(Routing.generate('api_appointments_put', { id: event.id }), payload);
+            const eventId = normalizeAppointmentId(event.id);
+            if (!eventId) {
+                throw new Error('Missing appointment id for update');
+            }
+            await axios.put(Routing.generate('api_appointments_put', { id: eventId }), payload);
             setShowAlert(false);
         } catch (error: any) {
             console.error('Error resizing appointment:', error);
@@ -396,6 +414,17 @@ export default function Calendar() {
         } finally {
             setIsGeneratingGaps(false);
         }
+    };
+
+    const normalizeAppointmentId = (value: unknown): string | null => {
+        if (value === null || value === undefined) return null;
+        if (typeof value === 'number') return String(value);
+        if (typeof value === 'string') {
+            const trimmed = value.trim();
+            if (trimmed === '') return null;
+            return trimmed.includes('/') ? trimmed.split('/').pop() || null : trimmed;
+        }
+        return null;
     };
 
     const handleDeleteGapsClick = () => {
