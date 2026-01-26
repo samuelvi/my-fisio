@@ -24,7 +24,7 @@ security:
                 success_handler: lexik_jwt_authentication.handler.authentication_success
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
             login_throttling:
-                limiter: login
+                limiter: limiter.login
 
         test:
             pattern: ^/api/test

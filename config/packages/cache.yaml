@@ -5,28 +5,22 @@ framework:
 
         # The "app" cache stores to the filesystem by default.
         # The data in this cache should persist between deploys.
-        #
-        # Options for CACHE_ADAPTER env var:
-        #   - cache.adapter.filesystem (default dev - not shared across servers)
+        # Options:
+        #   - cache.adapter.filesystem (default dev/test - not shared across servers)
         #   - cache.adapter.apcu (fast, single server - requires APCu extension)
         #   - cache.adapter.redis (distributed - requires Redis server)
         #   - cache.adapter.pdo (database - works everywhere, slower)
-        app: '%env(default:cache_default:CACHE_ADAPTER)%'
+        app: cache.adapter.filesystem
 
-        # Redis provider URL (only used when CACHE_ADAPTER=cache.adapter.redis)
+        # Redis provider URL (only used when using cache.adapter.redis)
         default_redis_provider: '%env(default::REDIS_URL)%'
 
-parameters:
-    cache_default: 'cache.adapter.filesystem'
-
 when@prod:
-    parameters:
-        # Default to PDO/database in production (works on shared hosting like IONOS)
-        # Override with CACHE_ADAPTER=cache.adapter.apcu if APCu available
-        # Override with CACHE_ADAPTER=cache.adapter.redis for multi-server
-        cache_default: 'cache.adapter.pdo'
-
     framework:
         cache:
-            # Use existing database connection for cache
+            # Use PDO/database in production (works on shared hosting like IONOS)
+            # For better performance, override in config/packages/prod/cache.yaml with:
+            #   - cache.adapter.apcu (if APCu extension available)
+            #   - cache.adapter.redis (for multi-server deployments)
+            app: cache.adapter.pdo
             default_pdo_provider: 'doctrine.dbal.default_connection'
