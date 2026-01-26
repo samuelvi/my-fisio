@@ -74,4 +74,4 @@ when@test:
                     check_path: /api/login_check
                     success_handler: lexik_jwt_authentication.handler.authentication_success
                     failure_handler: lexik_jwt_authentication.handler.authentication_failure
-                # No login_throttling in test environment - E2E tests need many logins
+                login_throttling: false  # Disabled in test - E2E tests need many logins
