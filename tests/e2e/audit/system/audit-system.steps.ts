@@ -42,6 +42,11 @@ async function getAuditTrails(page, entityType: string | null = null) {
 async function getAuditTrailCount(page) {
   const response = await getAuditTrails(page);
   expect(response.status).toBe(200);
+  
+  if (response.data['hydra:totalItems'] !== undefined) {
+    return response.data['hydra:totalItems'];
+  }
+
   const members = response.data.member || response.data['hydra:member'] || [];
   return members.length;
 }
