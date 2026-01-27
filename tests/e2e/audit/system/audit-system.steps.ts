@@ -60,9 +60,8 @@ Given('I note the current audit trail count', async ({ page }) => {
 });
 
 Then('the audit trail count should have increased', async ({ page }) => {
-  await expect
-    .poll(async () => getAuditTrailCount(page), { timeout: 15000, intervals: [500, 1000, 2000] })
-    .toBeGreaterThan(initialAuditCount);
+  const count = await getAuditTrailCount(page);
+  expect(count).toBeGreaterThan(initialAuditCount);
 });
 
 Then('the latest audit trail for {string} should have operation {string}', async ({ page }, entityType: string, operation: string) => {

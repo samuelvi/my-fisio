@@ -1,5 +1,10 @@
 import { test as base, createBdd } from 'playwright-bdd';
 import { TestInfo } from '@playwright/test';
+import { spin } from './spin';
+
+// Re-export so step files can `import { spin } from '../common/bdd'`.
+export type { SpinOptions } from './spin';
+export { spin } from './spin';
 
 // =============================================================================
 // Types
@@ -46,7 +51,41 @@ export const test = base.extend<MyFixtures>({
   ]
 });
 
-export const { Given, When, Then } = createBdd(test);
+const bdd = createBdd(test);
+
+// ---------------------------------------------------------------------------
+// Spin-wrapped step registrars
+//
+// Every `Then` step is automatically wrapped with `spin`, so assertions are
+// retried at 250 ms intervals for up to 10 minutes.  This eliminates flaky
+// failures caused by backend/rendering latency without requiring per-step
+// timeout tuning.
+//
+// `Given` and `When` are exported as-is — Playwright's built-in auto-waiting
+// already handles action retries (clicks, fills, navigation).  If a setup or
+// action step needs explicit polling, import `spin` directly:
+//
+//   import { spin } from '../common/bdd';
+//   When('...', async ({ page }) => { await spin(async () => { ... }); });
+// ---------------------------------------------------------------------------
+
+export const Given = bdd.Given;
+export const When = bdd.When;
+
+/**
+ * Register a `Then` step whose body is automatically retried via `spin`.
+ *
+ * The wrapper calls the original callback inside `spin()`, which polls at
+ * 250 ms intervals for up to 10 minutes.  If the callback keeps throwing
+ * after the timeout, the **last** error is surfaced to the test reporter.
+ */
+export const Then: typeof bdd.Then = ((
+  pattern: any,
+  fn: (...args: any[]) => any,
+) => {
+  const wrapped = (...args: any[]) => spin(() => fn(...args));
+  return bdd.Then(pattern, wrapped as any);
+}) as any;
 
 // =============================================================================
 // Private Helpers
