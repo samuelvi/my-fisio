@@ -1,5 +1,5 @@
 import { expect } from '@playwright/test';
-import { Given, When, Then } from '../../common/bdd';
+import { Given, When, Then, spin } from '../../common/bdd';
 
 let initialAuditCount = 0;
 
@@ -60,18 +60,22 @@ Given('I note the current audit trail count', async ({ page }) => {
 });
 
 Then('the audit trail count should have increased', async ({ page }) => {
-  const count = await getAuditTrailCount(page);
-  expect(count).toBeGreaterThan(initialAuditCount);
+  await spin(async () => {
+    const count = await getAuditTrailCount(page);
+    expect(count).toBeGreaterThan(initialAuditCount);
+  });
 });
 
 Then('the latest audit trail for {string} should have operation {string}', async ({ page }, entityType: string, operation: string) => {
-  const auditResponse = await getAuditTrails(page, entityType);
-  expect(auditResponse.status).toBe(200);
+  await spin(async () => {
+    const auditResponse = await getAuditTrails(page, entityType);
+    expect(auditResponse.status).toBe(200);
 
-  const audits = auditResponse.data.member || auditResponse.data['hydra:member'] || [];
-  expect(audits.length).toBeGreaterThan(0);
+    const audits = auditResponse.data.member || auditResponse.data['hydra:member'] || [];
+    expect(audits.length).toBeGreaterThan(0);
 
-  const latestAudit = audits[0];
-  expect(latestAudit.entityType).toBe(entityType);
-  expect(latestAudit.operation).toBe(operation);
+    const latestAudit = audits[0];
+    expect(latestAudit.entityType).toBe(entityType);
+    expect(latestAudit.operation).toBe(operation);
+  });
 });
