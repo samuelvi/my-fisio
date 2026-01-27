@@ -46,5 +46,6 @@ Given('invoices are seeded for search tests', async ({ page }) => {
 When('I search for invoice customer {string}', async ({ page }, name: string) => {
   await page.locator('input[type="text"]').first().fill(name);
   await page.locator('button[type="submit"]').click();
+  await page.waitForResponse(resp => resp.url().includes('/api/invoices') && resp.status() === 200);
   await page.waitForLoadState('networkidle');
 });

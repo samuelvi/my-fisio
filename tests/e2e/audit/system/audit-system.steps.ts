@@ -32,7 +32,7 @@ async function apiFetch(page, url: string, options: any = {}) {
 }
 
 async function getAuditTrails(page, entityType: string | null = null) {
-  let url = '/api/audit_trails?order[changedAt]=desc';
+  let url = `/api/audit_trails?order[changedAt]=desc&_t=${new Date().getTime()}`;
   if (entityType) {
     url += `&entityType=${entityType}`;
   }
