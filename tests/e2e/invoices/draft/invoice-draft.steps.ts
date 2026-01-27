@@ -104,7 +104,6 @@ When('I click the discard invoice draft button', async ({ page }) => {
 When('I confirm the invoice draft action', async ({ page }) => {
   await page.getByTestId('confirm-draft-btn').click();
   await expect(page.getByTestId('confirm-draft-btn')).toBeHidden({ timeout: 15000 });
-  await page.waitForTimeout(1000);
 });
 
 // =============================================================================

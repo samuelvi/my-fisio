@@ -117,5 +117,4 @@ Given('customers are seeded for search tests', async ({ page }) => {
       });
     }, customer);
   }
-  await page.waitForTimeout(500);
 });

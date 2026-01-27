@@ -30,7 +30,6 @@ When('I set the appointment start time to today at {int}:{int}', async ({ page }
   const input = page.locator('label').filter({ hasText: /Start|Inicio/i }).locator('..').locator('input');
   await input.fill(dateTime.picker);
   await input.press('Enter');
-  await page.waitForTimeout(500);
 });
 
 When('I set the appointment end time to today at {int}:{int}', async ({ page }, hour: number, minute: number) => {
@@ -38,7 +37,6 @@ When('I set the appointment end time to today at {int}:{int}', async ({ page }, 
   const input = page.locator('label').filter({ hasText: /End|Fin/i }).locator('..').locator('input');
   await input.fill(dateTime.picker);
   await input.press('Enter');
-  await page.waitForTimeout(500);
 });
 
 When('I save the appointment', async ({ page }) => {
@@ -51,7 +49,6 @@ When('I save the appointment', async ({ page }) => {
     page.getByTestId('save-appointment-btn').click(),
   ]);
   await expect(page.locator('.fixed.inset-0')).toBeHidden({ timeout: 10000 });
-  await page.waitForTimeout(2000);
 });
 
 // =============================================================================

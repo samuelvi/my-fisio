@@ -58,7 +58,6 @@ When('I create a quick appointment with title {string}', async ({ page }, title:
   await page.waitForResponse(resp =>
     resp.url().includes('/api/appointments') && resp.status() === 201
   );
-  await page.waitForTimeout(2000);
 });
 
 When('the appointment {string} appears in the calendar', async ({ page }, title: string) => {
@@ -71,7 +70,6 @@ When('I should see the edit appointment heading', async ({ page }) => {
 });
 
 When('I should see the delete confirmation dialog', async ({ page }) => {
-  await page.waitForTimeout(500);
   await expect(page.locator('h3', { hasText: /Delete|Borrar/i }).last()).toBeVisible();
 });
 
