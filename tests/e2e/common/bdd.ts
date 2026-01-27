@@ -76,10 +76,9 @@ export const { Given, When, Then } = createBdd(test);
 
 const resetFeatures = new Set<string>();
 
-function shouldResetDatabase({ tags, featureTitle, isCI }: ResetContext): boolean {
-  if (isCI) return true;
-  if (tags.includes('@reset')) return true;
+function shouldResetDatabase({ tags, featureTitle }: ResetContext): boolean {
   if (tags.includes('@no-reset')) return false;
+  if (tags.includes('@reset')) return true;
   return !resetFeatures.has(featureTitle);
 }
 
