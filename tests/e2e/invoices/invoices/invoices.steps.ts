@@ -42,7 +42,9 @@ When('I save the invoice', async ({ page }) => {
 });
 
 When('I click edit on the first invoice', async ({ page }) => {
-  await page.locator('tbody tr').first().getByRole('link', { name: /Edit|Editar/i }).click();
+  const row = page.locator('tbody tr').first();
+  await expect(row).toBeVisible({ timeout: 10000 });
+  await row.getByRole('link', { name: /Edit|Editar/i }).click();
   await expect(page).toHaveURL(/\/invoices\/\d+\/edit/);
 });
 

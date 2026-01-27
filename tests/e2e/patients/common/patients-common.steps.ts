@@ -70,7 +70,9 @@ When('I search for patient {string}', async ({ page }, name: string) => {
 });
 
 When('I click on the patient link {string}', async ({ page }, name: string) => {
-  await page.getByRole('link', { name: new RegExp(name) }).first().click();
+  const link = page.getByRole('link', { name: new RegExp(name) }).first();
+  await expect(link).toBeVisible({ timeout: 10000 });
+  await link.click();
   await page.waitForLoadState('networkidle');
 });
 

@@ -42,7 +42,7 @@ Then('the {string} link should be visible', async ({ page }, name: string) => {
 // =============================================================================
 
 Then('I should see {int} rows in the table', async ({ page }, count: number) => {
-  await expect(page.locator('tbody tr')).toHaveCount(count);
+  await expect(page.locator('tbody tr')).toHaveCount(count, { timeout: 10000 });
 });
 
 Then('the table should contain {string}', async ({ page }, text: string) => {

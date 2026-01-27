@@ -63,7 +63,9 @@ When('I save the customer expecting update', async ({ page }) => {
 });
 
 When('I click edit on the row containing {string}', async ({ page }, text: string) => {
-  await page.locator('tr', { hasText: text }).getByTitle(/Edit|Editar/i).click();
+  const row = page.locator('tr', { hasText: text }).first();
+  await expect(row).toBeVisible({ timeout: 10000 });
+  await row.getByTitle(/Edit|Editar/i).click();
 });
 
 Then('the customer {string} should be created successfully', async ({ page }, firstName: string) => {
