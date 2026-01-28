@@ -95,8 +95,8 @@ final class DoctrineAppointmentRepository extends ServiceEntityRepository implem
     {
         $result = $this->createQueryBuilder('a')
             ->select('1')
-            ->where('a.startsAt >= :start')
-            ->andWhere('a.endsAt <= :end')
+            ->where('a.startsAt < :end')
+            ->andWhere('a.endsAt > :start')
             ->setParameter('start', $start)
             ->setParameter('end', $end)
             ->setMaxResults(1)
