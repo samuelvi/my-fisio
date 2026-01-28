@@ -238,7 +238,7 @@ make cache-warmup
 
 ## Testing
 
-### Run Tests
+### Run Unit/Integration Tests (PHPUnit)
 
 ```bash
 make test
@@ -251,6 +251,26 @@ make test-coverage
 ```
 
 The coverage report will be available at `var/coverage/index.html`.
+
+### Run E2E Tests (Playwright)
+
+For local development, **single worker execution is strongly recommended** to ensure database stability during resets:
+
+```bash
+npx playwright test --workers=1
+```
+
+Or using the Makefile shortcut (which defaults to safer settings):
+
+```bash
+make test-e2e
+```
+
+To run a specific test file:
+
+```bash
+npx playwright test tests/e2e/patients/create/patients-create.feature --workers=1
+```
 
 ## Code Quality
 

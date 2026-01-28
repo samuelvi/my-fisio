@@ -13,6 +13,11 @@ tests/e2e/
 │       ├── navigation.steps.ts   # "I navigate to", "I should be on"
 │       ├── forms.steps.ts        # "I fill in", "I click the button"
 │       └── assertions.steps.ts   # "I should see", "table should contain"
+├── factories/              # Factorías de datos (Fishery + Faker)
+│   ├── patient.factory.ts
+│   ├── customer.factory.ts
+│   ├── invoice.factory.ts
+│   └── record.factory.ts
 └── <domain>/
     └── <feature>/
         ├── feature.feature     # Escenarios Gherkin
@@ -22,79 +27,56 @@ tests/e2e/
 ## Ejecución
 
 ```bash
+# Recomendado para desarrollo local (evita colisiones de BD)
+npx playwright test --workers=1
+
 # Generar specs y ejecutar
 npx bddgen && npx playwright test --project=bdd
 
-# Solo generar specs
-npx bddgen
-
-# Ejecutar con UI
+# Ejecutar con UI para depuración
 npx playwright test --project=bdd --ui
 ```
 
-## Comportamiento por defecto
+## Estrategia de Datos
 
-### Database Reset con Tags
+### 1. Factorías (Recomendado)
 
-La base de datos se resetea siguiendo esta lógica:
+Usamos `fishery` y `@faker-js/faker` para generar datos dinámicos y robustos. **Evita hardcodear datos** en los tests.
+
+```typescript
+// tests/e2e/factories/patient.factory.ts
+export const patientFactory = Factory.define<Partial<Patient>>(() => ({
+    firstName: faker.person.firstName(),
+    taxId: faker.helpers.replaceSymbols('########?').toUpperCase(),
+    // ...
+}));
+
+// En tu step definition
+const testPatient = patientFactory.build();
+await page.getByLabel(/First Name/).fill(testPatient.firstName);
+```
+
+### 2. Database Reset con Tags
+
+La base de datos se resetea siguiendo esta lógica para soportar "User Journeys" secuenciales:
 
 | Contexto | Comportamiento |
 |----------|----------------|
 | Primer escenario del feature | Reset automático |
 | Escenarios siguientes (sin tag) | Reutiliza datos (secuencial) |
-| `@no-reset` | Nunca resetea (reutiliza datos del anterior) |
+| `@no-reset` | **Nunca resetea** (reutiliza datos, incluso en CI) |
 | `@reset` | Siempre resetea |
-| CI mode (`CI=true`) | Siempre resetea (ignora tags) |
 
-**Ejemplo de uso:**
+> **Nota sobre CI**: A diferencia de versiones anteriores, el modo CI **respeta** el tag `@no-reset` para permitir la ejecución de historias de usuario completas que dependen del estado anterior (ej: Crear paciente -> Editar paciente -> Añadir historial).
 
-```gherkin
-Feature: Invoice Management
+## Reglas de Oro (Auditadas)
 
-  Scenario: Create invoice
-    # Resetea (primer escenario)
-    When I create an invoice
-    Then it should be saved
-
-  @no-reset
-  Scenario: Edit invoice shows existing data
-    # NO resetea - reutiliza la factura creada
-    When I click edit on the first invoice
-    Then the form should show the invoice data
-```
-
-**Implementación en `common/bdd.ts`:**
-
-```typescript
-const hasNoResetTag = testInfo.tags.includes('@no-reset');
-const hasResetTag = testInfo.tags.includes('@reset');
-
-if (isCI || hasResetTag) {
-  shouldReset = true;
-} else if (hasNoResetTag) {
-  shouldReset = false;
-} else if (isFirstScenarioOfFeature) {
-  shouldReset = true;
-}
-```
-
-### Autenticación
-
-```typescript
-// En steps
-import { loginAsAdmin } from '../../common/auth';
-
-Given('I am logged in as an administrator', async ({ page, context }) => {
-  await loginAsAdmin(page, context);
-});
-```
-
-## Reglas clave
-
-1. **Sin waits explícitos** - Usar `waitFor()`, `waitForLoadState()`, expects
-2. **Selectores semánticos** - `getByRole()`, `getByText()`, `getByLabel()` sobre CSS/IDs
-3. **Steps atómicos** - Una acción o aserción por step
-4. **Sin cleanup** - Los datos persisten para debugging post-fallo
+1. **Sin waits explícitos** - `waitForTimeout` está **PROHIBIDO**. Usa `waitFor()`, `expect().toBeVisible()`, o `waitForLoadState('networkidle')`.
+2. **Selectores semánticos** - Usa `getByRole()`, `getByLabel()`, `getByText()`. Evita selectores CSS frágiles (`#id`, `.class`).
+3. **Datos Dinámicos** - Usa las factorías en `tests/e2e/factories/` en lugar de strings fijos.
+4. **Validación Robusta** - Sincroniza las aserciones con los datos generados por la factoría.
+   * *Mal*: `expect(locator).toHaveValue("12345678A")`
+   * *Bien*: `expect(locator).toHaveValue(testPatient.taxId)`
 
 ## Steps Genéricos Disponibles
 
@@ -129,16 +111,4 @@ Then I should see {n} rows in the table
 Then the table should contain "{text}"
 Then the "{name}" button should be visible
 Then the "{name}" button should be disabled
-```
-
-## Anti-patrones
-
-```typescript
-// MAL
-await page.waitForTimeout(5000);
-await page.locator('#submit-btn').click();
-
-// BIEN
-await page.waitForLoadState('networkidle');
-await page.getByRole('button', { name: 'Submit' }).click();
 ```
