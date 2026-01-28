@@ -8,16 +8,16 @@ import { When, Then } from '../../common/bdd';
 When('I fill the invoice form with:', async ({ page }, dataTable) => {
   const rows = dataTable.rowsHash();
 
-  const fieldMap: Record<string, string> = {
-    'Customer Name': '#invoice-customerName',
-    'Customer Tax ID': '#invoice-customerTaxId',
-    'Customer Address': '#invoice-customerAddress',
+  const fieldMap: Record<string, RegExp> = {
+    'Customer Name': /Customer Name|Nombre del Cliente/i,
+    'Customer Tax ID': /Tax Identifier|Identificador Fiscal/i,
+    'Customer Address': /Address|Direcci.n/i,
   };
 
   for (const [key, value] of Object.entries(rows)) {
-    const selector = fieldMap[key];
-    if (selector) {
-      await page.locator(selector).fill(value);
+    const label = fieldMap[key];
+    if (label) {
+      await page.getByLabel(label).fill(value);
     } else {
       throw new Error(`Field mapping not found for: ${key}`);
     }
@@ -42,7 +42,9 @@ When('I save the invoice', async ({ page }) => {
 });
 
 When('I click edit on the first invoice', async ({ page }) => {
-  const row = page.locator('tbody tr').first();
+  // Use getByRole('row') assuming 1 header row.
+  // The first data row is nth(1).
+  const row = page.getByRole('row').nth(1);
   await expect(row).toBeVisible({ timeout: 10000 });
   await row.getByRole('link', { name: /Edit|Editar/i }).click();
   await expect(page).toHaveURL(/\/invoices\/\d+\/edit/);
@@ -55,16 +57,16 @@ When('I click edit on the first invoice', async ({ page }) => {
 Then('the invoice form should contain:', async ({ page }, dataTable) => {
   const rows = dataTable.rowsHash();
 
-  const fieldMap: Record<string, string> = {
-    'Customer Name': '#invoice-customerName',
-    'Customer Tax ID': '#invoice-customerTaxId',
-    'Customer Address': '#invoice-customerAddress',
+  const fieldMap: Record<string, RegExp> = {
+    'Customer Name': /Customer Name|Nombre del Cliente/i,
+    'Customer Tax ID': /Tax Identifier|Identificador Fiscal/i,
+    'Customer Address': /Address|Direcci.n/i,
   };
 
   for (const [key, value] of Object.entries(rows)) {
-    const selector = fieldMap[key];
-    if (selector) {
-      await expect(page.locator(selector)).toHaveValue(value);
+    const label = fieldMap[key];
+    if (label) {
+      await expect(page.getByLabel(label)).toHaveValue(value);
     } else {
       throw new Error(`Field mapping not found for: ${key}`);
     }

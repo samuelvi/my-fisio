@@ -1,5 +1,7 @@
 import { expect } from '@playwright/test';
 import { Given, When, Then, test } from '../../common/bdd';
+import { patientFactory } from '../../factories/patient.factory';
+import { recordFactory } from '../../factories/record.factory';
 
 // Store patient ID for the test session
 let testPatientId: string;
@@ -14,15 +16,17 @@ Given('a test patient exists for records', async ({ page, request }) => {
 
   // Create a patient to add records to
   const token = await page.evaluate(() => localStorage.getItem('token'));
+  const testPatient = patientFactory.build();
+  
   const createResponse = await request.post('/api/patients', {
     headers: {
       'Content-Type': 'application/ld+json',
       'Authorization': `Bearer ${token}`
     },
     data: {
-      firstName: 'Draft',
-      lastName: 'Patient',
-      allergies: 'None'
+      firstName: testPatient.firstName,
+      lastName: testPatient.lastName,
+      allergies: testPatient.allergies
     }
   });
   const patient = await createResponse.json();
@@ -43,15 +47,17 @@ Given('all record drafts are cleared', async ({ page }) => {
 
 Given('a record draft exists with savedByError true for test patient', async ({ page }) => {
   const patientId = testPatientId;
-  await page.addInitScript((pid) => {
+  const record = recordFactory.build({ consultationReason: 'Reload Test', patient: `/api/patients/${patientId}` });
+  
+  await page.addInitScript((data) => {
     localStorage.setItem('draft_record', JSON.stringify({
       type: 'record',
-      data: { consultationReason: 'Reload Test', patient: `/api/patients/${pid}` },
+      data: data,
       timestamp: Date.now(),
       formId: 'test-123',
       savedByError: true
     }));
-  }, patientId);
+  }, record);
 });
 
 Given('a record draft exists with savedByError true and data for test patient:', async ({ page }, dataTable) => {

@@ -42,15 +42,23 @@ Then('the {string} link should be visible', async ({ page }, name: string) => {
 // =============================================================================
 
 Then('I should see {int} rows in the table', async ({ page }, count: number) => {
-  await expect(page.locator('tbody tr')).toHaveCount(count, { timeout: 10000 });
+  // Assuming standard table with 1 header row.
+  // We expect count + 1 rows total.
+  // If count is 0, we expect 1 row (the header) or 0 if no table.
+  // But usually empty table has header + "no results" or just header.
+  // If "No results" is a row, then count 0 might mean 2 rows?
+  // Let's assume the user means data rows.
+  // Strategy: Count all rows.
+  await expect(page.getByRole('row')).toHaveCount(count + 1, { timeout: 10000 });
 });
 
 Then('the table should contain {string}', async ({ page }, text: string) => {
-  await expect(page.locator('tbody')).toContainText(text);
+  await expect(page.getByRole('table')).toContainText(text);
 });
 
 Then('the table should be empty', async ({ page }) => {
-  await expect(page.locator('tbody tr')).toHaveCount(0);
+  // Empty means only header row exists (1 row total).
+  await expect(page.getByRole('row')).toHaveCount(1);
 });
 
 // =============================================================================
@@ -74,13 +82,15 @@ Then('I should not see a loading indicator', async ({ page }) => {
 // =============================================================================
 
 Then('I should see an error message', async ({ page }) => {
-  await expect(page.locator('[role="alert"], .error, .alert-danger, .text-red-600')).toBeVisible();
+  await expect(page.getByRole('alert')).toBeVisible();
 });
 
 Then('I should see a success message', async ({ page }) => {
-  await expect(page.locator('[role="alert"], .success, .alert-success, .text-green-600')).toBeVisible();
+  // Success messages might not always have role=alert depending on implementation (e.g. toasts)
+  // But they should.
+  await expect(page.getByRole('alert')).toBeVisible();
 });
 
 Then('I should see an error message containing {string}', async ({ page }, text: string) => {
-  await expect(page.locator('body')).toContainText(new RegExp(text, 'i'));
+  await expect(page.getByRole('alert')).toContainText(new RegExp(text, 'i'));
 });

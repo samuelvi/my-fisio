@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { Given, When, Then } from '../../common/bdd';
+import { CalendarHelper } from '../../common/helpers/calendar.helper';
 
 // =============================================================================
 // Network Control Steps
@@ -36,7 +37,7 @@ Given('the server will return 500 on appointment creation', async ({ page }) => 
 // =============================================================================
 
 When('I fill the appointment title with {string}', async ({ page }, title: string) => {
-  const titleInput = page.locator('form input[type="text"]').first();
+  const titleInput = page.getByRole('textbox').first();
   await expect(titleInput).toBeVisible();
   await titleInput.fill(title);
 });
@@ -49,7 +50,7 @@ When('I create a quick appointment with title {string}', async ({ page }, title:
   const newBtn = page.getByTestId('new-appointment-btn');
   await newBtn.click();
 
-  const titleInput = page.locator('form input[type="text"]').first();
+  const titleInput = page.getByRole('textbox').first();
   await expect(titleInput).toBeVisible();
   await titleInput.fill(title);
 
@@ -61,8 +62,7 @@ When('I create a quick appointment with title {string}', async ({ page }, title:
 });
 
 When('the appointment {string} appears in the calendar', async ({ page }, title: string) => {
-  const event = page.locator('.fc-event', { hasText: title }).first();
-  await expect(event).toBeVisible();
+  await CalendarHelper.verifyEventVisible(page, title);
 });
 
 When('I should see the edit appointment heading', async ({ page }) => {
@@ -70,18 +70,16 @@ When('I should see the edit appointment heading', async ({ page }) => {
 });
 
 When('I should see the delete confirmation dialog', async ({ page }) => {
-  await expect(page.locator('h3', { hasText: /Delete|Borrar/i }).last()).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Delete|Borrar/i }).last()).toBeVisible();
 });
 
 When('I drag the appointment {string} to another time slot', async ({ page }, title: string) => {
-  const event = page.locator('.fc-event', { hasText: title }).first();
-  const target = page.locator('.fc-timegrid-col').last();
-  await event.dragTo(target, { force: true });
+  await CalendarHelper.dragEvent(page, title);
 });
 
 When('I dismiss the alert', async ({ page }) => {
-  const alert = page.locator('#status-alert');
-  await alert.locator('button').click();
+  const alert = page.getByRole('alert');
+  await alert.getByRole('button').click();
 });
 
 // =============================================================================
@@ -89,31 +87,31 @@ When('I dismiss the alert', async ({ page }) => {
 // =============================================================================
 
 Then('I should see the status alert', async ({ page }) => {
-  await expect(page.locator('#status-alert')).toBeVisible();
+  await expect(page.getByRole('alert')).toBeVisible();
 });
 
 Then('I should see the status alert with connection error', async ({ page }) => {
-  const alert = page.locator('#status-alert');
+  const alert = page.getByRole('alert');
   await expect(alert).toBeVisible();
   await expect(alert).toContainText(/Error de conexi.n|Connection Error/i);
 });
 
 Then('I should see the status alert with server error', async ({ page }) => {
-  const alert = page.locator('#status-alert');
+  const alert = page.getByRole('alert');
   await expect(alert).toBeVisible();
   await expect(alert).toContainText(/Error del servidor|Server Error/i);
 });
 
 Then('the alert should contain {string}', async ({ page }, text: string) => {
-  const alert = page.locator('#status-alert');
+  const alert = page.getByRole('alert');
   await expect(alert).toContainText(text);
 });
 
 Then('the status alert should not be visible', async ({ page }) => {
-  await expect(page.locator('#status-alert')).not.toBeVisible();
+  await expect(page.getByRole('alert')).not.toBeVisible();
 });
 
 Then('the appointment modal should not be visible', async ({ page }) => {
-  const modal = page.locator('h3').filter({ hasText: /Nueva Cita|New Appointment/i });
+  const modal = page.getByRole('heading', { name: /Nueva Cita|New Appointment/i });
   await expect(modal).not.toBeVisible();
 });

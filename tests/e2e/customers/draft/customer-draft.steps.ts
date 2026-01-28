@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { Given, When, Then } from '../../common/bdd';
+import { customerFactory } from '../../factories/customer.factory';
 
 // =============================================================================
 // Draft Setup Steps
@@ -14,15 +15,16 @@ Given('all customer drafts are cleared', async ({ page }) => {
 });
 
 Given('a customer draft exists with savedByError true', async ({ page }) => {
-  await page.addInitScript(() => {
+  const customer = customerFactory.build({ firstName: 'Reload Test' });
+  await page.addInitScript((data) => {
     localStorage.setItem('draft_customer', JSON.stringify({
       type: 'customer',
-      data: { firstName: 'Reload Test' },
+      data: data,
       timestamp: Date.now(),
       formId: 'test-123',
       savedByError: true
     }));
-  });
+  }, customer);
 });
 
 Given('a customer draft exists with savedByError true and data:', async ({ page }, dataTable) => {

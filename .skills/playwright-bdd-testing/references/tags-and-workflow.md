@@ -57,7 +57,7 @@ Feature: User Registration
 **Feature-level auto-reset**:
 - **First scenario**: Database automatically truncated
 - **Subsequent scenarios**: Reuse data (sequential journey)
-- **In CI**: ALL scenarios reset (independence)
+- **In CI**: Respects @no-reset to support sequential journeys, but defaults to reset if untagged (configurable)
 
 ```gherkin
 Feature: Product Catalog
@@ -244,10 +244,9 @@ npm run test:headed -- invoices.feature
 ### CI Mode (GitHub Actions, GitLab, etc)
 
 **Characteristics**:
-- ALL scenarios reset database (independence)
-- Tags @no-reset are IGNORED
-- Tests can run in any order
-- Full isolation
+- **Respects @no-reset** to maintain sequential flow integrity
+- **Defaults to reset** for untagged scenarios to ensure isolation
+- Tests run in parallel at Feature level
 
 **Configuration**:
 ```bash
@@ -258,7 +257,7 @@ CI=true
 TEST_MODE=ci
 ```
 
-**Result**: Every scenario is independent, no shared state.
+**Result**: Features run in parallel, but scenarios within a feature respect the sequential flow defined by tags.
 
 ## Real-World Example
 
@@ -434,11 +433,11 @@ TEST_MODE=ci npm run test
 - **@reset**: Explicit database reset (new flow)
 - **@no-reset**: Explicit reuse data (verification)
 - **No tag**: Auto-reset first scenario, share data after
-- **CI mode**: ALL scenarios reset (independence)
-- **Dev mode**: Respect tags (fast iteration)
+- **CI mode**: Respects tags (sequential integrity)
+- **Dev mode**: Respects tags (fast iteration)
 
 This approach balances:
 - **Development speed**: Iterate quickly without recreating data
-- **Test reliability**: CI ensures all tests are independent
+- **Test reliability**: CI respects sequential flows while isolating features
 - **Readability**: User journeys flow naturally in features
 - **Flexibility**: Explicit control with tags when needed

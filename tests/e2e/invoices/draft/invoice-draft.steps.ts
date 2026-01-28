@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { Given, When, Then } from '../../common/bdd';
+import { invoiceFactory } from '../../factories/invoice.factory';
 
 // =============================================================================
 // Draft Setup Steps
@@ -14,15 +15,16 @@ Given('all invoice drafts are cleared', async ({ page }) => {
 });
 
 Given('an invoice draft exists with savedByError true', async ({ page }) => {
-  await page.addInitScript(() => {
+  const invoice = invoiceFactory.build({ fullName: 'Reload Test' });
+  await page.addInitScript((data) => {
     localStorage.setItem('draft_invoice', JSON.stringify({
       type: 'invoice',
-      data: { customerName: 'Reload Test' },
+      data: { ...data, customerName: data.fullName }, // Map fullName to customerName for draft
       timestamp: Date.now(),
       formId: 'test-123',
       savedByError: true
     }));
-  });
+  }, invoice);
 });
 
 Given('an invoice draft exists with savedByError true and data:', async ({ page }, dataTable) => {
@@ -57,7 +59,7 @@ Given('the invoice draft has line:', async ({ page }, dataTable) => {
 // =============================================================================
 
 When('I fill the invoice customer name with {string}', async ({ page }, value: string) => {
-  await page.locator('#invoice-customerName').fill(value);
+  await page.getByLabel(/Nombre del Cliente|Customer Name/i).fill(value);
 });
 
 When('I fill the invoice line concept with {string}', async ({ page }, value: string) => {
@@ -68,13 +70,13 @@ When('I fill the invoice draft form with:', async ({ page }, dataTable) => {
   const rows = dataTable.rowsHash();
 
   if (rows.customerName) {
-    await page.locator('#invoice-customerName').fill(rows.customerName);
+    await page.getByLabel(/Nombre del Cliente|Customer Name/i).fill(rows.customerName);
   }
   if (rows.customerTaxId) {
-    await page.locator('#invoice-customerTaxId').fill(rows.customerTaxId);
+    await page.getByLabel(/Identificador Fiscal|Tax Identifier/i).fill(rows.customerTaxId);
   }
   if (rows.customerAddress) {
-    await page.locator('#invoice-customerAddress').fill(rows.customerAddress);
+    await page.getByLabel(/Address|Direcci.n/i).fill(rows.customerAddress);
   }
 });
 
@@ -130,7 +132,7 @@ Then('the invoice draft should be marked as savedByError', async ({ page }) => {
 });
 
 Then('the invoice customer name field should have value {string}', async ({ page }, value: string) => {
-  await expect(page.locator('#invoice-customerName')).toHaveValue(value);
+  await expect(page.getByLabel(/Nombre del Cliente|Customer Name/i)).toHaveValue(value);
 });
 
 Then('the invoice line concept should have value {string}', async ({ page }, value: string) => {

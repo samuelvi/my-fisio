@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { Given, When, Then } from '../../common/bdd';
+import { patientFactory } from '../../factories/patient.factory';
 
 // =============================================================================
 // Draft Setup Steps
@@ -14,15 +15,16 @@ Given('all patient drafts are cleared', async ({ page }) => {
 });
 
 Given('a patient draft exists with savedByError true', async ({ page }) => {
-  await page.addInitScript(() => {
+  const patient = patientFactory.build({ firstName: 'Reload Test' });
+  await page.addInitScript((data) => {
     localStorage.setItem('draft_patient', JSON.stringify({
       type: 'patient',
-      data: { firstName: 'Reload Test' },
+      data: data,
       timestamp: Date.now(),
       formId: 'test-123',
       savedByError: true
     }));
-  });
+  }, patient);
 });
 
 Given('a patient draft exists with savedByError true and data:', async ({ page }, dataTable) => {
@@ -59,7 +61,7 @@ When('I fill the patient form with:', async ({ page }, dataTable) => {
 });
 
 When('I fill the patient allergies with {string}', async ({ page }, value: string) => {
-  await page.locator('#allergies').fill(value);
+  await page.getByLabel(/Allergies|Alergias/i).fill(value);
 });
 
 When('I click the restore patient draft button', async ({ page }) => {

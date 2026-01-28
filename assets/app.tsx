@@ -8,6 +8,7 @@ import { LanguageProvider } from './components/LanguageContext';
 
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
+import Login from './components/Login';
 import PatientList from './components/PatientList';
 import PatientDetail from './components/PatientDetail';
 import PatientForm from './components/PatientForm';
@@ -76,22 +77,23 @@ axios.interceptors.response.use(
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
     const isAuthenticated = !!localStorage.getItem('token');
     if (!isAuthenticated) {
-        window.location.href = '/login?expired=1';
-        return null;
+        return <Navigate to="/login?expired=1" replace />;
     }
     return <>{children}</>;
 };
 
 function App() {
     const isAuthenticated = !!localStorage.getItem('token');
-    if (!isAuthenticated) {
-        window.location.href = '/login';
-        return null;
-    }
 
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/login" element={
+                    isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+                } />
+
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
                 <Route path="/dashboard" element={
                     <ProtectedRoute>
                         <Layout>

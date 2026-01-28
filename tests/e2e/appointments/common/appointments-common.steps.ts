@@ -1,11 +1,16 @@
 import { expect } from '@playwright/test';
 import { Given, When, Then } from '../../common/bdd';
+import { CalendarHelper } from '../../common/helpers/calendar.helper';
 
 // =============================================================================
 // Calendar Setup
 // =============================================================================
 
 Given('the calendar is loaded', async ({ page }) => {
+  // Using a specific role or text that confirms calendar presence would be better than .fc,
+  // but if .fc is the only way, we keep it or better, expect a specific calendar view element.
+  // For now, let's stick to .fc as it's an internal implementation detail of FullCalendar.
+  // Ideally, we should wait for a day header or time grid.
   await page.waitForSelector('.fc');
 });
 
@@ -22,13 +27,11 @@ When('I click the new appointment button', async ({ page }) => {
 });
 
 When('I click on the appointment {string} in the calendar', async ({ page }, titleText: string) => {
-  const event = page.locator('.fc-event').filter({ hasText: titleText }).first();
-  await expect(event).toBeVisible({ timeout: 10000 });
-  await event.click({ force: true });
+  await CalendarHelper.clickEvent(page, titleText);
 });
 
 When('I click the delete appointment button', async ({ page }) => {
-  await page.locator('button[title*="Delete"], button[title*="Borrar"]').click();
+  await page.getByRole('button', { name: /Delete|Borrar/i }).click();
 });
 
 When('I confirm the deletion', async ({ page }) => {
@@ -41,9 +44,9 @@ When('I confirm the deletion', async ({ page }) => {
 // =============================================================================
 
 Then('the appointment {string} should appear in the calendar', async ({ page }, titleText: string) => {
-  await expect(page.locator('.fc-event').filter({ hasText: titleText }).first()).toBeVisible({ timeout: 15000 });
+  await CalendarHelper.verifyEventVisible(page, titleText);
 });
 
 Then('the appointment {string} should not appear in the calendar', async ({ page }, titleText: string) => {
-  await expect(page.locator('.fc-event').filter({ hasText: titleText })).toHaveCount(0);
+  await CalendarHelper.verifyEventHidden(page, titleText);
 });

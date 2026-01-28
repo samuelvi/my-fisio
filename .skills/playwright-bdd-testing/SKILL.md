@@ -239,7 +239,7 @@ Scenario: Verify user data
 ### Default Behavior (no tags)
 - **First scenario of feature**: Automatically resets database
 - **Subsequent scenarios**: Reuse data from previous (sequential journey)
-- **In CI mode**: ALL scenarios reset (test independence)
+- **In CI mode**: Respects @no-reset to support sequential journeys, but defaults to reset if untagged (configurable)
 
 ## Configuration Example
 
@@ -294,4 +294,4 @@ export default defineConfig({
 7. **Truncate at Feature Start** - First scenario resets, preserve data after
 8. **Atomic Steps** - One action/assertion per step
 9. **Reusable Steps** - Organize by domain, build composable library
-10. **CI Independence** - All scenarios independent in CI (tags ignored)
+10. **CI Compatibility** - CI respects @no-reset tags to maintain sequential flow integrity

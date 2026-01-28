@@ -572,8 +572,9 @@ export default function Calendar() {
                                     </div>
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t('title')}</label>
+                                            <label htmlFor="appointment-title" className="block text-sm font-semibold text-gray-700 mb-1">{t('title')}</label>
                                             <input
+                                                id="appointment-title"
                                                 ref={titleInputRef}
                                                 type="text"
                                                 className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
@@ -597,8 +598,9 @@ export default function Calendar() {
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('start')}</label>
+                                                <label htmlFor="appointment-start" className="block text-sm font-semibold text-gray-700 mb-1">{t('start')}</label>
                                                 <DatePicker
+                                                    id="appointment-start"
                                                     selected={formData.startsAt ? new Date(formData.startsAt) : null}
                                                     onChange={(date) => setFormData({...formData, startsAt: date ? toSimpleDateTimeString(date) : ''})}
                                                     showTimeSelect
@@ -611,8 +613,9 @@ export default function Calendar() {
                                                 />
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-semibold text-gray-700 mb-1">{t('end')}</label>
+                                                <label htmlFor="appointment-end" className="block text-sm font-semibold text-gray-700 mb-1">{t('end')}</label>
                                                 <DatePicker
+                                                    id="appointment-end"
                                                     selected={formData.endsAt ? new Date(formData.endsAt) : null}
                                                     onChange={(date) => setFormData({...formData, endsAt: date ? toSimpleDateTimeString(date) : ''})}
                                                     showTimeSelect
@@ -631,8 +634,8 @@ export default function Calendar() {
                                             </div>
                                         )}
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t('notes')}</label>
-                                            <textarea rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
+                                            <label htmlFor="appointment-notes" className="block text-sm font-semibold text-gray-700 mb-1">{t('notes')}</label>
+                                            <textarea id="appointment-notes" rows={3} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-4 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})}></textarea>
                                         </div>
                                     </div>
                                 </div>

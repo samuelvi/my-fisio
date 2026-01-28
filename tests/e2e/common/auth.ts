@@ -3,16 +3,17 @@
  */
 
 import { Page, BrowserContext, expect } from '@playwright/test';
+import { AUTH_CREDENTIALS } from './constants';
 
 /**
- * Login as admin user (tina@tinafisio.com) bypassing the UI form for speed and stability.
+ * Login as admin user bypassing the UI form for speed and stability.
  */
 export async function loginAsAdmin(page: Page, context: BrowserContext): Promise<void> {
   // 1. Get token via API using context request
   const loginResponse = await context.request.post('/api/login_check', {
     data: {
-      username: 'tina@tinafisio.com',
-      password: 'password'
+      username: AUTH_CREDENTIALS.username,
+      password: AUTH_CREDENTIALS.password
     }
   });
   

@@ -43,4 +43,4 @@ Feature: Patient Creation
     And I click the save patient button
     Then the URL should contain "/patients/"
     When I click the edit details button
-    Then the patient DNI field should have value "12345678A"
+    Then the patient DNI field should have the test data value

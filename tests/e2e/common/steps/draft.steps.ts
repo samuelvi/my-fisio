@@ -10,9 +10,9 @@ When('I wait for potential auto-save', async ({ page }) => {
 });
 
 Then('I should see the draft alert', async ({ page }) => {
-  await expect(page.locator('#draft-alert')).toBeVisible({ timeout: 15000 });
+  await expect(page.getByRole('alert').filter({ hasText: /draft|borrador/i })).toBeVisible({ timeout: 15000 });
 });
 
 Then('I should not see the draft alert', async ({ page }) => {
-  await expect(page.locator('#draft-alert')).not.toBeVisible();
+  await expect(page.getByRole('alert').filter({ hasText: /draft|borrador/i })).not.toBeVisible();
 });

@@ -1,5 +1,6 @@
 import { expect } from '@playwright/test';
 import { When, Then } from '../../common/bdd';
+import { CalendarHelper } from '../../common/helpers/calendar.helper';
 
 // =============================================================================
 // Appointment Form Steps (calendar-specific)
@@ -9,32 +10,35 @@ When('I fill the appointment form with:', async ({ page }, dataTable) => {
   const rows = dataTable.rowsHash();
 
   if (rows['Title']) {
-    const titleInput = page.locator('label').filter({ hasText: /Title|T.tulo/i }).locator('..').locator('input');
-    await titleInput.fill(rows['Title']);
+    await page.getByLabel(/Title|T.tulo/i).fill(rows['Title']);
   }
 
   if (rows['Type']) {
     const typeLabel = rows['Type'] === 'Appointment' ? /Appointment|Cita/i :
                       rows['Type'] === 'Other' ? /Other|Otro/i : new RegExp(rows['Type'], 'i');
-    await page.locator('label').filter({ hasText: typeLabel }).click();
+    // Using getByLabel might click the input associated with the label.
+    // If it's a radio button or similar, getByLabel should work.
+    // If it's a custom component where label is separate, we might need more care.
+    // Assuming standard accessible form controls.
+    // Since the input might be sr-only (visually hidden) for custom styling, we force the click.
+    await page.getByLabel(typeLabel).click({ force: true });
   }
 
   if (rows['Notes']) {
-    const notesTextarea = page.locator('label').filter({ hasText: /Notes|Notas/i }).locator('..').locator('textarea');
-    await notesTextarea.fill(rows['Notes']);
+    await page.getByLabel(/Notes|Notas/i).fill(rows['Notes']);
   }
 });
 
 When('I set the appointment start time to today at {int}:{int}', async ({ page }, hour: number, minute: number) => {
   const dateTime = await buildLocalDateTime(page, { hour, minute });
-  const input = page.locator('label').filter({ hasText: /Start|Inicio/i }).locator('..').locator('input');
+  const input = page.getByLabel(/Start|Inicio/i);
   await input.fill(dateTime.picker);
   await input.press('Enter');
 });
 
 When('I set the appointment end time to today at {int}:{int}', async ({ page }, hour: number, minute: number) => {
   const dateTime = await buildLocalDateTime(page, { hour, minute });
-  const input = page.locator('label').filter({ hasText: /End|Fin/i }).locator('..').locator('input');
+  const input = page.getByLabel(/End|Fin/i);
   await input.fill(dateTime.picker);
   await input.press('Enter');
 });
@@ -48,7 +52,13 @@ When('I save the appointment', async ({ page }) => {
     ),
     page.getByTestId('save-appointment-btn').click(),
   ]);
-  await expect(page.locator('.fixed.inset-0')).toBeHidden({ timeout: 10000 });
+  // Use a more generic check for modal/overlay disappearance
+  // If the overlay has no role, we might need a test id or fallback to locator if it's structural.
+  // Using getByRole('dialog') is preferred if available.
+  // If not, we might check that the form is hidden.
+  // The original checked .fixed.inset-0. Let's try checking if the form is hidden or dialog is hidden.
+  // Or check if the "New Appointment" heading is hidden.
+  await expect(page.getByRole('heading', { name: /New Appointment|Nueva Cita/i })).toBeHidden({ timeout: 10000 });
 });
 
 // =============================================================================
@@ -56,7 +66,7 @@ When('I save the appointment', async ({ page }) => {
 // =============================================================================
 
 Then('the appointment {string} should be scheduled for today', async ({ page }, titleText: string) => {
-  const slotInfo = await getEventSlotInfo(page, titleText);
+  const slotInfo = await CalendarHelper.getEventSlotInfo(page, titleText);
   const today = await page.evaluate(() => {
     const date = new Date();
     const pad = (num: number) => String(num).padStart(2, '0');
@@ -93,17 +103,3 @@ async function buildLocalDateTime(page, { hour, minute }: { hour: number; minute
   }, { hour, minute });
 }
 
-async function getEventSlotInfo(page, titleText: string) {
-  return await page.evaluate((title) => {
-    const eventEl = Array.from(document.querySelectorAll('.fc-event'))
-      .find((el) => el.textContent && el.textContent.includes(title));
-    if (!eventEl) return null;
-    const timeEl = eventEl.querySelector('.fc-event-time');
-    const timeText = (timeEl?.textContent || eventEl.textContent || '').trim();
-    const column = eventEl.closest('.fc-timegrid-col');
-    return {
-      timeText,
-      date: column?.getAttribute('data-date') || null,
-    };
-  }, titleText);
-}
