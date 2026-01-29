@@ -5,9 +5,9 @@ Feature: Patient Search
 
   Background:
     Given I am logged in as an administrator
-    And the database has fixture data
 
   Scenario: Normal search is case-insensitive
+    Given the database has fixture data
     When I navigate to "/patients"
     And I search for patient "afirst"
     Then the table should contain "AFirst"

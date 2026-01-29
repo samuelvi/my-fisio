@@ -25,6 +25,7 @@ export default defineConfig({
     timeout: 30000,
   },
   timeout: 120000,
+  grepInvert: /@ignore/,
   projects: [
     {
       name: 'bdd',
