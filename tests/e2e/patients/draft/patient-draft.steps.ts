@@ -78,22 +78,22 @@ When('I confirm the patient draft restoration', async ({ page }) => {
 // =============================================================================
 
 Then('the patient draft should not exist', async ({ page }) => {
-  const draftData = await page.evaluate(() => localStorage.getItem('draft_patient'));
-  expect(draftData).toBeNull();
+  await expect.poll(async () => {
+    return await page.evaluate(() => localStorage.getItem('draft_patient'));
+  }).toBeNull();
 });
 
 Then('the patient draft should exist', async ({ page }) => {
-  const draftData = await page.evaluate(() => localStorage.getItem('draft_patient'));
-  expect(draftData).not.toBeNull();
+  await expect.poll(async () => {
+    return await page.evaluate(() => localStorage.getItem('draft_patient'));
+  }).not.toBeNull();
 });
 
 Then('the patient draft should be marked as savedByError', async ({ page }) => {
-  const draftData = await page.evaluate(() => {
-    const data = localStorage.getItem('draft_patient');
-    return data ? JSON.parse(data) : null;
-  });
-  expect(draftData).not.toBeNull();
-  expect(draftData.savedByError).toBe(true);
+  await expect.poll(async () => {
+    const data = await page.evaluate(() => localStorage.getItem('draft_patient'));
+    return data ? JSON.parse(data).savedByError : null;
+  }).toBe(true);
 });
 
 Then('the patient first name field should have value {string}', async ({ page }, value: string) => {

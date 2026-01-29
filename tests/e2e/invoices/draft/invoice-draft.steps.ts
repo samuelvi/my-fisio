@@ -113,22 +113,22 @@ When('I confirm the invoice draft action', async ({ page }) => {
 // =============================================================================
 
 Then('the invoice draft should not exist', async ({ page }) => {
-  const draftData = await page.evaluate(() => localStorage.getItem('draft_invoice'));
-  expect(draftData).toBeNull();
+  await expect.poll(async () => {
+    return await page.evaluate(() => localStorage.getItem('draft_invoice'));
+  }).toBeNull();
 });
 
 Then('the invoice draft should exist', async ({ page }) => {
-  const draftData = await page.evaluate(() => localStorage.getItem('draft_invoice'));
-  expect(draftData).not.toBeNull();
+  await expect.poll(async () => {
+    return await page.evaluate(() => localStorage.getItem('draft_invoice'));
+  }).not.toBeNull();
 });
 
 Then('the invoice draft should be marked as savedByError', async ({ page }) => {
-  const draftData = await page.evaluate(() => {
-    const data = localStorage.getItem('draft_invoice');
-    return data ? JSON.parse(data) : null;
-  });
-  expect(draftData).not.toBeNull();
-  expect(draftData.savedByError).toBe(true);
+  await expect.poll(async () => {
+    const data = await page.evaluate(() => localStorage.getItem('draft_invoice'));
+    return data ? JSON.parse(data).savedByError : null;
+  }).toBe(true);
 });
 
 Then('the invoice customer name field should have value {string}', async ({ page }, value: string) => {

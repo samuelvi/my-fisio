@@ -61,31 +61,29 @@ When('I confirm the customer draft restoration', async ({ page }) => {
 // =============================================================================
 
 Then('the customer draft should not exist', async ({ page }) => {
-  const draftData = await page.evaluate(() => localStorage.getItem('draft_customer'));
-  expect(draftData).toBeNull();
+  await expect.poll(async () => {
+    return await page.evaluate(() => localStorage.getItem('draft_customer'));
+  }).toBeNull();
 });
 
 Then('the customer draft should exist', async ({ page }) => {
-  const draftData = await page.evaluate(() => localStorage.getItem('draft_customer'));
-  expect(draftData).not.toBeNull();
+  await expect.poll(async () => {
+    return await page.evaluate(() => localStorage.getItem('draft_customer'));
+  }).not.toBeNull();
 });
 
 Then('the draft should have firstName {string}', async ({ page }, expectedName: string) => {
-  const draftData = await page.evaluate(() => {
-    const data = localStorage.getItem('draft_customer');
-    return data ? JSON.parse(data) : null;
-  });
-  expect(draftData).not.toBeNull();
-  expect(draftData.data.firstName).toBe(expectedName);
+  await expect.poll(async () => {
+    const data = await page.evaluate(() => localStorage.getItem('draft_customer'));
+    return data ? JSON.parse(data).data.firstName : null;
+  }).toBe(expectedName);
 });
 
 Then('the draft should be marked as savedByError', async ({ page }) => {
-  const draftData = await page.evaluate(() => {
-    const data = localStorage.getItem('draft_customer');
-    return data ? JSON.parse(data) : null;
-  });
-  expect(draftData).not.toBeNull();
-  expect(draftData.savedByError).toBe(true);
+  await expect.poll(async () => {
+    const data = await page.evaluate(() => localStorage.getItem('draft_customer'));
+    return data ? JSON.parse(data).savedByError : null;
+  }).toBe(true);
 });
 
 Then('the customer first name field should have value {string}', async ({ page }, value: string) => {

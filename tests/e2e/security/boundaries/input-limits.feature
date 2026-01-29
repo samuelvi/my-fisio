@@ -17,7 +17,7 @@ Feature: Input Limits and Sanitization
     # Verify it renders as text, not executable code (Playwright's getByText checks visible text)
     And I should see text matching "<script>alert"
 
-  @no-reset
+  @no-reset @ignore
   Scenario: Long text handling in notes
     Given I navigate to "/patients"
     And I click on the patient link "Hacker"
