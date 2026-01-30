@@ -6,43 +6,96 @@ This guide covers deploying the Physiotherapy Clinic Management System to any pr
 
 ## Quick Start
 
-### Automated Build (Recommended)
+### 1. One-Time Setup
 
-Use the dedicated isolated production build to prepare your application:
+**Configure your target server:**
+Create or edit `.env.local` in your project root and add your production server details:
 
-```bash
-make prod-build
+```ini
+###> production/deployment ###
+# Format: user@host:/path/to/app
+DEPLOY_SERVER=user@your-domain.com:/var/www/html
+###< production/deployment ###
 ```
 
-This command uses a **dedicated Docker container** to build the application in isolation and exports the artifacts to the `dist/` directory. It ensures:
-- ✅ **Isolation**: Your local development environment (vendor, node_modules) is NOT touched.
-- ✅ **Cleanliness**: The `dist/` folder contains *only* what is needed for production.
-- ✅ **Optimization**: Installs production dependencies, compiles assets, and generates optimized configuration.
+**Setup Passwordless Deployment (Optional but Recommended):**
+To avoid typing your password every time you deploy, set up SSH keys.
 
-**Output:** A `dist/` folder containing the ready-to-deploy application.
+#### Option A: Use Default Key (Quickest)
+If you already have a default key (`~/.ssh/id_rsa`) and want to reuse it:
 
-### Deploying
+1.  **Copy it to your server:**
+    ```bash
+    ssh-copy-id user@your-domain.com
+    ```
 
-Once built, you can deploy the contents of the `dist/` folder to your server:
+#### Option B: Dedicated Key (Best Practice)
+It is safer to generate a specific key for production so it's separate from your GitHub/personal keys.
+
+1.  **Generate a specific key:**
+    ```bash
+    # -f defines the filename
+    ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_prod_key
+    ```
+2.  **Copy this specific key to the server:**
+    ```bash
+    ssh-copy-id -i ~/.ssh/id_prod_key.pub user@your-domain.com
+    ```
+3.  **Configure your SSH Client:**
+    Edit (or create) your `~/.ssh/config` file to map the key to the host:
+    
+    ```ssh
+    # ~/.ssh/config
+    Host your-domain.com
+        User user
+        IdentityFile ~/.ssh/id_prod_key
+    ```
+
+Now, when you run `make prod-release`, SSH (and rsync) will automatically use the correct key for that domain.
+
+### 2. Build & Deploy
+
+Run a single command to build the application in an isolated Docker container and deploy it:
 
 ```bash
-make prod-deploy server=user@your-server:/var/www/html
+make prod-release
 ```
 
-Or manually using rsync:
+**What this does:**
+1.  **Builds** a clean, optimized artifact in `var/releases/vYYYYMMDD...` (ignoring local dev files).
+2.  **Uploads** the artifact to your server via `rsync`.
+3.  **Executes** remote tasks (migrations, cache clearing) automatically.
 
+**Rollback:**
+To redeploy a specific previous version from your local history:
 ```bash
-rsync -avz --exclude='.git' dist/ user@your-server:/var/www/html/
+make prod-release tag=v20260130120000
 ```
 
 ---
 
-## Understanding the Workflow
+## Detailed Workflow (Under the Hood)
 
-1.  **Build**: `make prod-build` creates a temporary Docker container, runs the build process (composer install --no-dev, npm run build, cache warmup), and copies the result to `dist/`.
-2.  **Deploy**: You simply copy the content of `dist/` to your production server's document root.
+### Automated Build
 
-This strategy prevents "works on my machine" issues and ensures you don't accidentally deploy development files or configuration.
+The `make prod-release` command triggers an isolated build process:
+
+- ✅ **Isolation**: Your local development environment (vendor, node_modules) is NOT touched.
+- ✅ **Cleanliness**: The release folder contains *only* what is needed for production.
+- ✅ **Optimization**: Installs production dependencies, compiles assets with Vite, and pre-warms the cache.
+
+**Output:** A timestamped folder in `var/releases/` containing the ready-to-deploy application.
+
+### Deployment Strategy
+
+The system uses `rsync` to synchronize the built artifact with your server.
+- **Includes:** Optimized vendor, compiled assets (`public/build`), source code.
+- **Excludes:** `.git`, tests, docker config, dev tools (`php-cs-fixer`), and environment secrets (`.env.local`).
+
+After file sync, it connects via SSH to run:
+1. `composer dump-env prod` (optimizes .env)
+2. `doctrine:migrations:migrate` (updates database)
+3. `cache:clear` & `cache:warmup`
 
 ---
 
