@@ -18,6 +18,11 @@ final class Version20260125000000 extends AbstractMigration
         return 'Creates cache_items table for PDO cache adapter (rate limiting)';
     }
 
+    public function isTransactional(): bool
+    {
+        return false;
+    }
+
     public function up(Schema $schema): void
     {
         $this->addSql('CREATE TABLE cache_items (
