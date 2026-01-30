@@ -70,65 +70,10 @@ test-assets-build: ## Build frontend assets in test environment
 
 ##@ Production Build & Deploy
 
-prod-build: ## Build production artifacts in isolated container and export to dist/
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)Production Build (Isolated)$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Building isolated production image...$(NC)"
-	docker build -f docker/prod/dist/Dockerfile -t physiotherapy-dist .
-	@echo ""
-	@echo "$(YELLOW)Exporting to dist/ folder...$(NC)"
-	@mkdir -p dist
-	@CONTAINER_ID=$$(docker create physiotherapy-dist); \
-	echo "Container created: $$CONTAINER_ID"; \
-	rm -rf dist/*; \
-	docker cp $$CONTAINER_ID:/var/www/html/. dist/; \
-	echo "Files copied to dist/"; \
-	docker rm $$CONTAINER_ID > /dev/null; \
-	echo "Container removed"
-	@echo ""
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo "$(GREEN)Build exported to ./dist/$(NC)"
-	@echo "$(GREEN)=========================================$(NC)"
-	@echo ""
-	@echo "$(YELLOW)Ready to deploy!$(NC)"
+##@ Production Build & Deploy
 
-prod-deploy: ## Deploy to production server (use: make prod-deploy server=user@host:/path)
-	@if [ -z "$(server)" ]; then \
-		echo "$(RED)Error: server parameter required$(NC)"; \
-		echo "$(YELLOW)Usage: make prod-deploy server=user@host:/path/to/app$(NC)"; \
-		exit 1; \
-	fi
-	@if [ ! -d "dist" ]; then \
-		echo "$(RED)Error: dist/ directory not found.$(NC)"; \
-		echo "$(YELLOW)Please run 'make prod-build' first.$(NC)"; \
-		exit 1; \
-	fi
-	@echo "$(YELLOW)Deploying 'dist/' to $(server)...$(NC)"
-	@echo "$(YELLOW)⚠ This will overwrite files on the server$(NC)"
-	@read -p "Continue? [y/N] " -n 1 -r; \
-	echo; \
-	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
-		rsync -avz --progress \
-			--exclude='.git' \
-			--exclude='node_modules' \
-			--exclude='var/cache' \
-			--exclude='var/log' \
-			--exclude='docker' \
-			--exclude='tests' \
-			--exclude='.env.dev' \
-			--exclude='.env.test' \
-			--exclude='.env.local' \
-			dist/ $(server)/; \
-		echo "$(GREEN)✓ Deployment completed!$(NC)"; \
-		echo "$(YELLOW)Don't forget to:$(NC)"; \
-		echo "  1. Set APP_ENV=prod on the server"; \
-		echo "  2. Run migrations: php bin/console doctrine:migrations:migrate --env=prod"; \
-		echo "  3. Verify application is working"; \
-	else \
-		echo "$(YELLOW)Deployment cancelled$(NC)"; \
-	fi
+prod-release: ## Build and deploy (config in .env.local via DEPLOY_SERVER)
+	@SERVER="$(server)" TAG="$(tag)" ./scripts/release.sh
 
 
 ##@ Container Access (Dev)

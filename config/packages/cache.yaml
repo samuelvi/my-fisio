@@ -18,9 +18,6 @@ framework:
 when@prod:
     framework:
         cache:
-            # Use PDO/database in production (works on shared hosting like IONOS)
-            # For better performance, override in config/packages/prod/cache.yaml with:
-            #   - cache.adapter.apcu (if APCu extension available)
-            #   - cache.adapter.redis (for multi-server deployments)
-            app: cache.adapter.pdo
-            default_pdo_provider: 'doctrine.dbal.default_connection'
+            # Use Database (Doctrine DBAL) for cache in production
+            # This is stable and doesn't require Redis
+            app: cache.adapter.doctrine_dbal
