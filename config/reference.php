@@ -2046,7 +2046,6 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     api_platform?: ApiPlatformConfig,
  *     lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *     pentatrion_vite?: PentatrionViteConfig,
- *     snc_redis?: SncRedisConfig,
  *     fos_js_routing?: FosJsRoutingConfig,
  *     "when@dev"?: array{
  *         imports?: ImportsConfig,
@@ -2085,7 +2084,6 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *         api_platform?: ApiPlatformConfig,
  *         lexik_jwt_authentication?: LexikJwtAuthenticationConfig,
  *         pentatrion_vite?: PentatrionViteConfig,
- *         snc_redis?: SncRedisConfig,
  *         fos_js_routing?: FosJsRoutingConfig,
  *     },
  *     "when@test"?: array{

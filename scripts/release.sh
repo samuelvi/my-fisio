@@ -62,47 +62,66 @@ echo -e "${YELLOW}[3/4] Deploying to $HOST:$REMOTE_PATH...${NC}"
 echo -e "${YELLOW}⚠ This will overwrite files on the server. Continuing in 3 seconds...${NC}"
 sleep 3
 
-rsync -avz --progress \
+rsync -avz --delete --progress \
     --include='composer.phar' \
+    --exclude='.DS_Store' \
+    --exclude='.dockerignore' \
+    --exclude='.editorconfig' \
+    --exclude='.env' \
+    --exclude='.env.dev' \
+    --exclude='.env.test' \
+    --exclude='.env.local' \
+    --exclude='.env.prod' \
+    --exclude='.env.prod.local' \
+    --exclude='.env.local.php' \
+    --exclude='.features-gen/' \
     --exclude='.git/' \
     --exclude='.github/' \
+    --exclude='.gitignore' \
+    --exclude='.gitignore.additions' \
     --exclude='.agents/' \
     --exclude='.skills/' \
     --exclude='.claude/' \
     --exclude='.idea/' \
     --exclude='.vscode/' \
+    --exclude='.phpunit.cache/' \
+    --exclude='agents' \
+    --exclude='assets/' \
+    --exclude='claude-*' \
+    --exclude='gemini-*' \
+    --exclude='openai-*' \
+    --exclude='skills' \
+    --exclude='docs/' \
+    --exclude='docker/' \
     --exclude='node_modules/' \
+    --exclude='private/' \
+    --exclude='scripts/' \
+    --exclude='tests/' \
+    --exclude='test-results/' \
     --exclude='var/cache/' \
     --exclude='var/log/' \
     --exclude='var/sessions/' \
-    --exclude='docker/' \
-    --exclude='tests/' \
-    --exclude='scripts/' \
-    --exclude='private/' \
-    --exclude='.env.dev' \
-    --exclude='.env.test' \
-    --exclude='.env.local' \
-    --exclude='.env.prod.local' \
-    --exclude='.env.local.php' \
     --exclude='Makefile' \
+    --exclude='package.json' \
+    --exclude='package-lock.json' \
+    --exclude='tsconfig*.json' \
+    --exclude='vite.config.js' \
+    --exclude='tailwind.config.js' \
+    --exclude='postcss.config.js' \
+    --exclude='playwright.config.ts' \
+    --exclude='docker-compose*' \
+    --exclude='compose.yaml' \
+    --exclude='compose.override.yaml' \
     --exclude='*.md' \
     --exclude='*.dist' \
     --exclude='*.lock' \
     --include='composer.lock' \
-    --include='package-lock.json' \
     --include='symfony.lock' \
     --exclude='.php-cs-fixer*' \
     --exclude='/phpstan*' \
     --exclude='/phpunit*' \
     --exclude='/rector.php' \
-    --exclude='/playwright*' \
-    --exclude='/tsconfig*' \
-    --exclude='/vite.config.js' \
-    --exclude='/tailwind.config.js' \
-    --exclude='/postcss.config.js' \
-    --exclude='/compose.yaml' \
-    --exclude='/compose.override.yaml' \
-    --exclude='/docker-compose*' \
+    --exclude='config/jwt/' \
     "$RELEASE_DIR/" "$HOST:$REMOTE_PATH/"
 
 echo ""
@@ -110,13 +129,13 @@ echo ""
 # --- 3. POST-DEPLOY TASKS (SSH) ---
 echo -e "${YELLOW}[4/4] Running remote post-deployment tasks...${NC}"
 
-# Use Heredoc for cleaner remote command execution
-ssh "$HOST" /bin/bash << EOF
+# We pass REMOTE_PATH as an environment variable to the SSH session
+ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     set -e
-    cd $REMOTE_PATH
+    cd "$REMOTE_PATH"
+    export APP_ENV=prod
     
-    # 1. Detect correct PHP CLI binary (Critical for IONOS/Shared Hosting)
-    # We prioritize specific versions and CLI variants to avoid CGI binaries that output headers
+    # 1. Detect correct PHP CLI binary
     if command -v php8.4-cli >/dev/null 2>&1; then
         PHP_BIN='php8.4-cli'
     elif command -v php8.3-cli >/dev/null 2>&1; then
@@ -129,29 +148,49 @@ ssh "$HOST" /bin/bash << EOF
         PHP_BIN='php'
     fi
     
-    echo "Using PHP binary: \$PHP_BIN"
+    echo "Using PHP binary: $PHP_BIN"
     
     # 2. Determine Composer command
     if command -v composer >/dev/null 2>&1; then
-        COMPOSER_CMD="\$PHP_BIN \$(command -v composer)"
+        COMPOSER_CMD="$PHP_BIN $(command -v composer)"
     elif [ -f ./composer.phar ]; then
-        COMPOSER_CMD="\$PHP_BIN composer.phar"
+        COMPOSER_CMD="$PHP_BIN ./composer.phar"
     else
         echo "Error: Composer not found."
         exit 1
     fi
     
-    echo "Using composer command: \$COMPOSER_CMD"
+    echo "Using composer command: $COMPOSER_CMD"
+
+    echo "  > Cleaning up development files..."
+    rm -rf .DS_Store .dockerignore .editorconfig .env.prod .features-gen .gitignore .gitignore.additions .phpunit.cache agents assets claude-* gemini-* openai-* skills docs package.json package-lock.json test-results sync-server.sh
+
+    echo "  > Checking JWT keys..."
+    $PHP_BIN bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction --env=prod
 
     echo "  > Regenerating .env.local.php..."
-    \$COMPOSER_CMD dump-env prod
+    $COMPOSER_CMD dump-env prod
     
-    echo "  > Running migrations..."
-    \$PHP_BIN bin/console doctrine:migrations:migrate --no-interaction
+    echo "  > Checking database state..."
+    if $PHP_BIN bin/console dbal:run-sql "SELECT 1 FROM doctrine_migration_versions LIMIT 1" --env=prod >/dev/null 2>&1; then
+        echo "    - Existing installation detected."
+        echo "    - Running migrations..."
+        $PHP_BIN bin/console doctrine:migrations:migrate --no-interaction --env=prod
+    else
+        echo "    - Fresh installation detected (No migration table)."
+        echo "    - Initializing schema directly..."
+        $PHP_BIN bin/console doctrine:schema:create --no-interaction --env=prod
+        
+        echo "    - Syncing migration storage..."
+        $PHP_BIN bin/console doctrine:migrations:sync-metadata-storage --env=prod
+        
+        echo "    - Marking migrations as executed..."
+        $PHP_BIN bin/console doctrine:migrations:version --add --all --no-interaction --env=prod
+    fi
     
-    echo "  > Clearing cache..."
-    \$PHP_BIN bin/console cache:clear
-    \$PHP_BIN bin/console cache:warmup
+    echo "  > Clearing and warming up cache..."
+    rm -rf var/cache/*
+    $PHP_BIN bin/console cache:warmup --env=prod
 EOF
 
 echo ""

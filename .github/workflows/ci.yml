@@ -78,6 +78,7 @@ jobs:
       # --- Dependencies ---
       - name: Install Composer dependencies
         run: |
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test git config --global --add safe.directory /var/www/html
           docker compose -f docker/test/docker-compose.yaml exec -T php_test \
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
@@ -173,6 +174,7 @@ jobs:
       # --- Dependencies ---
       - name: Install Composer dependencies
         run: |
+          docker compose -f docker/test/docker-compose.yaml exec -T php_test git config --global --add safe.directory /var/www/html
           docker compose -f docker/test/docker-compose.yaml exec -T php_test \
             composer install --no-interaction --prefer-dist --optimize-autoloader
 
