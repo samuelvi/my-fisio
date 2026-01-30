@@ -6,24 +6,11 @@
 set -e # Exit on error
 
 # --- Load Environment Variables ---
-# We load .env first, then override with .env.local if it exists
-if [ -f .env ]; then
-    set -a
-    source .env
-    set +a
-fi
+if [ -f .env ]; then set -a; source .env; set +a; fi
+if [ -f .env.local ]; then set -a; source .env.local; set +a; fi
 
-if [ -f .env.local ]; then
-    set -a
-    source .env.local
-    set +a
-fi
-# ----------------------------------
-
-# Configuration priority: Arg 1 > Env Var SERVER > .env.local DEPLOY_SERVER
+# Configuration priority
 SERVER="${1:-${SERVER:-$DEPLOY_SERVER}}"
-
-# Configuration priority: Arg 2 > Env Var TAG > Date-based generation
 TAG="${2:-${TAG:-v$(date +'%Y%m%d%H%M%S')}}"
 APP_NAME="physiotherapy-dist"
 RELEASE_DIR="var/releases/$TAG"
@@ -55,10 +42,16 @@ echo -e "${YELLOW}[2/4] Exporting artifact...${NC}"
 mkdir -p "$RELEASE_DIR"
 CONTAINER_ID=$(docker create "$APP_NAME:$TAG")
 rm -rf "$RELEASE_DIR"/*
-docker cp "$CONTAINER_ID:/var/www/html/." "$RELEASE_DIR/"
-docker rm "$CONTAINER_ID" > /dev/null
 
-echo -e "${GREEN}✓ Artifact saved to $RELEASE_DIR${NC}"
+# Copy application files
+docker cp "$CONTAINER_ID:/var/www/html/." "$RELEASE_DIR/"
+
+# Copy composer binary from the container itself
+echo -e "${YELLOW}Extracting composer from Docker image...${NC}"
+docker cp "$CONTAINER_ID:/usr/bin/composer" "$RELEASE_DIR/composer.phar"
+
+docker rm "$CONTAINER_ID" > /dev/null
+echo -e "${GREEN}✓ Artifact and tools saved to $RELEASE_DIR${NC}"
 echo ""
 
 # --- 2. DEPLOY (RSYNC) ---
@@ -70,6 +63,7 @@ echo -e "${YELLOW}⚠ This will overwrite files on the server. Continuing in 3 s
 sleep 3
 
 rsync -avz --progress \
+    --include='composer.phar' \
     --exclude='.git/' \
     --exclude='.github/' \
     --exclude='.agents/' \
@@ -80,6 +74,7 @@ rsync -avz --progress \
     --exclude='node_modules/' \
     --exclude='var/cache/' \
     --exclude='var/log/' \
+    --exclude='var/sessions/' \
     --exclude='docker/' \
     --exclude='tests/' \
     --exclude='scripts/' \
@@ -87,6 +82,8 @@ rsync -avz --progress \
     --exclude='.env.dev' \
     --exclude='.env.test' \
     --exclude='.env.local' \
+    --exclude='.env.prod.local' \
+    --exclude='.env.local.php' \
     --exclude='Makefile' \
     --exclude='*.md' \
     --exclude='*.dist' \
@@ -95,34 +92,67 @@ rsync -avz --progress \
     --include='package-lock.json' \
     --include='symfony.lock' \
     --exclude='.php-cs-fixer*' \
-    --exclude='phpstan*' \
-    --exclude='phpunit*' \
-    --exclude='rector.php' \
-    --exclude='playwright*' \
-    --exclude='tsconfig*' \
-    --exclude='vite.config.js' \
-    --exclude='tailwind.config.js' \
-    --exclude='postcss.config.js' \
-    --exclude='compose.yaml' \
-    --exclude='compose.override.yaml' \
-    --exclude='docker-compose*' \
+    --exclude='/phpstan*' \
+    --exclude='/phpunit*' \
+    --exclude='/rector.php' \
+    --exclude='/playwright*' \
+    --exclude='/tsconfig*' \
+    --exclude='/vite.config.js' \
+    --exclude='/tailwind.config.js' \
+    --exclude='/postcss.config.js' \
+    --exclude='/compose.yaml' \
+    --exclude='/compose.override.yaml' \
+    --exclude='/docker-compose*' \
     "$RELEASE_DIR/" "$HOST:$REMOTE_PATH/"
 
 echo ""
 
 # --- 3. POST-DEPLOY TASKS (SSH) ---
 echo -e "${YELLOW}[4/4] Running remote post-deployment tasks...${NC}"
-# We try to use local composer.phar if available, otherwise global composer
-ssh "$HOST" "cd $REMOTE_PATH && \
-    COMPOSER_CMD='composer'; \
-    if [ -f composer.phar ]; then COMPOSER_CMD='php composer.phar'; fi; \
-    echo '  > Regenerating .env.local.php...' && \
-    \$COMPOSER_CMD dump-env prod && \
-    echo '  > Running migrations...' && \
-    php bin/console doctrine:migrations:migrate --no-interaction && \
-    echo '  > Clearing cache...' && \
-    php bin/console cache:clear && \
-    php bin/console cache:warmup"
+
+# Use Heredoc for cleaner remote command execution
+ssh "$HOST" /bin/bash << EOF
+    set -e
+    cd $REMOTE_PATH
+    
+    # 1. Detect correct PHP CLI binary (Critical for IONOS/Shared Hosting)
+    # We prioritize specific versions and CLI variants to avoid CGI binaries that output headers
+    if command -v php8.4-cli >/dev/null 2>&1; then
+        PHP_BIN='php8.4-cli'
+    elif command -v php8.3-cli >/dev/null 2>&1; then
+        PHP_BIN='php8.3-cli'
+    elif command -v php8.2-cli >/dev/null 2>&1; then
+        PHP_BIN='php8.2-cli'
+    elif command -v php-cli >/dev/null 2>&1; then
+        PHP_BIN='php-cli'
+    else
+        PHP_BIN='php'
+    fi
+    
+    echo "Using PHP binary: \$PHP_BIN"
+    
+    # 2. Determine Composer command
+    if command -v composer >/dev/null 2>&1; then
+        COMPOSER_CMD="\$PHP_BIN \$(command -v composer)"
+    elif [ -f ./composer.phar ]; then
+        COMPOSER_CMD="\$PHP_BIN composer.phar"
+    else
+        echo "Error: Composer not found."
+        exit 1
+    fi
+    
+    echo "Using composer command: \$COMPOSER_CMD"
+
+    echo "  > Regenerating .env.local.php..."
+    \$COMPOSER_CMD dump-env prod
+    
+    echo "  > Running migrations..."
+    \$PHP_BIN bin/console doctrine:migrations:migrate --no-interaction
+    
+    echo "  > Clearing cache..."
+    \$PHP_BIN bin/console cache:clear
+    \$PHP_BIN bin/console cache:warmup
+EOF
 
 echo ""
 echo -e "${GREEN}=========================================${NC}"

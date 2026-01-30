@@ -116,3 +116,4 @@ tests/e2e/features/tests/
 
 # Scripts locales de despliegue
 /deploy/
+composer.phar
