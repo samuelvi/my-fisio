@@ -24,7 +24,7 @@ doctrine_migrations:
     em: null
 
     # All or nothing approach (transactional migrations)
-    all_or_nothing: true
+    all_or_nothing: false
 
     # Custom migration template (optional)
     # custom_template: null
