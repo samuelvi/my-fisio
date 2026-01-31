@@ -92,6 +92,7 @@ sync-server.sh
 ###> pentatrion/vite-bundle ###
 /node_modules/
 /public/build/
+/public/logo.png
 ###< pentatrion/vite-bundle ###
 
 ###> phpstan/phpstan ###

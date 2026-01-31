@@ -25,7 +25,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </svg>
         )},
         { name: t('patients'), href: '/patients', icon: (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
         )},
@@ -46,9 +46,40 @@ export default function Layout({ children }: { children: ReactNode }) {
         )},
     ];
 
+    const Logo = ({ size = "w-[42px] h-[42px]", textSize = "text-xl", iconColor = "text-primary", bgColor = "bg-white" }: { size?: string, textSize?: string, iconColor?: string, bgColor?: string }) => {
+        const rawPath = (import.meta.env.VITE_COMPANY_LOGO_PATH || '').replace(/"/g, '');
+        const appTitle = (import.meta.env.VITE_APP_TITLE || 'M').replace(/"/g, '');
+        const initial = appTitle.charAt(0).toUpperCase();
+        const [imgError, setImgError] = useState(false);
+
+        // Sanitize path: remove 'public/' prefix and ensure single leading slash
+        const sanitizedPath = rawPath
+            .replace(/^public\//, '') // Remove public/ if present
+            .replace(/^\/+/, '');     // Remove any leading slashes
+
+        if (sanitizedPath && sanitizedPath.trim() !== '' && !imgError) {
+            return (
+                <div className={`${size} bg-white rounded-full flex items-center justify-center shadow-lg shadow-black/10 shrink-0 overflow-hidden border border-gray-100`}>
+                    <img 
+                        src={`/${sanitizedPath}`} 
+                        alt="Logo" 
+                        className="w-full h-full object-contain p-1"
+                        onError={() => setImgError(true)}
+                    />
+                </div>
+            );
+        }
+
+        return (
+            <div className={`${size} ${bgColor} rounded-full flex items-center justify-center shadow-lg shadow-black/10 shrink-0`}>
+                <span className={`${textSize} font-black ${iconColor} leading-none flex items-center justify-center`}>{initial}</span>
+            </div>
+        );
+    };
+
     return (
         <div className="min-h-screen bg-[#F8FAFC]">
-            <aside 
+            <aside
                 className={`fixed inset-y-0 left-0 bg-primary border-r border-primary-dark/20 hidden lg:block z-20 transition-all duration-300 ${
                     isSidebarCollapsed ? 'w-20' : 'w-64'
                 }`}
@@ -65,11 +96,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
                     <div className="p-4">
                         <div className={`flex items-center ${isSidebarCollapsed ? 'justify-center' : 'space-x-3 px-4'} mb-10 h-10`}>
-                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg shadow-black/10 shrink-0">
-                                <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                                </svg>
-                            </div>
+                            <Logo />
                             {!isSidebarCollapsed && (
                                 <span className="text-xl font-black text-white whitespace-nowrap">{import.meta.env.VITE_APP_TITLE}</span>
                             )}
@@ -84,8 +111,8 @@ export default function Layout({ children }: { children: ReactNode }) {
                                         to={item.href}
                                         title={isSidebarCollapsed ? item.name : ''}
                                         className={`flex items-center ${isSidebarCollapsed ? 'justify-center px-0' : 'space-x-3 px-4'} py-3 rounded-xl transition-all duration-200 group ${
-                                            isActive 
-                                            ? 'bg-primary-light text-white shadow-md shadow-black/10' 
+                                            isActive
+                                            ? 'bg-primary-light text-white shadow-md shadow-black/10'
                                             : 'text-white/70 hover:bg-white/10 hover:text-white'
                                         }`}
                                     >
@@ -107,13 +134,13 @@ export default function Layout({ children }: { children: ReactNode }) {
                                 <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">{t('language')}</p>
                             )}
                             <div className={`flex ${isSidebarCollapsed ? 'flex-col space-y-2' : 'space-x-2'}`}>
-                                <button 
+                                <button
                                     onClick={() => changeLanguage('en')}
                                     className={`flex-1 text-[10px] font-black py-2 rounded-lg transition-all ${language === 'en' ? 'bg-white text-primary shadow-sm' : 'text-white/60 hover:text-white'}`}
                                 >
                                     EN
                                 </button>
-                                <button 
+                                <button
                                     onClick={() => changeLanguage('es')}
                                     className={`flex-1 text-[10px] font-black py-2 rounded-lg transition-all ${language === 'es' ? 'bg-white text-primary shadow-sm' : 'text-white/60 hover:text-white'}`}
                                 >
@@ -140,11 +167,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             <header className="lg:hidden bg-white border-b border-gray-200 sticky top-0 z-30">
                 <div className="flex items-center justify-between px-4 py-4">
                     <div className="flex items-center space-x-2">
-                        <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                        </div>
+                        <Logo size="w-[34px] h-[34px]" textSize="text-sm" iconColor="text-white" bgColor="bg-primary" />
                         <span className="font-black text-gray-900">{import.meta.env.VITE_APP_TITLE}</span>
                     </div>
                     <button

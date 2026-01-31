@@ -593,11 +593,11 @@ You can customize the invoice details and the company logo through the environme
     ```
 
 2.  **Company Logo**: 
-    -   Place your logo file in the `private/` directory (e.g., `private/logo.png`).
+    -   Place your logo file in the `public/` directory (e.g., `public/logo.png`).
     -   Update the `COMPANY_LOGO_PATH` variable in `.env.dev.local`:
         
         ```dotenv
-        COMPANY_LOGO_PATH="private/logo.png"
+        COMPANY_LOGO_PATH="/logo.png"
         ```
     
     *Note: Files in `private/` are ignored by git (except `.gitkeep`), keeping your assets secure and local.*

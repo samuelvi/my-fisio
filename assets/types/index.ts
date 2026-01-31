@@ -108,5 +108,5 @@ export interface DashboardStats {
 
 export interface HealthCheck {
     status: 'ok' | 'degraded' | 'loading';
-    checks: Record<string, { ok: boolean }>;
+    checks: { [key: string]: { ok: boolean } };
 }

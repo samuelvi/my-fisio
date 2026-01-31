@@ -270,7 +270,7 @@ COMPANY_ADDRESS_LINE2="City, ZIP, Country"
 COMPANY_PHONE="+34 000 000 000"
 COMPANY_EMAIL="info@yourclinic.com"
 COMPANY_WEB="www.yourclinic.com"
-COMPANY_LOGO_PATH="private/logo.png"          # Place logo in private/
+COMPANY_LOGO_PATH="/logo.png"          # Place logo in public/
 ```
 
 **Frontend Variables (Vite):**
