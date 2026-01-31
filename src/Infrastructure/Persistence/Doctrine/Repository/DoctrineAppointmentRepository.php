@@ -63,6 +63,11 @@ final class DoctrineAppointmentRepository extends ServiceEntityRepository implem
                ->setParameter('end', $filters['endsAt']);
         }
 
+        if (isset($filters['patientId'])) {
+            $qb->andWhere('a.patient = :patientId')
+               ->setParameter('patientId', $filters['patientId']);
+        }
+
         return $qb->getQuery()->getArrayResult();
     }
 

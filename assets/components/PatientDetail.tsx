@@ -31,10 +31,24 @@ export default function PatientDetail() {
         const fetchData = async () => {
             if (!id) return;
             setLoading(true);
+            
+            // Get current date and time in YYYY-MM-DDTHH:mm:ss format
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const nowStr = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
+
             const [patientResult, appointmentsResult] = await Promise.allSettled([
                 axios.get<Patient>(Routing.generate('api_patients_get', { id })),
                 axios.get(Routing.generate('api_appointments_collection'), {
-                    params: { patientId: id }
+                    params: { 
+                        patientId: id,
+                        start: nowStr
+                    }
                 })
             ]);
 

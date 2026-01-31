@@ -41,8 +41,12 @@ class AppointmentProvider implements ProviderInterface
         if (isset($filters['endsAt']['before'])) {
             $searchFilters['endsAt'] = $filters['endsAt']['before'];
         }
+
+        if (isset($filters['patientId'])) {
+            $searchFilters['patientId'] = (int) $filters['patientId'];
+        }
         
-        // 2. Try to get dates from FullCalendar compatibility (start/end parameters)
+        // 2. Try to get parameters from Request query (FullCalendar compatibility)
         if ($request) {
             if (null !== $start = $request->query->get('start')) {
                 $searchFilters['startsAt'] = $start;
@@ -50,14 +54,24 @@ class AppointmentProvider implements ProviderInterface
             if (null !== $end = $request->query->get('end')) {
                 $searchFilters['endsAt'] = $end;
             }
+            if (null !== $pId = $request->query->get('patientId')) {
+                $searchFilters['patientId'] = (int) $pId;
+            }
         }
 
-        // 3. MANDATORY VALIDATION: start and end must be present
-        if (!isset($searchFilters['startsAt']) || !isset($searchFilters['endsAt'])) {
-            throw new BadRequestHttpException('Filtros de fecha "start" y "end" son obligatorios para consultar citas.');
+        // 3. VALIDATION: start and end must be present UNLESS patientId is provided
+        if (!isset($searchFilters['patientId']) && (!isset($searchFilters['startsAt']) || !isset($searchFilters['endsAt']))) {
+            throw new BadRequestHttpException('Filtros de fecha "start" y "end" son obligatorios para consultar citas globales.');
         }
 
         $appointments = $this->repository->searchAsArray($searchFilters);
+
+        // Sort by startsAt ascending
+        usort($appointments, function($a, $b) {
+            $dateA = $a['startsAt'] instanceof \DateTimeInterface ? $a['startsAt'] : new \DateTime((string) $a['startsAt']);
+            $dateB = $b['startsAt'] instanceof \DateTimeInterface ? $b['startsAt'] : new \DateTime((string) $b['startsAt']);
+            return $dateA->getTimestamp() <=> $dateB->getTimestamp();
+        });
 
         return array_map([$this, 'mapToResource'], $appointments);
     }

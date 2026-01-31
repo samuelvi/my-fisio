@@ -295,13 +295,18 @@ export default function Calendar() {
     };
 
     const handlePatientChange = (patient: Patient | null) => {
+        const previousPatient = selectedPatient;
         setSelectedPatient(patient);
         setFormData(prev => ({ ...prev, patientId: patient ? patient.id : null }));
         setPatientError(undefined);
 
         if (patient) {
             setFormData(prev => {
-                if (!prev.title || prev.title.trim() === '') {
+                const currentTitle = prev.title || '';
+                const prevPatientName = previousPatient ? `${previousPatient.firstName} ${previousPatient.lastName}` : '';
+                
+                // Update title if it's empty OR if it matches the previous patient's name
+                if (currentTitle.trim() === '' || currentTitle === prevPatientName) {
                     return { ...prev, title: `${patient.firstName} ${patient.lastName}` };
                 }
                 return prev;
@@ -633,15 +638,6 @@ export default function Calendar() {
                                         <div>
                                             <div className="flex justify-between items-center mb-1">
                                                 <label className="block text-sm font-semibold text-gray-700">{t('patient')}</label>
-                                                {selectedPatient && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => navigate(`/patients/${selectedPatient.id}`)}
-                                                        className="text-[10px] text-primary hover:text-primary-dark font-black uppercase tracking-widest flex items-center transition-colors"
-                                                    >
-                                                        {t('view_profile') || 'View Profile'} →
-                                                    </button>
-                                                )}
                                             </div>
                                             <PatientAutocomplete
                                                 value={selectedPatient}

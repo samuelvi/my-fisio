@@ -6,8 +6,8 @@ import { useLanguage } from './LanguageContext';
 
 export default function Login() {
     const { language, t, changeLanguage } = useLanguage();
-    const [email, setEmail] = useState<string>('');
-    const [password, setPassword] = useState<string>('');
+    const [email, setEmail] = useState<string>(import.meta.env.VITE_AUTH_EMAIL as string || '');
+    const [password, setPassword] = useState<string>(import.meta.env.VITE_AUTH_PASSWORD as string || '');
     const [error, setError] = useState<string | null>(null);
     const [sessionExpired, setSessionExpired] = useState<boolean>(false);
     const location = useLocation();
@@ -22,12 +22,6 @@ export default function Login() {
             setSessionExpired(true);
             localStorage.removeItem('token');
         }
-
-        // Dev/test convenience: auto-fill login form (empty in production)
-        const envEmail = import.meta.env.VITE_AUTH_EMAIL as string;
-        const envPassword = import.meta.env.VITE_AUTH_PASSWORD as string;
-        if (envEmail) setEmail(envEmail);
-        if (envPassword) setPassword(envPassword);
     }, [location.search]);
 
     useEffect(() => {
