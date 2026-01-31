@@ -64,64 +64,16 @@ sleep 3
 
 rsync -avz --delete --progress \
     --include='composer.phar' \
+    --include='public/build/**' \
     --exclude='.DS_Store' \
-    --exclude='.dockerignore' \
-    --exclude='.editorconfig' \
-    --exclude='.env' \
-    --exclude='.env.dev' \
-    --exclude='.env.test' \
-    --exclude='.env.local' \
-    --exclude='.env.prod' \
-    --exclude='.env.prod.local' \
-    --exclude='.env.local.php' \
-    --exclude='.features-gen/' \
     --exclude='.git/' \
     --exclude='.github/' \
-    --exclude='.gitignore' \
-    --exclude='.gitignore.additions' \
-    --exclude='.agents/' \
-    --exclude='.skills/' \
-    --exclude='.claude/' \
-    --exclude='.idea/' \
-    --exclude='.vscode/' \
-    --exclude='.phpunit.cache/' \
-    --exclude='agents' \
-    --exclude='assets/' \
-    --exclude='claude-*' \
-    --exclude='gemini-*' \
-    --exclude='openai-*' \
-    --exclude='skills' \
-    --exclude='docs/' \
-    --exclude='docker/' \
     --exclude='node_modules/' \
-    --exclude='private/' \
-    --exclude='scripts/' \
-    --exclude='tests/' \
-    --exclude='test-results/' \
     --exclude='var/cache/' \
     --exclude='var/log/' \
-    --exclude='var/sessions/' \
-    --exclude='Makefile' \
-    --exclude='package.json' \
-    --exclude='package-lock.json' \
-    --exclude='tsconfig*.json' \
-    --exclude='vite.config.js' \
-    --exclude='tailwind.config.js' \
-    --exclude='postcss.config.js' \
-    --exclude='playwright.config.ts' \
-    --exclude='docker-compose*' \
-    --exclude='compose.yaml' \
-    --exclude='compose.override.yaml' \
+    --exclude='tests/' \
+    --exclude='assets/' \
     --exclude='*.md' \
-    --exclude='*.dist' \
-    --exclude='*.lock' \
-    --include='composer.lock' \
-    --include='symfony.lock' \
-    --exclude='.php-cs-fixer*' \
-    --exclude='/phpstan*' \
-    --exclude='/phpunit*' \
-    --exclude='/rector.php' \
-    --exclude='config/jwt/' \
     "$RELEASE_DIR/" "$HOST:$REMOTE_PATH/"
 
 echo ""

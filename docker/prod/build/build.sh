@@ -48,12 +48,22 @@ npm run build
 echo -e "${GREEN}✓ Frontend assets compiled${NC}"
 echo ""
 
-# Step 5: Clear and warm up cache
-echo -e "${YELLOW}[5/6] Clearing and warming up Symfony cache...${NC}"
-php bin/console cache:clear --env=prod --no-warmup
-php bin/console cache:warmup --env=prod
-echo -e "${GREEN}✓ Cache cleared and warmed up${NC}"
+# Step 5: Generate JWT keys (if they don't exist)
+echo -e "${YELLOW}[5/7] Checking JWT keys...${NC}"
+mkdir -p config/jwt
+if [ ! -f config/jwt/private.pem ]; then
+    # Use dummy env for key generation if .env is missing
+    JWT_SECRET_KEY=%kernel.project_dir%/config/jwt/private.pem \
+    JWT_PUBLIC_KEY=%kernel.project_dir%/config/jwt/public.pem \
+    JWT_PASSPHRASE=temporary_passphrase_for_build \
+    php bin/console lexik:jwt:generate-keypair --no-interaction --env=prod || echo "Warning: JWT keys generation failed, will try on server"
+else
+    echo "JWT keys already exist"
+fi
+echo -e "${GREEN}✓ JWT keys checked${NC}"
 echo ""
+
+# Step 6: Clear and warm up cache
 
 # Step 7: Set proper permissions
 echo -e "${YELLOW}[7/7] Setting permissions...${NC}"
