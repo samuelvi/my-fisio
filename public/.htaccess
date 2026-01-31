@@ -30,6 +30,9 @@ DirectoryIndex index.php
     RewriteCond %{HTTP:Authorization} .
     RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Additional IONOS/Apache compatibility for JWT
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+
     RewriteCond %{ENV:REDIRECT_STATUS} ^$
     RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
 
