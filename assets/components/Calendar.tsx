@@ -631,7 +631,18 @@ export default function Calendar() {
                                     </div>
                                     <div className="space-y-6">
                                         <div>
-                                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t('patient')}</label>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <label className="block text-sm font-semibold text-gray-700">{t('patient')}</label>
+                                                {selectedPatient && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigate(`/patients/${selectedPatient.id}`)}
+                                                        className="text-[10px] text-primary hover:text-primary-dark font-black uppercase tracking-widest flex items-center transition-colors"
+                                                    >
+                                                        {t('view_profile') || 'View Profile'} →
+                                                    </button>
+                                                )}
+                                            </div>
                                             <PatientAutocomplete
                                                 value={selectedPatient}
                                                 onChange={handlePatientChange}

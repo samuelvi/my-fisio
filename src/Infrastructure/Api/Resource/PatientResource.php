@@ -108,6 +108,9 @@ class PatientResource
     public ?string $customer = null;
 
     #[Groups(['patient:read'])]
+    public float $totalInvoiced = 0.0;
+
+    #[Groups(['patient:read'])]
     public ?DateTimeImmutable $createdAt = null;
 
     /** @var array<int, mixed> */

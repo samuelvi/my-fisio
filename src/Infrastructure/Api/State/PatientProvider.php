@@ -9,6 +9,7 @@ use ApiPlatform\State\ProviderInterface;
 use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Api\Resource\PatientResource;
 use App\Infrastructure\Persistence\Doctrine\Repository\DoctrinePatientRepository;
+use App\Infrastructure\Persistence\Doctrine\Repository\DoctrineInvoiceRepository;
 use DateTimeImmutable;
 use DateTimeInterface;
 
@@ -16,6 +17,7 @@ class PatientProvider implements ProviderInterface
 {
     public function __construct(
         private readonly DoctrinePatientRepository $repository,
+        private readonly DoctrineInvoiceRepository $invoiceRepository,
         private readonly int $itemsPerPage,
     ) {
     }
@@ -43,6 +45,15 @@ class PatientProvider implements ProviderInterface
         $resource->status = $data['status'] instanceof PatientStatus
             ? $data['status']
             : PatientStatus::from($data['status']);
+
+        $resource->firstName = $data['firstName'];
+        $resource->lastName = $data['lastName'];
+        
+        // Calculate total invoiced
+        $resource->totalInvoiced = 0.0;
+        if (isset($data['customer']['id'])) {
+            $resource->totalInvoiced = $this->invoiceRepository->sumByCustomerId((int) $data['customer']['id']);
+        }
 
         $resource->firstName = $data['firstName'];
         $resource->lastName = $data['lastName'];

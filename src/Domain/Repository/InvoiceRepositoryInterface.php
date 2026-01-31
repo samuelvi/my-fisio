@@ -29,4 +29,6 @@ interface InvoiceRepositoryInterface
     public function getByIdAsArray(int $id): ?array;
 
     public function searchAsArray(array $filters, int $page, int $limit): array;
+
+    public function sumByCustomerId(int $customerId): float;
 }

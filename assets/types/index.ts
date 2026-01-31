@@ -24,6 +24,7 @@ export interface Patient {
     others?: string;
     notes?: string;
     status: PatientStatus;
+    totalInvoiced?: number;
     createdAt: string;
     records?: RecordEntry[];
 }

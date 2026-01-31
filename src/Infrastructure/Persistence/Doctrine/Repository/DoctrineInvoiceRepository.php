@@ -212,6 +212,16 @@ final class DoctrineInvoiceRepository extends ServiceEntityRepository implements
             ->getArrayResult();
     }
 
+    public function sumByCustomerId(int $customerId): float
+    {
+        return (float) $this->createQueryBuilder('i')
+            ->select('SUM(i.amount)')
+            ->where('i.customer = :customerId')
+            ->setParameter('customerId', $customerId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     private function escapeLikeWildcards(string $value): string
     {
         return str_replace(['%', '_'], ['\\%', '\\_'], $value);
