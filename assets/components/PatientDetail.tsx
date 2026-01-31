@@ -147,6 +147,12 @@ export default function PatientDetail() {
                                 <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('rate')}</dt>
                                 <dd className="text-gray-900 font-bold">{patient.rate || '-'}</dd>
                             </div>
+                            <div>
+                                <dt className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">{t('total_invoiced') || 'Total Invoiced'}</dt>
+                                <dd className="text-blue-700 font-black">
+                                    {new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(patient.totalInvoiced || 0)}
+                                </dd>
+                            </div>
                         </div>
                     </div>
                 </div>
