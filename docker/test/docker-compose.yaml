@@ -62,6 +62,15 @@ services:
       - APP_DEBUG=1
       - APP_SECRET=test_secret_12345
       - ITEMS_PER_PAGE=4
+    command: >
+      sh -c "
+        if [ -d vendor ]; then
+          mkdir -p config/jwt;
+          php bin/console lexik:jwt:generate-keypair --skip-if-exists;
+          chmod 666 config/jwt/*.pem;
+        fi;
+        php-fpm
+      "
 
   # Nginx (Test)
   nginx_test:

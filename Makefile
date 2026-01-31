@@ -47,6 +47,14 @@ dev-ps: ## Show running containers (Dev)
 
 ##@ Docker Management (Test)
 
+jwt-setup: ## Generate JWT keys (Dev)
+	@echo "$(GREEN)Checking JWT keys (Dev)...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec -T php sh -c "mkdir -p config/jwt && if [ -f config/jwt/private.pem ] && ! openssl rsa -check -in config/jwt/private.pem -passin pass:\"\$${JWT_PASSPHRASE}\" -noout > /dev/null 2>&1; then echo 'Invalid keys, regenerating...'; rm -f config/jwt/private.pem config/jwt/public.pem; fi; php bin/console lexik:jwt:generate-keypair --skip-if-exists && chmod 666 config/jwt/*.pem"
+
+jwt-setup-test: ## Generate JWT keys (Test)
+	@echo "$(GREEN)Checking JWT keys (Test)...$(NC)"
+	$(DOCKER_COMPOSE_TEST) exec -T php_test sh -c "mkdir -p config/jwt && php bin/console lexik:jwt:generate-keypair --skip-if-exists && chmod 666 config/jwt/*.pem"
+
 test-build: ## Build all Docker containers (Test)
 	@echo "$(GREEN)Building Docker containers (Test)...$(NC)"
 	$(DOCKER_COMPOSE_TEST) build
@@ -227,8 +235,7 @@ test: ## Run PHPUnit unit tests
 		sleep 5; \
 	fi
 	$(DOCKER_COMPOSE_TEST) exec -T php_test composer install --no-interaction --prefer-dist --optimize-autoloader
-	$(DOCKER_COMPOSE_TEST) exec -T php_test mkdir -p config/jwt
-	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
+	make jwt-setup-test
 	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/phpunit
 
 test-unit: test ## Alias for 'test' (Run PHPUnit tests)
@@ -252,8 +259,7 @@ test-e2e: ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests
 		make test-up; \
 		sleep 5; \
 	fi
-	$(DOCKER_COMPOSE_TEST) exec -T php_test mkdir -p config/jwt
-	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
+	make jwt-setup-test
 	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console cache:clear
 	make test-reset-db
 	npx playwright test $(file)
@@ -265,6 +271,7 @@ test-e2e-ui: ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="
 		make test-up; \
 		sleep 5; \
 	fi
+	make jwt-setup-test
 	npx playwright test --ui $(file)
 
 test-e2e-video: ## Run E2E test with video recording (use: make test-e2e-video file="tests/e2e/login.spec.ts")
@@ -274,8 +281,7 @@ test-e2e-video: ## Run E2E test with video recording (use: make test-e2e-video f
 		make test-up; \
 		sleep 5; \
 	fi
-	$(DOCKER_COMPOSE_TEST) exec -T php_test mkdir -p config/jwt
-	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console lexik:jwt:generate-keypair --skip-if-exists
+	make jwt-setup-test
 	make test-reset-db
 	@echo "$(YELLOW)Enabling video recording...$(NC)"
 	@perl -i -pe 's/video: '\''retain-on-failure'\''/video: '\''on'\''/' playwright.config.cjs
@@ -305,7 +311,7 @@ test-all: test test-e2e ## Run full test suite (unit + E2E)
 
 ##@ Project Setup
 
-dev-install: dev-build dev-up wait-for-services init-symfony install-packages db-setup dump-routes success-message ## Full project installation (Dev)
+dev-install: dev-build dev-up wait-for-services init-symfony install-packages jwt-setup db-setup dump-routes success-message ## Full project installation (Dev)
 
 init-symfony: ## Initialize Symfony application
 	@echo "$(GREEN)Initializing Symfony application...$(NC)"
@@ -356,7 +362,7 @@ success-message: ## Display success message
 	@echo "  4. Run 'make help' to see all available commands"
 	@echo ""
 
-dev-quick-start: dev-build dev-up wait-for-services composer-install db-setup success-message ## Quick start (assumes Symfony is already initialized)
+dev-quick-start: dev-build dev-up wait-for-services composer-install jwt-setup db-setup success-message ## Quick start (assumes Symfony is already initialized)
 
 ##@ Cleanup
 

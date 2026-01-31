@@ -60,6 +60,21 @@ services:
       - REDIS_URL=redis://redis:6379
       - APP_ENV=dev
       - APP_DEBUG=1
+    command: >
+      sh -c "
+        if [ -d vendor ]; then
+          mkdir -p config/jwt;
+          if [ -f config/jwt/private.pem ]; then
+            if ! openssl rsa -check -in config/jwt/private.pem -passin pass:\"\$JWT_PASSPHRASE\" -noout > /dev/null 2>&1; then
+              echo 'JWT Passphrase mismatch or invalid key. Regenerating...';
+              rm -f config/jwt/private.pem config/jwt/public.pem;
+            fi
+          fi;
+          php bin/console lexik:jwt:generate-keypair --skip-if-exists;
+          chmod 666 config/jwt/*.pem;
+        fi;
+        php-fpm
+      "
 
   # Nginx Web Server
   nginx:

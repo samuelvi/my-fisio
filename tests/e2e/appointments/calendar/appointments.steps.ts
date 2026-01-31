@@ -109,6 +109,11 @@ Then('the patient input should show an error', async ({ page }) => {
   await expect(container).toBeVisible();
 });
 
+Then('the patient input should automatically be {string}', async ({ page }, name: string) => {
+  const input = page.getByPlaceholder(/Search by name|Buscar por nombre/i);
+  await expect(input).toHaveValue(name);
+});
+
 async function buildLocalDateTime(page, { hour, minute }: { hour: number; minute: number }) {
   return await page.evaluate(({ hour, minute }) => {
     const pad = (num: number) => String(num).padStart(2, '0');

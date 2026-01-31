@@ -38,3 +38,15 @@ Feature: Appointment Patient Integration
     And I select patient "Invalid Test" from the dropdown
     And I type "Invalid" in the patient search input
     Then the patient input should show an error
+
+  @no-reset
+  Scenario: Patient association persistence
+    Given a patient exists with name "Persistence" and surname "Check"
+    When I navigate to "/appointments"
+    And I click the new appointment button
+    And I search for patient "Persistence" in the appointment form
+    And I select patient "Persistence Check" from the dropdown
+    And I save the appointment
+    And I reload the page
+    When I click on the appointment "Persistence Check" in the calendar
+    Then the patient input should automatically be "Persistence Check"
