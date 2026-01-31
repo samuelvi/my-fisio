@@ -16,10 +16,12 @@ interface RecordFormInputAreaProps {
     error?: string;
     onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
     disabled?: boolean;
+    placeholder?: string;
+    fullWidth?: boolean;
 }
 
-const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange, disabled = false }: RecordFormInputAreaProps) => (
-    <div className={rows > 2 ? "col-span-6" : "col-span-6 sm:col-span-3"}>
+const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, error, onChange, disabled = false, placeholder, fullWidth = false }: RecordFormInputAreaProps) => (
+    <div className={(fullWidth || rows > 2) ? "col-span-6" : "col-span-6 sm:col-span-3"}>
         <label htmlFor={name} className="block text-sm font-bold text-gray-700 mb-1">{label} {required && "*"}</label>
         <textarea
             name={name}
@@ -30,6 +32,7 @@ const RecordFormInputArea = ({ label, name, required = false, rows = 3, value, e
             value={value}
             onChange={onChange}
             disabled={disabled}
+            placeholder={placeholder}
             className={`block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm ${error ? 'border-red-500' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
         />
         {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
@@ -299,14 +302,24 @@ export default function RecordForm() {
                                 disabled={loading}
                             />
 
-                            <div className="col-span-6 sm:col-span-3">
-                                <label htmlFor="radiologyTests" className="block text-sm font-bold text-gray-700 mb-1">{t('tests_radiology')}</label>
-                                <input id="radiologyTests" type="text" name="radiologyTests" value={formData.radiologyTests} onChange={handleChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-                            </div>
-                            <div className="col-span-6 sm:col-span-3">
-                                <label htmlFor="medicalTreatment" className="block text-sm font-bold text-gray-700 mb-1">{t('parallel_medical_treatment')}</label>
-                                <input id="medicalTreatment" type="text" name="medicalTreatment" value={formData.medicalTreatment} onChange={handleChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm" />
-                            </div>
+                            <RecordFormInputArea
+                                label={t('tests_radiology')}
+                                name="radiologyTests"
+                                rows={2}
+                                value={formData.radiologyTests}
+                                error={errors.radiologyTests}
+                                onChange={handleChange}
+                                disabled={loading}
+                            />
+                            <RecordFormInputArea
+                                label={t('parallel_medical_treatment')}
+                                name="medicalTreatment"
+                                rows={2}
+                                value={formData.medicalTreatment}
+                                error={errors.medicalTreatment}
+                                onChange={handleChange}
+                                disabled={loading}
+                            />
 
                             <RecordFormInputArea
                                 label={t('home_tasks_treatment')}
@@ -318,10 +331,17 @@ export default function RecordForm() {
                                 disabled={loading}
                             />
                             
-                            <div className="col-span-6">
-                                <label htmlFor="notes" className="block text-sm font-bold text-gray-700 mb-1">{t('confidential_notes')}</label>
-                                <input id="notes" type="text" name="notes" value={formData.notes} onChange={handleChange} className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm italic" placeholder={t('private_notes_placeholder')} />
-                            </div>
+                            <RecordFormInputArea
+                                label={t('confidential_notes')}
+                                name="notes"
+                                rows={2}
+                                value={formData.notes}
+                                error={errors.notes}
+                                onChange={handleChange}
+                                disabled={loading}
+                                placeholder={t('private_notes_placeholder')}
+                                fullWidth={true}
+                            />
 
                             <div className="col-span-6">
                                 <div className="flex items-center">

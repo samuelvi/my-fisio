@@ -48,7 +48,7 @@ export default function RecordTimeline({ records, onAddRecord, patientId, patien
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {record.consultationReason && (
                                     <div>
-                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('reason')}</h4>
+                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('consultation_reason')}</h4>
                                         <p className="text-sm font-medium text-gray-700">{record.consultationReason}</p>
                                     </div>
                                 )}
@@ -74,7 +74,7 @@ export default function RecordTimeline({ records, onAddRecord, patientId, patien
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {record.radiologyTests && (
                                     <div>
-                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('radiology')}</h4>
+                                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('tests_radiology')}</h4>
                                         <p className="text-sm font-medium text-gray-700">{record.radiologyTests}</p>
                                     </div>
                                 )}
@@ -85,6 +85,12 @@ export default function RecordTimeline({ records, onAddRecord, patientId, patien
                                     </div>
                                 )}
                             </div>
+                            {record.homeTreatment && (
+                                <div>
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('home_tasks_treatment')}</h4>
+                                    <p className="text-sm font-medium text-gray-700 whitespace-pre-wrap">{record.homeTreatment}</p>
+                                </div>
+                            )}
                             <div className="flex items-center space-x-4 bg-gray-50 p-3 rounded-xl border border-gray-100 w-fit">
                                 <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('sick_leave')}</span>
                                 <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${record.sickLeave ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>

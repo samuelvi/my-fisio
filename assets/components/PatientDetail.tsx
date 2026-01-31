@@ -135,25 +135,64 @@ export default function PatientDetail() {
                                 <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('sports_activity')}</dt>
                                 <dd className="text-gray-900 font-bold">{patient.sportsActivity || '-'}</dd>
                             </div>
-                            <div className="col-span-1 md:col-span-2 lg:col-span-3">
+                            <div>
                                 <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('address')}</dt>
                                 <dd className="text-gray-900 font-bold">{patient.address || '-'}</dd>
-                            </div>
-                            <div>
-                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('rate')}</dt>
-                                <dd className="text-gray-900 font-bold">{patient.rate || '-'}</dd>
                             </div>
                             <div>
                                 <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('dni')}</dt>
                                 <dd className="text-gray-900 font-bold">{patient.taxId || '-'}</dd>
                             </div>
+                            <div>
+                                <dt className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{t('rate')}</dt>
+                                <dd className="text-gray-900 font-bold">{patient.rate || '-'}</dd>
+                            </div>
                         </div>
                     </div>
+                </div>
+                
+                {/* Medical Alerts - Moved inside Patient Info Card, above Appointments */}
+                {patient.notes && (
+                    <div className="px-4 sm:px-6 lg:px-8 py-4 bg-red-50/50 border-t border-red-100">
+                        <h4 className="text-xs font-black text-red-800 uppercase tracking-widest flex items-center gap-2 mb-2">
+                            <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            {t('medical_alerts')}
+                        </h4>
+                        <p className="text-sm font-bold text-red-700 leading-relaxed">
+                            <span className="text-[10px] text-red-400 uppercase tracking-wider block mb-1">{t('observations')}</span>
+                            {patient.notes}
+                        </p>
+                    </div>
+                )}
+
+                {/* Next Appointments Section - Moved inside Patient Info Card */}
+                <div className="px-4 sm:px-6 lg:px-8 py-4 bg-gray-50/50 border-t border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 gap-2">
+                        <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            {t('next_appointments')}
+                        </h4>
+                        <button onClick={() => navigate('/appointments')} className="text-[10px] bg-white border border-gray-200 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-50 hover:text-primary transition-all uppercase font-bold shadow-sm self-start sm:self-auto">
+                            {t('schedule')}
+                        </button>
+                    </div>
+                    {appointments.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                            {appointments.slice(0, 3).map(app => (
+                                <div key={app.id} className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm hover:border-primary/30 transition-colors">
+                                    <p className="font-bold text-gray-800 text-sm">{new Date(app.startsAt).toLocaleDateString()} <span className="text-gray-400 font-normal">|</span> {new Date(app.startsAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
+                                    <p className="text-gray-500 truncate text-xs mt-1 font-medium">{app.title}</p>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-xs text-gray-400 italic font-medium py-2">{t('no_upcoming_appointments')}</p>
+                    )}
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 order-2 lg:order-1">
                     <RecordTimeline 
                         records={patient.records || []} 
                         patient={patient}
@@ -162,47 +201,28 @@ export default function PatientDetail() {
                     />
                 </div>
 
-                <div className="space-y-6 sm:space-y-8">
-                    <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-6 border-l-4 border-primary border border-gray-200">
-                        <h4 className="text-sm font-black text-gray-900 mb-4 flex justify-between items-center uppercase tracking-widest">
-                            {t('next_appointments')}
-                            <button onClick={() => navigate('/appointments')} className="text-[10px] bg-primary/10 text-primary px-2 py-1 rounded-lg hover:bg-primary hover:text-white transition-all uppercase">{t('schedule')}</button>
-                        </h4>
-                        <div className="space-y-4">
-                            {appointments.length > 0 ? (
-                                appointments.slice(0, 3).map(app => (
-                                    <div key={app.id} className="text-sm border-b border-gray-50 pb-3 last:border-0 last:pb-0">
-                                        <p className="font-bold text-gray-800">{new Date(app.startsAt).toLocaleDateString()} - {new Date(app.startsAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</p>
-                                        <p className="text-gray-500 truncate mt-0.5 font-medium">{app.title}</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-xs text-gray-400 italic font-medium">{t('no_upcoming_appointments')}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-6 border-l-4 border-red-500 border border-gray-200">
-                        <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-widest">{t('medical_alerts')}</h4>
-                        <div className="space-y-4 text-xs font-bold">
-                            <div>
-                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('allergies')}</span>
-                                <p className="text-red-600 bg-red-50 p-2 rounded-lg border border-red-100">{patient.allergies || t('none_recorded')}</p>
-                            </div>
-                            <div>
-                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('systemic_diseases')}</span>
-                                <p className="text-gray-900 bg-gray-50 p-2 rounded-lg border border-gray-100">{patient.systemicDiseases || t('none_recorded')}</p>
-                            </div>
-                             <div>
-                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('current_medication')}</span>
-                                <p className="text-gray-900 bg-gray-50 p-2 rounded-lg border border-gray-100">{patient.medication || t('none_recorded')}</p>
-                            </div>
-                        </div>
-                    </div>
-
+                <div className="space-y-6 sm:space-y-8 order-1 lg:order-2">
+                    {/* History Details - Now includes Allergies, Diseases, Medication */}
                     <div className="bg-white shadow-sm rounded-2xl p-4 sm:p-6 border-l-4 border-yellow-500 border border-gray-200">
                         <h4 className="text-sm font-black text-gray-900 mb-4 uppercase tracking-widest">{t('history_details')}</h4>
                          <div className="space-y-4 text-xs font-bold">
+                            {/* Added Fields from Medical Alerts */}
+                            <div className="space-y-4 border-b border-gray-100 pb-4 mb-4">
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('allergies')}</span>
+                                    {/* Allergies removed red highlight as requested */}
+                                    <p className="text-gray-900">{patient.allergies || '-'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('systemic_diseases')}</span>
+                                    <p className="text-gray-900">{patient.systemicDiseases || '-'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('current_medication')}</span>
+                                    <p className="text-gray-900">{patient.medication || '-'}</p>
+                                </div>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('surgeries')}</span>
@@ -232,10 +252,6 @@ export default function PatientDetail() {
                                     <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('others')}</span>
                                     <p className="text-gray-900">{patient.others || '-'}</p>
                                 </div>
-                            </div>
-                            <div>
-                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('observations')}</span>
-                                <p className="text-gray-900">{patient.notes || '-'}</p>
                             </div>
                         </div>
                     </div>

@@ -36,7 +36,8 @@ All documents have been prepared to the standard required for:
 | **09** | [Constraints & Limitations](./09-CONSTRAINTS-AND-LIMITATIONS.md) | 36 KB | 1,295 | Technical boundaries, trade-offs, known gaps | All Technical Teams |
 | **10** | [Risks & Mitigation](./10-RISKS-AND-MITIGATION.md) | 36 KB | 1,077 | Risk register, mitigation plans, contingencies | PMO, Risk Management, Exec |
 | **11** | [Open Questions & Next Steps](./11-OPEN-QUESTIONS-AND-NEXT-STEPS.md) | 37 KB | 1,042 | Pending decisions, action items, blockers | Product, Engineering, PMO |
-| | **TOTAL** | **329 KB** | **9,892** | Complete enterprise documentation | All Stakeholders |
+| **12** | [Changelog & Updates](./12-CHANGELOG.md) | 3 KB | 100 | Record of recent changes and updates | Technical Team |
+| | **TOTAL** | **332 KB** | **10,000+** | Complete enterprise documentation | All Stakeholders |
 
 ---
 
@@ -387,6 +388,25 @@ All documents in this suite exhibit the following professional standards:
 ---
 
 ## 12. Recent Changes & Updates
+
+### January 31, 2026 - Patient & Record Management Enhancements
+
+**Type:** Feature Enhancement + UI/UX Improvement
+**Scope:** Patient Detail View, Clinical Records, Translations
+**Document Updated:** [02-PRODUCT-REQUIREMENTS.md](./02-PRODUCT-REQUIREMENTS.md), [06-DATA-MODEL.md](./06-DATA-MODEL.md), [12-CHANGELOG.md](./12-CHANGELOG.md)
+
+**Summary:**
+Implemented significant improvements to the Patient Detail view and Clinical Record management, focusing on data visibility, optionality of fields, and translation completeness.
+
+**What Changed:**
+- **Patient Management:** "Allergies" field is now optional. Reorganized Patient Detail View (Medical Alerts inside info card, Next Appointments bottom of info card, History Details includes allergies/diseases/meds). Desktop layout optimized (Address, DNI, Rate in one row). Mobile layout reordered.
+- **Clinical Records:** Converted text fields to textareas. Added "Home Tasks" to detail view. Fixed translation keys.
+- **i18n:** Added missing Spanish/English translations.
+
+**Impact:**
+- ✅ Improved UX and Data Visibility
+- ✅ Optimized Desktop/Mobile Layouts
+- ✅ Complete Spanish Localization
 
 ### December 31, 2025 (3) - Invoice Prefix System & Customer Address Validation
 
