@@ -11,8 +11,9 @@ import { registerLocale } from 'react-datepicker';
 import { enUS, es } from 'date-fns/locale';
 import { useLanguage } from './LanguageContext';
 import Routing from '../routing/init';
-import { Appointment } from '../types';
+import { Appointment, Patient } from '../types';
 import StatusAlert from './shared/StatusAlert';
+import PatientAutocomplete from './shared/PatientAutocomplete';
 
 registerLocale('en', enUS);
 registerLocale('es', es);
@@ -34,6 +35,7 @@ interface FormData {
     startsAt: string;
     endsAt: string;
     allDay: boolean;
+    patientId: number | null;
 }
 
 export default function Calendar() {
@@ -53,8 +55,11 @@ export default function Calendar() {
         type: 'appointment',
         startsAt: '',
         endsAt: '',
-        allDay: false
+        allDay: false,
+        patientId: null
     });
+    const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+    const [patientError, setPatientError] = useState<string | undefined>(undefined);
     const [validationError, setValidationError] = useState<string | null>(null);
     const currentViewDatesRef = useRef<{ start: string | null; end: string | null }>({ start: null, end: null });
     const [hasAppointments, setHasAppointments] = useState<boolean>(false);
@@ -246,28 +251,82 @@ export default function Calendar() {
             type: 'appointment',
             startsAt: selectInfo.startStr,
             endsAt: selectInfo.endStr,
-            allDay: selectInfo.allDay
+            allDay: selectInfo.allDay,
+            patientId: null
         });
+        setSelectedPatient(null);
+        setPatientError(undefined);
         setCurrentEvent(null);
         setModalOpen(true);
     };
 
-    const handleEventClick = (clickInfo: any) => {
+    const handleEventClick = async (clickInfo: any) => {
         if (!navigator.onLine) {
             handleApiError({ code: 'ERR_NETWORK' });
             return;
         }
         const app = clickInfo.event;
+        const pId = app.extendedProps.patientId;
+
         setFormData({
             title: app.title || '',
             notes: app.extendedProps.notes || '',
             type: app.extendedProps.type || '',
             startsAt: app.startStr,
             endsAt: app.endStr,
-            allDay: app.allDay
+            allDay: app.allDay,
+            patientId: pId
         });
+
+        setSelectedPatient(null);
+        setPatientError(undefined);
+
+        if (pId) {
+            try {
+                const response = await axios.get<Patient>(Routing.generate('api_patients_get', { id: pId }));
+                setSelectedPatient(response.data);
+            } catch (err) {
+                console.error("Failed to fetch patient details", err);
+            }
+        }
+
         setCurrentEvent(app);
         setModalOpen(true);
+    };
+
+    const handlePatientChange = (patient: Patient | null) => {
+        setSelectedPatient(patient);
+        setFormData(prev => ({ ...prev, patientId: patient ? patient.id : null }));
+        setPatientError(undefined);
+
+        if (patient) {
+            setFormData(prev => {
+                if (!prev.title || prev.title.trim() === '') {
+                    return { ...prev, title: `${patient.firstName} ${patient.lastName}` };
+                }
+                return prev;
+            });
+        }
+    };
+
+    const handlePatientInputChange = (text: string) => {
+        if (!text) {
+             if (selectedPatient) {
+                 setSelectedPatient(null);
+                 setFormData(prev => ({ ...prev, patientId: null }));
+             }
+             setPatientError(undefined);
+             return;
+        }
+        
+        if (selectedPatient) {
+            const fullName = `${selectedPatient.firstName} ${selectedPatient.lastName}`;
+            if (text !== fullName) {
+                setSelectedPatient(null);
+                setFormData(prev => ({ ...prev, patientId: null }));
+                setPatientError(' '); // Empty space to trigger red border, message optional
+            }
+        }
     };
 
     const handleApiError = (error: any) => {
@@ -571,6 +630,15 @@ export default function Calendar() {
                                         )}
                                     </div>
                                     <div className="space-y-6">
+                                        <div>
+                                            <label className="block text-sm font-semibold text-gray-700 mb-1">{t('patient')}</label>
+                                            <PatientAutocomplete
+                                                value={selectedPatient}
+                                                onChange={handlePatientChange}
+                                                error={patientError}
+                                                onInputChange={handlePatientInputChange}
+                                            />
+                                        </div>
                                         <div>
                                             <label htmlFor="appointment-title" className="block text-sm font-semibold text-gray-700 mb-1">{t('title')}</label>
                                             <input

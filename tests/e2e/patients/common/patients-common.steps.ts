@@ -1,6 +1,7 @@
 import { expect } from '@playwright/test';
 import { Given, When, Then } from '../../common/bdd';
 import { patientFactory } from '../../factories/patient.factory';
+import { AUTH_CREDENTIALS } from '../../common/constants';
 
 // Store created patient name for later reference
 let createdPatientName = '';
@@ -143,5 +144,31 @@ Then('the patient observations field should have the test data value', async ({ 
 
 Given('the database has fixture data', async ({ request }) => {
   const response = await request.post('/api/test/reset-db');
+  expect(response.ok()).toBeTruthy();
+});
+
+Given('a patient exists with name {string} and surname {string}', async ({ request }, firstName: string, lastName: string) => {
+  // Login first to get token
+  const loginResponse = await request.post('/api/login_check', {
+    data: {
+      username: AUTH_CREDENTIALS.username,
+      password: AUTH_CREDENTIALS.password
+    }
+  });
+  
+  if (!loginResponse.ok()) {
+      throw new Error(`Login failed in patient creation step: ${loginResponse.status()}`);
+  }
+  
+  const { token } = await loginResponse.json();
+
+  const patient = patientFactory.build({ firstName, lastName });
+  const response = await request.post('/api/patients', { 
+      data: patient,
+      headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/ld+json'
+      }
+  });
   expect(response.ok()).toBeTruthy();
 });

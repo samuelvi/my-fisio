@@ -79,6 +79,36 @@ Then('the appointment {string} should be scheduled for today', async ({ page }, 
 // Helper Functions
 // =============================================================================
 
+When('I search for patient {string} in the appointment form', async ({ page }, name: string) => {
+  const input = page.getByPlaceholder(/Search by name|Buscar por nombre/i);
+  await input.fill(name);
+  await page.waitForTimeout(500); // Wait for debounce
+});
+
+When('I select patient {string} from the dropdown', async ({ page }, name: string) => {
+  await page.getByRole('option', { name }).click();
+});
+
+Then('the appointment title should automatically be {string}', async ({ page }, title: string) => {
+  await expect(page.getByLabel(/Title|T.tulo/i)).toHaveValue(title);
+});
+
+When('I clear the patient search input', async ({ page }) => {
+  const input = page.getByPlaceholder(/Search by name|Buscar por nombre/i);
+  await input.clear();
+});
+
+When('I type {string} in the patient search input', async ({ page }, text: string) => {
+  const input = page.getByPlaceholder(/Search by name|Buscar por nombre/i);
+  await input.fill(text);
+});
+
+Then('the patient input should show an error', async ({ page }) => {
+  // Verify the red border class on the container
+  const container = page.locator('div.border-red-500');
+  await expect(container).toBeVisible();
+});
+
 async function buildLocalDateTime(page, { hour, minute }: { hour: number; minute: number }) {
   return await page.evaluate(({ hour, minute }) => {
     const pad = (num: number) => String(num).padStart(2, '0');
