@@ -161,7 +161,7 @@ class AppointmentResourceTest extends ApiTestCase
 
         $this->assertResponseStatusCodeSame(400);
         $this->assertJsonContains([
-            'detail' => 'Filtros de fecha "start" y "end" son obligatorios para consultar citas globales.',
+            'detail' => 'Filtros de fecha "start" y "end" son obligatorios para consultar citas.',
         ]);
     }
 

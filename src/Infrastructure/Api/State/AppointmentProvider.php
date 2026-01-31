@@ -61,7 +61,7 @@ class AppointmentProvider implements ProviderInterface
 
         // 3. VALIDATION: start and end must be present UNLESS patientId is provided
         if (!isset($searchFilters['patientId']) && (!isset($searchFilters['startsAt']) || !isset($searchFilters['endsAt']))) {
-            throw new BadRequestHttpException('Filtros de fecha "start" y "end" son obligatorios para consultar citas globales.');
+            throw new BadRequestHttpException('Filtros de fecha "start" y "end" son obligatorios para consultar citas.');
         }
 
         // Capture pagination and order from filters or request
