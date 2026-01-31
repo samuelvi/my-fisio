@@ -31,6 +31,7 @@ final class UserFactory extends PersistentObjectFactory
             'email' => self::faker()->unique()->safeEmail(),
             'password' => 'password', // Default raw password
             'roles' => ['ROLE_USER'],
+            'application' => ApplicationFactory::new(),
         ];
     }
 
@@ -39,7 +40,7 @@ final class UserFactory extends PersistentObjectFactory
     {
         return $this
             ->instantiateWith(function (array $attributes) {
-                return User::create($attributes['email'], $attributes['password']);
+                return User::create($attributes['email'], $attributes['password'], $attributes['application']);
             })
             ->afterInstantiate(function (User $user, array $attributes): void {
                 $user->roles = $attributes['roles'];

@@ -134,7 +134,7 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     set -e
     cd "$REMOTE_PATH"
     export APP_ENV=prod
-    
+
     # 1. Detect correct PHP CLI binary
     if command -v php8.4-cli >/dev/null 2>&1; then
         PHP_BIN='php8.4-cli'
@@ -147,9 +147,9 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     else
         PHP_BIN='php'
     fi
-    
+
     echo "Using PHP binary: $PHP_BIN"
-    
+
     # 2. Determine Composer command
     if command -v composer >/dev/null 2>&1; then
         COMPOSER_CMD="$PHP_BIN $(command -v composer)"
@@ -159,7 +159,7 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
         echo "Error: Composer not found."
         exit 1
     fi
-    
+
     echo "Using composer command: $COMPOSER_CMD"
 
     echo "  > Cleaning up development files..."
@@ -170,7 +170,7 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
 
     echo "  > Regenerating .env.local.php..."
     $COMPOSER_CMD dump-env prod
-    
+
     echo "  > Checking database state..."
     if $PHP_BIN bin/console dbal:run-sql "SELECT 1 FROM doctrine_migration_versions LIMIT 1" --env=prod >/dev/null 2>&1; then
         echo "    - Existing installation detected."
@@ -180,14 +180,14 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
         echo "    - Fresh installation detected (No migration table)."
         echo "    - Initializing schema directly..."
         $PHP_BIN bin/console doctrine:schema:create --no-interaction --env=prod
-        
+
         echo "    - Syncing migration storage..."
         $PHP_BIN bin/console doctrine:migrations:sync-metadata-storage --env=prod
-        
+
         echo "    - Marking migrations as executed..."
         $PHP_BIN bin/console doctrine:migrations:version --add --all --no-interaction --env=prod
     fi
-    
+
     echo "  > Clearing and warming up cache..."
     rm -rf var/cache/*
     $PHP_BIN bin/console cache:warmup --env=prod

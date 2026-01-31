@@ -32,18 +32,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::STRING, length: 255, nullable: false)]
     public string $password;
 
-    private function __construct(string $email, string $password)
+    #[ORM\ManyToOne(targetEntity: Application::class)]
+    #[ORM\JoinColumn(name: 'application_id', referencedColumnName: 'id', nullable: false)]
+    public Application $application;
+
+    private function __construct(string $email, string $password, Application $application)
     {
         if ('' === $email) {
             throw new InvalidArgumentException('Email cannot be empty');
         }
         $this->email = $email;
         $this->password = $password;
+        $this->application = $application;
     }
 
-    public static function create(string $email, string $password): self
+    public static function create(string $email, string $password, Application $application): self
     {
-        return new self($email, $password);
+        return new self($email, $password, $application);
     }
 
     /**

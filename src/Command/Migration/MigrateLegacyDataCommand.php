@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Command\Migration;
 
+use App\Domain\Entity\Application;
 use App\Domain\Entity\User;
 use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Audit\AuditService;
@@ -151,6 +152,8 @@ final class MigrateLegacyDataCommand extends Command
 
     private array $validPatientIds = [];
 
+    private ?int $defaultApplicationId = null;
+
     public function __construct(
         private readonly EntityManagerInterface      $entityManager,
         private readonly string                      $projectDir,
@@ -179,22 +182,27 @@ final class MigrateLegacyDataCommand extends Command
         try {
             $io->title('Migrating Legacy Data');
 
-        $connection = $this->entityManager->getConnection();
+            $connection = $this->entityManager->getConnection();
 
-        $io->text('Cleaning existing data...');
-        // MariaDB: Disable foreign key checks to allow truncating tables with foreign keys
-        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
-        $connection->executeStatement('TRUNCATE TABLE appointments');
-        $connection->executeStatement('TRUNCATE TABLE records');
-        $connection->executeStatement('TRUNCATE TABLE customers');
-        $connection->executeStatement('TRUNCATE TABLE patients');
-        $connection->executeStatement('TRUNCATE TABLE invoices');
-        $connection->executeStatement('TRUNCATE TABLE invoice_lines');
-        $connection->executeStatement('TRUNCATE TABLE counters');
-        $connection->executeStatement('TRUNCATE TABLE users');
-        $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+            $io->text('Cleaning existing data...');
+            // MariaDB: Disable foreign key checks to allow truncating tables with foreign keys
+            $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+            $connection->executeStatement('TRUNCATE TABLE appointments');
+            $connection->executeStatement('TRUNCATE TABLE records');
+            $connection->executeStatement('TRUNCATE TABLE customers');
+            $connection->executeStatement('TRUNCATE TABLE patients');
+            $connection->executeStatement('TRUNCATE TABLE invoices');
+            $connection->executeStatement('TRUNCATE TABLE invoice_lines');
+            $connection->executeStatement('TRUNCATE TABLE counters');
+            $connection->executeStatement('TRUNCATE TABLE users');
+            $connection->executeStatement('TRUNCATE TABLE applications');
+            $connection->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
 
-        $io->text('Reading dump file and grouping data...');
+            $io->text('Creating default application...');
+            $connection->executeStatement("INSERT INTO applications (name) VALUES ('Default')");
+            $this->defaultApplicationId = (int)$connection->lastInsertId();
+
+            $io->text('Reading dump file and grouping data...');
         $dataByTable = [
             'users' => [],
             'paciente' => [],
@@ -279,11 +287,10 @@ final class MigrateLegacyDataCommand extends Command
             $parameters['patient_id'] = null;
         }
 
-        if ('records' === $targetTable) {
-            $patientId = (int)($row[1] ?? 0);
-            if (!in_array($patientId, $this->validPatientIds, true)) {
-                throw new Exception(sprintf('Inconsistency: Record refers to non-existing patient ID %d', $patientId));
-            }
+        if ('users' === $targetTable) {
+            $targetColumns[] = 'application_id';
+            $queryValues[] = ':application_id';
+            $parameters['application_id'] = $this->defaultApplicationId;
         }
 
         foreach ($columns as $index => $colConfig) {

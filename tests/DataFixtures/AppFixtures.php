@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\DataFixtures;
 
+use App\Domain\Entity\Application;
 use App\Domain\Entity\User;
+use App\Tests\Factory\ApplicationFactory;
 use App\Tests\Factory\PatientFactory;
 use App\Tests\Factory\RecordFactory;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -20,8 +22,12 @@ class AppFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
+        // 0. Create default application
+        $application = Application::create('Default');
+        $manager->persist($application);
+
         // 1. Create the main user
-        $user = User::create(email: 'tina@tinafisio.com', password: 'password');
+        $user = User::create(email: 'tina@tinafisio.com', password: 'password', application: $application);
         $user->password = $this->passwordHasher->hashPassword($user, 'password');
         $user->roles = ['ROLE_ADMIN'];
         $manager->persist($user);
