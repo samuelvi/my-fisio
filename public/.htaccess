@@ -30,6 +30,10 @@ DirectoryIndex index.php
     RewriteCond %{HTTP:Authorization} .
     RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Additional handle for environments where Apache renames the header after redirect
+    RewriteCond %{ENV:REDIRECT_HTTP_AUTHORIZATION} .
+    RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{ENV:REDIRECT_HTTP_AUTHORIZATION}]
+
     # Additional IONOS/Apache compatibility for JWT
     SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 
