@@ -64,14 +64,14 @@ class AppointmentProvider implements ProviderInterface
             throw new BadRequestHttpException('Filtros de fecha "start" y "end" son obligatorios para consultar citas globales.');
         }
 
-        $appointments = $this->repository->searchAsArray($searchFilters);
+        // Capture pagination and order from filters or request
+        $page = isset($filters['page']) ? (int)$filters['page'] : ($request && $request->query->has('page') ? $request->query->getInt('page') : null);
+        $limit = isset($filters['itemsPerPage']) ? (int)$filters['itemsPerPage'] : ($request && $request->query->has('itemsPerPage') ? $request->query->getInt('itemsPerPage') : null);
+        $order = isset($filters['order']) ? $filters['order'] : ($request ? $request->query->get('order') : 'ASC');
+        
+        $searchFilters['order'] = $order;
 
-        // Sort by startsAt ascending
-        usort($appointments, function($a, $b) {
-            $dateA = $a['startsAt'] instanceof \DateTimeInterface ? $a['startsAt'] : new \DateTime((string) $a['startsAt']);
-            $dateB = $b['startsAt'] instanceof \DateTimeInterface ? $b['startsAt'] : new \DateTime((string) $b['startsAt']);
-            return $dateA->getTimestamp() <=> $dateB->getTimestamp();
-        });
+        $appointments = $this->repository->searchAsArray($searchFilters, $page, $limit);
 
         return array_map([$this, 'mapToResource'], $appointments);
     }

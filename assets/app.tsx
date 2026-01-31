@@ -15,6 +15,7 @@ import PatientForm from './components/PatientForm';
 import RecordForm from './components/RecordForm';
 import FullHistory from './components/FullHistory';
 import Calendar from './components/Calendar';
+import PatientAppointmentList from './components/PatientAppointmentList';
 import InvoiceList from './components/invoices/InvoiceList';
 import InvoiceForm from './components/invoices/InvoiceForm';
 import InvoiceGaps from './components/invoices/InvoiceGaps';
@@ -130,6 +131,14 @@ function App() {
                     <ProtectedRoute>
                         <Layout>
                             <FullHistory />
+                        </Layout>
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/patients/:id/appointments" element={
+                    <ProtectedRoute>
+                        <Layout>
+                            <PatientAppointmentList />
                         </Layout>
                     </ProtectedRoute>
                 } />

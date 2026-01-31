@@ -47,7 +47,7 @@ final class DoctrineAppointmentRepository extends ServiceEntityRepository implem
             ->getOneOrNullResult(\Doctrine\ORM\Query::HYDRATE_ARRAY);
     }
 
-    public function searchAsArray(array $filters): array
+    public function searchAsArray(array $filters, int $page = null, int $limit = null): array
     {
         $qb = $this->createQueryBuilder('a')
             ->select('a', 'p')
@@ -66,6 +66,17 @@ final class DoctrineAppointmentRepository extends ServiceEntityRepository implem
         if (isset($filters['patientId'])) {
             $qb->andWhere('a.patient = :patientId')
                ->setParameter('patientId', $filters['patientId']);
+        }
+
+        // Handle Ordering
+        $order = isset($filters['order']) && strtoupper((string)$filters['order']) === 'DESC' ? 'DESC' : 'ASC';
+        $qb->orderBy('a.startsAt', $order);
+
+        // Handle Pagination
+        if ($page !== null && $limit !== null && $page > 0 && $limit > 0) {
+            $offset = ($page - 1) * $limit;
+            $qb->setFirstResult($offset)
+               ->setMaxResults($limit);
         }
 
         return $qb->getQuery()->getArrayResult();
