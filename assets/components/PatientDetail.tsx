@@ -215,17 +215,27 @@ export default function PatientDetail() {
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('injuries')}</span>
+                                    <p className="text-gray-900 truncate">{patient.injuries || '-'}</p>
+                                </div>
+                                <div>
                                     <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('bruxism')}</span>
                                     <p className="text-gray-900">{patient.bruxism || '-'}</p>
                                 </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('insoles')}</span>
                                     <p className="text-gray-900">{patient.insoles || '-'}</p>
                                 </div>
+                                <div>
+                                    <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('others')}</span>
+                                    <p className="text-gray-900">{patient.others || '-'}</p>
+                                </div>
                             </div>
                             <div>
-                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('others')}</span>
-                                <p className="text-gray-900">{patient.others || '-'}</p>
+                                <span className="text-[10px] text-gray-400 uppercase tracking-wider block mb-1">{t('observations')}</span>
+                                <p className="text-gray-900">{patient.notes || '-'}</p>
                             </div>
                         </div>
                     </div>

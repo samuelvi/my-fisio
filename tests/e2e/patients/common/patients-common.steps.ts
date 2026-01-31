@@ -129,6 +129,14 @@ Then('the patient DNI field should have value {string}', async ({ page }, value:
   await expect(page.getByLabel(/ID Document|DNI/i)).toHaveValue(value);
 });
 
+Then('the patient injuries field should have the test data value', async ({ page }) => {
+  await expect(page.getByLabel(/Injuries|Lesiones/i)).toHaveValue(testPatient.injuries!);
+});
+
+Then('the patient observations field should have the test data value', async ({ page }) => {
+  await expect(page.getByLabel(/Notes|Observaciones/i)).toHaveValue(testPatient.notes!);
+});
+
 // =============================================================================
 // Patient Data Setup
 // =============================================================================

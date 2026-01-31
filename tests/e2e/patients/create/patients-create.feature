@@ -26,7 +26,6 @@ Feature: Patient Creation
     When I navigate to "/patients/new"
     And I fill in "First Name|Nombre" with "TestFirst"
     And I fill in "Last Name|Apellidos" with "TestLast"
-    And I fill the allergies field with "None"
     And I click the save patient button
     Then I should be redirected to "/patients"
     When I search for patient "TestFirst"
@@ -44,3 +43,5 @@ Feature: Patient Creation
     Then the URL should contain "/patients/"
     When I click the edit details button
     Then the patient DNI field should have the test data value
+    And the patient injuries field should have the test data value
+    And the patient observations field should have the test data value

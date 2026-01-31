@@ -446,17 +446,16 @@ export default function PatientForm() {
                                 </div>
 
                                 <div className="col-span-6">
-                                    <label htmlFor="allergies" className="block text-sm font-bold text-red-600">{t('allergies')} *</label>
+                                    <label htmlFor="allergies" className="block text-sm font-semibold text-gray-700">{t('allergies')}</label>
                                     <input
                                         type="text"
                                         name="allergies"
                                         id="allergies"
-                                        required
                                         placeholder={t('allergies_placeholder')}
                                         value={formData.allergies}
                                         onChange={handleChange}
                                         disabled={loading}
-                                        className={`mt-1 focus:ring-red-500 focus:border-red-500 block w-full px-4 py-2.5 shadow-sm sm:text-sm border-red-300 rounded-md placeholder-gray-300 ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className={`mt-1 focus:ring-primary focus:border-primary block w-full px-4 py-2.5 shadow-sm sm:text-sm border-gray-300 rounded-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     />
                                 </div>
 
