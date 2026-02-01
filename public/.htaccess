@@ -34,7 +34,7 @@ DirectoryIndex index.php
     RewriteCond %{ENV:REDIRECT_HTTP_AUTHORIZATION} .
     RewriteRule ^ - [E=HTTP_AUTHORIZATION:%{ENV:REDIRECT_HTTP_AUTHORIZATION}]
 
-    # Additional IONOS/Apache compatibility for JWT
+    # Additional Apache/FastCGI compatibility for JWT
     SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 
     RewriteCond %{ENV:REDIRECT_STATUS} ^$

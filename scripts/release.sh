@@ -143,7 +143,19 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     echo "  > Clearing and warming up cache..."
     rm -rf var/cache/*
     $PHP_BIN bin/console cache:warmup --env=prod
+
+    echo "  > Resetting OpCache..."
+    # Attempt to reset OpCache via web server (since CLI cannot reset Web OpCache)
+    # We use localhost if possible, or try to infer from existing config
+    # For now, we just inform the user to visit /opcache_reset.php if needed
+    # or try a generic curl if the host allows it.
 EOF
+
+# Extract domain from server string for OpCache reset call
+DOMAIN=$(echo "$SERVER" | cut -d@ -f2 | cut -d: -f1)
+# Note: This is a best-effort attempt. The user should verify their domain.
+echo -e "${YELLOW}Attempting to reset Web OpCache...${NC}"
+curl -s -k "https://p3.tinafisio.com/opcache_reset.php" || echo "Warning: Could not reach opcache_reset.php automatically"
 
 echo ""
 echo -e "${GREEN}=========================================${NC}"

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Kernel;
 
-// IONOS/Apache compatibility fix for JWT
+// Apache/FastCGI compatibility fix for JWT
 if (isset($_SERVER['REDIRECT_HTTP_AUTHORIZATION'])) {
     $_SERVER['HTTP_AUTHORIZATION'] = $_SERVER['REDIRECT_HTTP_AUTHORIZATION'];
 }
