@@ -73,7 +73,9 @@ rsync -avz --delete --progress \
     --exclude='var/log/' \
     --exclude='tests/' \
     --exclude='assets/' \
-    --exclude='*.md' \
+    --exclude='.env.local' \
+    --exclude='.env.prod.local' \
+    --exclude='.env.local.php' \
     "$RELEASE_DIR/" "$HOST:$REMOTE_PATH/"
 
 echo ""
@@ -90,10 +92,6 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     # 1. Detect correct PHP CLI binary
     if command -v php8.4-cli >/dev/null 2>&1; then
         PHP_BIN='php8.4-cli'
-    elif command -v php8.3-cli >/dev/null 2>&1; then
-        PHP_BIN='php8.3-cli'
-    elif command -v php8.2-cli >/dev/null 2>&1; then
-        PHP_BIN='php8.2-cli'
     elif command -v php-cli >/dev/null 2>&1; then
         PHP_BIN='php-cli'
     else
@@ -103,13 +101,10 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     echo "Using PHP binary: $PHP_BIN"
 
     # 2. Determine Composer command
-    if command -v composer >/dev/null 2>&1; then
-        COMPOSER_CMD="$PHP_BIN $(command -v composer)"
-    elif [ -f ./composer.phar ]; then
+    if [ -f ./composer.phar ]; then
         COMPOSER_CMD="$PHP_BIN ./composer.phar"
     else
-        echo "Error: Composer not found."
-        exit 1
+        COMPOSER_CMD="composer"
     fi
 
     echo "Using composer command: $COMPOSER_CMD"
@@ -137,18 +132,11 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     rm -rf var/cache/*
     $PHP_BIN bin/console cache:warmup --env=prod
 
-    echo "  > Resetting OpCache..."
-    # Attempt to reset OpCache via web server (since CLI cannot reset Web OpCache)
-    # We use localhost if possible, or try to infer from existing config
-    # For now, we just inform the user to visit /opcache_reset.php if needed
-    # or try a generic curl if the host allows it.
+    echo "  > Resetting Web OpCache..."
+    # Execute the reset script via local curl to the web server
+    # This ensures we clear the Web OpCache pools
+    curl -s -k "http://localhost/scripts/opcache_reset.php" || echo "Warning: Local OpCache reset call failed"
 EOF
-
-# Extract domain from server string for OpCache reset call
-DOMAIN=$(echo "$SERVER" | cut -d@ -f2 | cut -d: -f1)
-# Note: This is a best-effort attempt. The user should verify their domain.
-echo -e "${YELLOW}Attempting to reset Web OpCache...${NC}"
-curl -s -k "https://p3.tinafisio.com/scripts/opcache_reset.php" || echo "Warning: Could not reach opcache_reset.php automatically"
 
 echo ""
 echo -e "${GREEN}=========================================${NC}"
