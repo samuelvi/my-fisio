@@ -69,10 +69,10 @@ DirectoryIndex index.php
         </IfModule>
     </FilesMatch>
 
-    # Restrict access to scripts directory to local only
-    <Directory "/scripts">
+    # Restrict access to sensitive scripts
+    <FilesMatch "opcache_reset\.php$">
         Require local
-    </Directory>
+    </FilesMatch>
 
     RewriteCond %{ENV:REDIRECT_STATUS} ^$
     RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
