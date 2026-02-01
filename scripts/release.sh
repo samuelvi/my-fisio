@@ -73,9 +73,11 @@ rsync -avz --delete --progress \
     --exclude='var/log/' \
     --exclude='tests/' \
     --exclude='assets/' \
+    --exclude='config/jwt/' \
     --exclude='.env.local' \
     --exclude='.env.prod.local' \
     --exclude='.env.local.php' \
+    --exclude='*.md' \
     "$RELEASE_DIR/" "$HOST:$REMOTE_PATH/"
 
 echo ""
@@ -113,6 +115,7 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     rm -rf .DS_Store .dockerignore .editorconfig .env.prod .features-gen .gitignore .gitignore.additions .phpunit.cache agents assets claude-* gemini-* openai-* skills docs package.json package-lock.json test-results sync-server.sh
 
     echo "  > Checking JWT keys..."
+    mkdir -p config/jwt
     $PHP_BIN bin/console lexik:jwt:generate-keypair --skip-if-exists --no-interaction --env=prod
 
     echo "  > Regenerating .env.local.php..."
