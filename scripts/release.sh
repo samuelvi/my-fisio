@@ -125,19 +125,12 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
 
     echo "  > Checking database state..."
     if $PHP_BIN bin/console dbal:run-sql "SELECT 1 FROM doctrine_migration_versions LIMIT 1" --env=prod >/dev/null 2>&1; then
-        echo "    - Existing installation detected."
+        echo "    - Database connection verified."
         echo "    - Running migrations..."
         $PHP_BIN bin/console doctrine:migrations:migrate --no-interaction --env=prod
     else
-        echo "    - Fresh installation detected (No migration table)."
-        echo "    - Initializing schema directly..."
-        $PHP_BIN bin/console doctrine:schema:create --no-interaction --env=prod
-
-        echo "    - Syncing migration storage..."
-        $PHP_BIN bin/console doctrine:migrations:sync-metadata-storage --env=prod
-
-        echo "    - Marking migrations as executed..."
-        $PHP_BIN bin/console doctrine:migrations:version --add --all --no-interaction --env=prod
+        echo "    - Database migration table not found or connection issue."
+        echo "    - Skipping dangerous schema:create. Please run migrations manually if this is a new setup."
     fi
 
     echo "  > Clearing and warming up cache..."
@@ -155,7 +148,7 @@ EOF
 DOMAIN=$(echo "$SERVER" | cut -d@ -f2 | cut -d: -f1)
 # Note: This is a best-effort attempt. The user should verify their domain.
 echo -e "${YELLOW}Attempting to reset Web OpCache...${NC}"
-curl -s -k "https://p3.tinafisio.com/opcache_reset.php" || echo "Warning: Could not reach opcache_reset.php automatically"
+curl -s -k "https://p3.tinafisio.com/scripts/opcache_reset.php" || echo "Warning: Could not reach opcache_reset.php automatically"
 
 echo ""
 echo -e "${GREEN}=========================================${NC}"

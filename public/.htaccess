@@ -69,6 +69,11 @@ DirectoryIndex index.php
         </IfModule>
     </FilesMatch>
 
+    # Restrict access to scripts directory to local only
+    <Directory "/scripts">
+        Require local
+    </Directory>
+
     RewriteCond %{ENV:REDIRECT_STATUS} ^$
     RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
 
