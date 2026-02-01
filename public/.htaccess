@@ -37,6 +37,38 @@ DirectoryIndex index.php
     # Additional Apache/FastCGI compatibility for JWT
     SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
 
+    # Performance Optimizations
+    <IfModule mod_deflate.c>
+        AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/x-javascript application/json image/svg+xml
+    </IfModule>
+
+    <IfModule mod_expires.c>
+        ExpiresActive On
+        ExpiresDefault "access plus 1 month"
+        # Assets compiled by Vite have hashes, so we can cache them for a long time
+        ExpiresByType text/css "access plus 1 year"
+        ExpiresByType application/javascript "access plus 1 year"
+        ExpiresByType application/x-javascript "access plus 1 year"
+        ExpiresByType image/x-icon "access plus 1 year"
+        ExpiresByType image/vnd.microsoft.icon "access plus 1 year"
+        ExpiresByType image/png "access plus 1 year"
+        ExpiresByType image/jpg "access plus 1 year"
+        ExpiresByType image/jpeg "access plus 1 year"
+        ExpiresByType image/gif "access plus 1 year"
+        ExpiresByType image/svg+xml "access plus 1 year"
+        ExpiresByType font/woff "access plus 1 year"
+        ExpiresByType font/woff2 "access plus 1 year"
+    </IfModule>
+
+    # Ensure PHP files are handled by FPM if available
+    <FilesMatch \.php$>
+        <IfModule mod_proxy_fcgi.c>
+            # Generic FPM handler - works in many shared hosting environments
+            # including those using proxy:unix or proxy:fcgi
+            SetHandler "proxy:fcgi://localhost"
+        </IfModule>
+    </FilesMatch>
+
     RewriteCond %{ENV:REDIRECT_STATUS} ^$
     RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
 
