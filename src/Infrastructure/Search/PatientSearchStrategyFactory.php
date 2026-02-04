@@ -7,6 +7,7 @@ namespace App\Infrastructure\Search;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Platforms\MariaDBPlatform;
 use Doctrine\DBAL\Platforms\MySQLPlatform;
+use Doctrine\DBAL\Platforms\SQLitePlatform;
 use RuntimeException;
 
 use function get_class;
@@ -32,7 +33,8 @@ final class PatientSearchStrategyFactory
 
         return match (true) {
             $platform instanceof MariaDBPlatform,
-            $platform instanceof MySQLPlatform => new MariaDBPatientSearchStrategy(),
+            $platform instanceof MySQLPlatform,
+            $platform instanceof SQLitePlatform => new MariaDBPatientSearchStrategy(),
             default => throw new RuntimeException(
                 sprintf(
                     'Unsupported database platform "%s". Supported platforms: MariaDB, MySQL.',

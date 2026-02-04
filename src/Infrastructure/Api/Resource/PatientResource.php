@@ -15,6 +15,7 @@ use ApiPlatform\Metadata\Put;
 use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Api\State\PatientProcessor;
 use App\Infrastructure\Api\State\PatientProvider;
+use App\Infrastructure\Api\Validator\UniquePatientEmail;
 use DateTimeImmutable;
 use DateTimeInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -33,6 +34,7 @@ use Symfony\Component\Validator\Constraints as Assert;
     denormalizationContext: ['groups' => ['patient:write']],
 )]
 #[ApiFilter(SearchFilter::class, properties: ['status' => 'exact'])]
+#[UniquePatientEmail]
 class PatientResource
 {
     #[ApiProperty(identifier: true)]

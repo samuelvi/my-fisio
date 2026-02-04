@@ -16,6 +16,7 @@
         <server name="APP_ENV" value="test" force="true" />
         <server name="SHELL_VERBOSITY" value="-1" />
         <server name="KERNEL_CLASS" value="App\Kernel" />
+        <env name="DATABASE_URL" value="sqlite:///%kernel.project_dir%/var/test.db" force="true" />
     </php>
 
     <testsuites>

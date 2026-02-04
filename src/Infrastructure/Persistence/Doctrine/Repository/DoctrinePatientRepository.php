@@ -165,4 +165,24 @@ final class DoctrinePatientRepository extends ServiceEntityRepository implements
 
         return $result[0] ?? null;
     }
+
+    public function existsByEmail(string $email, ?int $excludeId = null): bool
+    {
+        if (empty($email)) {
+            return false;
+        }
+
+        $qb = $this->createQueryBuilder('p')
+            ->select('p.id')
+            ->where('p.email = :email')
+            ->setParameter('email', $email)
+            ->setMaxResults(1);
+
+        if ($excludeId) {
+            $qb->andWhere('p.id != :excludeId')
+               ->setParameter('excludeId', $excludeId);
+        }
+
+        return !empty($qb->getQuery()->getOneOrNullResult());
+    }
 }

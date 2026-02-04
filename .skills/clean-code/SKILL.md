@@ -197,6 +197,94 @@ module/
 └── helpers.ts        # Funciones auxiliares
 ```
 
+# PHP Best Practices
+
+Additional specific rules for PHP development in this project.
+
+## Language and Comments
+
+*   **English Only:** All code, variable names, function names, class names, and **comments** must be in English.
+    *   *Exception:* Domain-specific terms that are untranslatable or legally required in another language (e.g., specific tax forms like "Modelo 303").
+*   **No "Spanglish":** Avoid mixing languages.
+
+```php
+// ❌ BAD
+// Calculamos el total
+$total = $precio + $impuesto;
+
+// ✅ GOOD
+// Calculate total
+$total = $price + $tax;
+```
+
+## Null and Empty Checks
+
+*   **Use `empty()`:** Prefer `empty()` over checking for `null` or `""` explicitly when you want to catch both (and `0`, `false`, `[]`).
+*   **Be explicit when necessary:** Only check for `=== null` if `0` or `false` are valid values that should *not* be treated as empty.
+
+```php
+// ❌ BAD
+if ($email === null || $email === '') { ... }
+
+// ✅ GOOD
+if (empty($email)) { ... }
+```
+
+## Type Declarations
+
+*   **Strict Types:** Always use `declare(strict_types=1);` at the top of PHP files.
+*   **Type Hinting:** Always type hint arguments and return values.
+
+```php
+<?php
+
+declare(strict_types=1);
+
+namespace App\Service;
+
+class Calculator
+{
+    public function add(int $a, int $b): int
+    {
+        return $a + $b;
+    }
+}
+```
+
+## Dependency Injection
+
+*   **Constructor Injection:** Prefer constructor injection over setter or property injection.
+*   **Interfaces:** Type hint against interfaces, not concrete classes.
+
+```php
+// ❌ BAD
+class UserService
+{
+    public function __construct(Mailer $mailer) { ... } // Concrete class
+}
+
+// ✅ GOOD
+class UserService
+{
+    public function __construct(MailerInterface $mailer) { ... } // Interface
+}
+```
+
+## Performance Mindset (IO Operations)
+
+Applying **Early Returns** is critical when dealing with I/O (Database, API calls, File System). Avoid unnecessary "round-trips" by validating inputs that would result in empty/no-op operations.
+
+```php
+// ✅ GOOD: Avoid DB call if we know the answer
+public function findUsers(array $ids): array
+{
+    if (empty($ids)) {
+        return [];
+    }
+    // ... query DB
+}
+```
+
 ---
 
 # Refactoring (Martin Fowler)

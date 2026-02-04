@@ -85,4 +85,43 @@ class PatientResourceTest extends ApiTestCase
 
         $this->assertResponseStatusCodeSame(401);
     }
+
+    public function testCannotCreateTwoPatientsWithSameEmail(): void
+    {
+        $token = $this->authenticate();
+        $client = self::createClient();
+
+        $patientData = [
+            'firstName' => 'John',
+            'lastName' => 'Doe',
+            'email' => 'duplicate@example.com',
+        ];
+
+        // Create first patient
+        $client->request('POST', '/api/patients', [
+            'auth_bearer' => $token,
+            'headers' => [
+                'Content-Type' => 'application/ld+json',
+                'Accept' => 'application/ld+json',
+            ],
+            'json' => $patientData,
+        ]);
+        $this->assertResponseStatusCodeSame(201);
+
+        // Attempt to create second patient with same email
+        $client->request('POST', '/api/patients', [
+            'auth_bearer' => $token,
+            'headers' => [
+                'Content-Type' => 'application/ld+json',
+                'Accept' => 'application/ld+json',
+            ],
+            'json' => [
+                'firstName' => 'Jane',
+                'lastName' => 'Smith',
+                'email' => 'duplicate@example.com',
+            ],
+        ]);
+
+        $this->assertResponseStatusCodeSame(422);
+    }
 }

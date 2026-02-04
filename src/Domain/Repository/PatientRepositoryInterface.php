@@ -20,4 +20,9 @@ interface PatientRepositoryInterface
      * Returns null if patient not found.
      */
     public function findForInvoicePrefill(int $id): ?array;
+
+    /**
+     * Check if a patient exists with the given email, optionally excluding a specific ID.
+     */
+    public function existsByEmail(string $email, ?int $excludeId = null): bool;
 }

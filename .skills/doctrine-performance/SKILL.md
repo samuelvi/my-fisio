@@ -98,7 +98,43 @@ public function countByEmail(string $email): int
 
 **Naming convention:** Use `exists*` methods returning `bool` instead of `count*` returning `int` when only checking existence.
 
+### 7. Avoid Unnecessary Round-Trips (Zero-Query Optimization)
+Apply "Early Return" logic to database interactions. If the query result can be determined by the input arguments (e.g., empty array for `IN` clause, null search term, empty string), return immediately without touching the database.
+
+```php
+// ✅ Efficient: ZERO DB calls
+public function findByIds(array $ids): array
+{
+    if (empty($ids)) {
+        return [];
+    }
+    // ... execute query
+}
+
+// ✅ Efficient: ZERO DB calls
+public function existsByEmail(?string $email): bool
+{
+    if (empty($email)) {
+        return false;
+    }
+    // ... execute query
+}
+
+// ❌ Inefficient: Executes query just to find nothing
+public function findByIds(array $ids): array
+{
+    // If $ids is empty, this executes "SELECT ... WHERE id IN (NULL)" or similar
+    // causing a network round-trip for an obvious empty result.
+    return $this->createQueryBuilder('p')
+        ->where('p.id IN (:ids)')
+        ->setParameter('ids', $ids)
+        ->getQuery()
+        ->getResult();
+}
+```
+
 ## Performance Checklist
+- [ ] **Avoid unnecessary round-trips** (check inputs before querying)
 - [ ] Use getArrayResult() for read-only queries
 - [ ] Use QueryBuilder exclusively
 - [ ] Select only needed fields
