@@ -33,6 +33,11 @@ parameters:
 
     # Audit settings
     audit_trail_enabled: '%env(bool:AUDIT_TRAIL_ENABLED)%'
+    audit_trail_patient_enabled: '%env(bool:AUDIT_TRAIL_PATIENT_ENABLED)%'
+    audit_trail_customer_enabled: '%env(bool:AUDIT_TRAIL_CUSTOMER_ENABLED)%'
+    audit_trail_appointment_enabled: '%env(bool:AUDIT_TRAIL_APPOINTMENT_ENABLED)%'
+    audit_trail_invoice_enabled: '%env(bool:AUDIT_TRAIL_INVOICE_ENABLED)%'
+    audit_trail_record_enabled: '%env(bool:AUDIT_TRAIL_RECORD_ENABLED)%'
 
 services:
     # default configuration for services in *this* file

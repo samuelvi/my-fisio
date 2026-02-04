@@ -13,6 +13,8 @@ use App\Domain\Repository\AppointmentRepositoryInterface;
 use App\Domain\Repository\PatientRepositoryInterface;
 use App\Infrastructure\Api\Resource\AppointmentResource;
 use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\Attribute\Target;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class AppointmentProcessor implements ProcessorInterface
 {
@@ -20,6 +22,8 @@ class AppointmentProcessor implements ProcessorInterface
         private AppointmentRepositoryInterface $appointmentRepo,
         private PatientRepositoryInterface $patientRepo,
         private Security $security,
+        #[Target('event.bus')]
+        private MessageBusInterface $eventBus,
     ) {
     }
 
@@ -30,19 +34,39 @@ class AppointmentProcessor implements ProcessorInterface
     {
         if ($operation instanceof DeleteOperationInterface) {
             $appointment = $this->appointmentRepo->get((int) $uriVariables['id']);
+            $appointment->recordDeletedEvent();
+            foreach ($appointment->pullDomainEvents() as $event) {
+                $this->eventBus->dispatch($event);
+            }
             $this->appointmentRepo->delete($appointment);
 
             return null;
         }
 
+        // Resolve Patient first
+        $patient = null;
+        if (null !== $data->patientId) {
+            $patient = $this->patientRepo->get((int) $data->patientId);
+        }
+
         if (isset($uriVariables['id'])) {
             $appointment = $this->appointmentRepo->get((int) $uriVariables['id']);
+            
+            $appointment->update(
+                patient: $patient,
+                startsAt: $data->startsAt,
+                endsAt: $data->endsAt,
+                title: $data->title,
+                allDay: $data->allDay,
+                type: $data->type,
+                notes: $data->notes
+            );
         } else {
             /** @var User $user */
             $user = $this->security->getUser();
 
             $appointment = Appointment::create(
-                patient: null,
+                patient: $patient,
                 userId: $user->id,
                 startsAt: $data->startsAt,
                 endsAt: $data->endsAt,
@@ -51,27 +75,14 @@ class AppointmentProcessor implements ProcessorInterface
                 type: $data->type,
                 notes: $data->notes
             );
+            $appointment->recordCreatedEvent();
         }
-
-        if (null !== $data->patientId) {
-            $patient = $this->patientRepo->get((int) $data->patientId);
-            $appointment->patient = $patient;
-        } elseif (property_exists($data, 'patientId')) {
-            // Nullify if explicitly passed as null/undefined handling (depends on serialization)
-            // Ideally we check if it was actually in the payload
-            $appointment->patient = null;
-        }
-
-        $appointment->title = $data->title;
-        $appointment->allDay = $data->allDay;
-        $appointment->startsAt = $data->startsAt;
-        $appointment->endsAt = $data->endsAt;
-        $appointment->notes = $data->notes;
-        $appointment->type = $data->type;
-
-        $appointment->updateTimestamp();
 
         $this->appointmentRepo->save($appointment);
+
+        foreach ($appointment->pullDomainEvents() as $event) {
+            $this->eventBus->dispatch($event);
+        }
 
         $data->id = $appointment->id;
         $data->userId = $appointment->userId;

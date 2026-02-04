@@ -59,14 +59,23 @@ class AuditEventListener
 ### Configuration
 ```yaml
 # .env
-AUDIT_TRAIL_ENABLED=true  # Production
-AUDIT_TRAIL_ENABLED=false # Development
+# Global Switch
+AUDIT_TRAIL_ENABLED=true
+
+# Granular Control per Entity
+AUDIT_TRAIL_PATIENT_ENABLED=true
+AUDIT_TRAIL_CUSTOMER_ENABLED=true
+AUDIT_TRAIL_APPOINTMENT_ENABLED=true
+AUDIT_TRAIL_INVOICE_ENABLED=true
+AUDIT_TRAIL_RECORD_ENABLED=true
 
 # services.yaml
 services:
-    App\Infrastructure\Audit\AuditEventListener:
-        tags:
-            - { name: doctrine.event_listener, event: onFlush }
+    App\Infrastructure\Audit\AuditService:
+        arguments:
+            $auditTrailEnabled: '%env(bool:AUDIT_TRAIL_ENABLED)%'
+            $patientEnabled: '%env(bool:AUDIT_TRAIL_PATIENT_ENABLED)%'
+            # ... mapped for all entities
 ```
 
 ### Querying Audit Trail

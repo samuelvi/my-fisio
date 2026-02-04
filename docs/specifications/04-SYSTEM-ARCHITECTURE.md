@@ -462,110 +462,17 @@ snc_redis:
 
 ## 7. Architectural Decision Records (ADRs)
 
-### ADR-001: Symfony + React (Decoupled SPA)
+The architectural decisions for this project are recorded in individual documents to ensure traceability and clarity.
 
-**Status:** ✅ Accepted
-**Date:** Early project phase
-**Context:** Need for modern UX with robust backend.
-**Decision:** Symfony 7.4 (backend API) + React 18 (frontend SPA) with Vite bundling.
-**Consequences:**
-- ✅ Clear separation of concerns
-- ✅ Independent technology upgrades
-- ⚠️ Complexity: Two build pipelines (Composer + npm)
-- ⚠️ Deployment: Requires Vite build step before production
+👉 **[View all Architectural Decision Records (ADRs) here](../adr/README.md)**
 
----
+### Key Decisions Summary
 
-### ADR-002: DDD with Pragmatic PHP Approach
-
-**Status:** ✅ Accepted
-**Date:** Early project phase
-**Context:** Balance between pure DDD and PHP ecosystem pragmatism.
-**Decision:** Use DDD layers but allow Doctrine ORM annotations on entities.
-**Consequences:**
-- ✅ Maintainability: Clear domain boundaries
-- ✅ Framework leverage: Doctrine migrations, validation
-- ⚠️ Deviation from pure DDD (domain layer has infrastructure concerns)
-
----
-
-### ADR-003: API Platform for REST API
-
-**Status:** ✅ Accepted
-**Date:** Early project phase
-**Context:** Avoid boilerplate CRUD controllers.
-**Decision:** Use API Platform for automatic endpoint generation.
-**Consequences:**
-- ✅ Rapid development
-- ✅ Automatic OpenAPI docs
-- ⚠️ Vendor lock-in to API Platform
-- ⚠️ Learning curve for custom operations
-
----
-
-### ADR-004: No UnitOfWork Cache (Fresh Data Strategy)
-
-**Status:** ✅ Accepted
-**Date:** Mid-project (performance optimization)
-**Context:** Stale data issues with Doctrine Identity Map.
-**Decision:** Use `getArrayResult()` + manual mapping to bypass UnitOfWork.
-**Consequences:**
-- ✅ Guaranteed fresh data on every query
-- ✅ Predictable behavior
-- ⚠️ More verbose repository code (manual array → entity mapping)
-- ⚠️ Loses automatic relationship loading (must be explicit)
-
----
-
-### ADR-005: Synchronous Translation Injection
-
-**Status:** ✅ Accepted
-**Date:** Multi-language implementation
-**Context:** Avoid 401 errors when fetching translations before login.
-**Decision:** Inject translations via Twig (server-side) into `window.APP_TRANSLATIONS`.
-**Consequences:**
-- ✅ No API calls for translations
-- ✅ Available before authentication
-- ✅ No "flash of untranslated content"
-- ⚠️ Slightly larger HTML payload (~10-20KB)
-
----
-
-### ADR-006: N+1 Fetch Pattern for Pagination
-
-**Status:** ✅ Accepted
-**Date:** Performance optimization
-**Context:** `COUNT(*)` queries slow on large tables.
-**Decision:** Fetch N+1 records; show "Next" button if N+1 exists.
-**Consequences:**
-- ✅ ~50% reduction in database load (one query vs two)
-- ✅ Constant-time performance (no COUNT)
-- ⚠️ No total page count display (acceptable trade-off)
-
----
-
-### ADR-007: Docker Multi-Environment (dev/test/prod)
-
-**Status:** ✅ Accepted
-**Date:** Infrastructure setup
-**Context:** Avoid polluting dev database with test data.
-**Decision:** Separate Docker Compose files for dev, test, prod.
-**Consequences:**
-- ✅ Environment isolation
-- ✅ CI/CD uses dedicated test environment
-- ⚠️ Increased configuration maintenance
-
----
-
-### ADR-008: Invoice Editing via Feature Flag
-
-**Status:** ⚠️ Under Review
-**Date:** Invoice implementation
-**Context:** Should invoices be editable post-creation? (audit trail implications)
-**Decision:** Feature flag `VITE_INVOICE_EDIT_ENABLED` controls editability.
-**Consequences:**
-- ✅ Flexibility (enable in dev, disable in prod)
-- ⚠️ **Pending**: Should invoice *numbers* be editable? (regulatory compliance risk)
+*   **ADR-001**: Symfony + React (Decoupled SPA)
+*   **ADR-002**: DDD with Pragmatic PHP Approach
+*   **ADR-003**: API Platform for REST API
+*   **ADR-004**: No UnitOfWork Cache (Fresh Data Strategy)
+*   **ADR-009**: Pragmatic Event Sourcing (Audit & State)
 
 ---
 

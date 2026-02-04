@@ -17,7 +17,9 @@ use App\Infrastructure\Api\Resource\InvoiceLineInput;
 use DateTimeImmutable;
 use App\Domain\Entity\Invoice;
 use App\Infrastructure\Api\Resource\InvoiceResource;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -29,6 +31,8 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         private InvoiceRepositoryInterface $invoiceRepository,
         private CustomerRepositoryInterface $customerRepository,
         private ValidatorInterface $validator,
+        #[Target('event.bus')]
+        private MessageBusInterface $eventBus,
     ) {
     }
 
@@ -99,16 +103,6 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
         if (null !== $data->number) {
             $invoice->number = $data->number;
         }
-        $invoice->fullName = $data->fullName;
-        $invoice->phone = $data->phone;
-        $invoice->address = $data->address;
-        $invoice->email = $data->email;
-        $invoice->taxId = $data->taxId;
-        $invoice->currency = $data->currency ?? $invoice->currency ?? 'EUR';
-        $invoice->customer = $customer;
-        if ($data->date instanceof DateTimeImmutable) {
-            $invoice->date = $data->date;
-        }
 
         foreach ($invoice->lines as $line) {
             $this->invoiceRepository->removeLine($line);
@@ -130,9 +124,23 @@ final class InvoiceUpdateProcessor implements ProcessorInterface
             $totalAmount += $lineAmount;
         }
 
-        $invoice->amount = $totalAmount;
+        $invoice->update(
+            amount: $totalAmount,
+            fullName: $data->fullName,
+            date: ($data->date instanceof DateTimeImmutable) ? $data->date : $invoice->date,
+            currency: $data->currency ?? $invoice->currency ?? 'EUR',
+            phone: $data->phone,
+            address: $data->address,
+            email: $data->email,
+            taxId: $data->taxId,
+            customer: $customer
+        );
 
         $this->invoiceRepository->save($invoice);
+
+        foreach ($invoice->pullDomainEvents() as $event) {
+            $this->eventBus->dispatch($event);
+        }
 
         return $this->mapToResource($invoice);
     }

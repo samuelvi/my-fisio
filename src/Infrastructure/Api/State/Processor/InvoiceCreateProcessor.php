@@ -21,7 +21,9 @@ use function is_array;
 
 use App\Infrastructure\Api\Resource\InvoiceResource;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /**
@@ -35,6 +37,8 @@ final class InvoiceCreateProcessor implements ProcessorInterface
         private readonly CounterRepositoryInterface $counterRepository,
         private readonly CustomerRepositoryInterface $customerRepository,
         private readonly ValidatorInterface $validator,
+        #[Target('event.bus')]
+        private readonly MessageBusInterface $eventBus,
     ) {
     }
 
@@ -98,6 +102,11 @@ final class InvoiceCreateProcessor implements ProcessorInterface
                     billingAddress: $data->address ?? ''
                 );
                 $this->customerRepository->save($customer);
+                
+                $customer->recordCreatedEvent();
+                foreach ($customer->pullDomainEvents() as $event) {
+                    $this->eventBus->dispatch($event);
+                }
             }
         }
 
@@ -132,6 +141,11 @@ final class InvoiceCreateProcessor implements ProcessorInterface
 
         /** @var Invoice $persistedInvoice */
         $persistedInvoice = $this->persistProcessor->process($invoice, $operation, $uriVariables, $context);
+
+        $persistedInvoice->recordCreatedEvent();
+        foreach ($persistedInvoice->pullDomainEvents() as $event) {
+            $this->eventBus->dispatch($event);
+        }
 
         return $this->mapToResource($persistedInvoice);
     }

@@ -40,25 +40,30 @@ El sistema de auditoría implementa un enfoque híbrido de dos niveles:
 
 ### Configuración
 
-**Archivo**: `config/packages/simple_things_entity_audit.yaml`
+**Archivo**: `config/services.yaml` y `.env`
 
-```yaml
-simple_things_entity_audit:
-    enabled: '%env(bool:AUDIT_TECHNICAL_ENABLED)%'
-    table_prefix: 'audit_'
-    table_suffix: '_log'
-    revision_table_name: 'audit_revisions'
-    audited_entities:
-        - App\Domain\Entity\Patient
-        - App\Domain\Entity\Appointment
-        - App\Domain\Entity\Invoice
-        - App\Domain\Entity\Record
-        - App\Domain\Entity\Customer
-        - App\Domain\Entity\User
-    global_ignore_columns:
-        - createdAt
-        - updatedAt
+El sistema permite un control granular por módulo mediante variables de entorno:
+
+```bash
+# Master Switch
+AUDIT_TRAIL_ENABLED=true
+
+# Control por Módulo
+AUDIT_TRAIL_PATIENT_ENABLED=true
+AUDIT_TRAIL_CUSTOMER_ENABLED=true
+AUDIT_TRAIL_APPOINTMENT_ENABLED=true
+AUDIT_TRAIL_INVOICE_ENABLED=true
+AUDIT_TRAIL_RECORD_ENABLED=true
 ```
+
+Estas variables se inyectan en el `AuditService` para determinar si un evento específico debe ser persistido.
+
+### Bundle Utilizado (Legacy/Opcional)
+
+**Sonata EntityAuditBundle** (fork de SimpleThings)
+- *Nota: Actualmente el sistema principal se basa en Eventos de Dominio (ver abajo), este bundle queda como respaldo técnico de bajo nivel si se requiere.*
+- Versión: ^1.23
+
 
 ### Esquema de Base de Datos
 

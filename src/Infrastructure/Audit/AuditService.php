@@ -12,16 +12,38 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * Respects the AUDIT_TRAIL_ENABLED environment variable as the default state,
  * but allows temporarily disabling audit for batch operations like data migrations
  * where tracking every change would create noise in the audit log.
+ * 
+ * Also supports granular control per entity type.
  */
 class AuditService
 {
     private bool $enabled;
+    private bool $patientEnabled;
+    private bool $customerEnabled;
+    private bool $appointmentEnabled;
+    private bool $invoiceEnabled;
+    private bool $recordEnabled;
 
     public function __construct(
         #[Autowire(param: 'audit_trail_enabled')]
-        bool $auditTrailEnabled
+        bool $auditTrailEnabled,
+        #[Autowire(param: 'audit_trail_patient_enabled')]
+        bool $patientEnabled = true,
+        #[Autowire(param: 'audit_trail_customer_enabled')]
+        bool $customerEnabled = true,
+        #[Autowire(param: 'audit_trail_appointment_enabled')]
+        bool $appointmentEnabled = true,
+        #[Autowire(param: 'audit_trail_invoice_enabled')]
+        bool $invoiceEnabled = true,
+        #[Autowire(param: 'audit_trail_record_enabled')]
+        bool $recordEnabled = true,
     ) {
         $this->enabled = $auditTrailEnabled;
+        $this->patientEnabled = $patientEnabled;
+        $this->customerEnabled = $customerEnabled;
+        $this->appointmentEnabled = $appointmentEnabled;
+        $this->invoiceEnabled = $invoiceEnabled;
+        $this->recordEnabled = $recordEnabled;
     }
 
     /**
@@ -45,9 +67,26 @@ class AuditService
 
     /**
      * Check if audit trail creation is enabled
+     * 
+     * @param string|null $entityType The entity type (e.g., 'Patient', 'Invoice')
      */
-    public function isEnabled(): bool
+    public function isEnabled(?string $entityType = null): bool
     {
-        return $this->enabled;
+        if (!$this->enabled) {
+            return false;
+        }
+
+        if (null === $entityType) {
+            return true;
+        }
+
+        return match ($entityType) {
+            'Patient' => $this->patientEnabled,
+            'Customer' => $this->customerEnabled,
+            'Appointment' => $this->appointmentEnabled,
+            'Invoice' => $this->invoiceEnabled,
+            'Record' => $this->recordEnabled,
+            default => true,
+        };
     }
 }

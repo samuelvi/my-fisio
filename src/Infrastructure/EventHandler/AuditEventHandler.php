@@ -30,13 +30,14 @@ class AuditEventHandler
     {
         $this->eventStore->append($event);
 
-        // Skip audit trail creation if disabled (e.g., during batch operations)
-        if (!$this->auditService->isEnabled()) {
+        $entityType = $this->resolveEntityType($event);
+
+        // Skip audit trail creation if disabled (e.g., during batch operations or per entity)
+        if (!$this->auditService->isEnabled($entityType)) {
             return;
         }
 
         $payload = $event->getPayload();
-        $entityType = $this->resolveEntityType($event);
 
         // Determine operation and changes based on event type
         $operation = $this->determineOperation($event);
@@ -87,6 +88,9 @@ class AuditEventHandler
         }
         if (str_contains($class, 'Record')) {
             return 'Record';
+        }
+        if (str_contains($class, 'Invoice')) {
+            return 'Invoice';
         }
         return 'Unknown';
     }
