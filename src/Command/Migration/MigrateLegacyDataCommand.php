@@ -430,7 +430,11 @@ final class MigrateLegacyDataCommand extends Command
             return $this->hashedDefaultPassword;
         }
 
-        $user = User::create(email: $email ?? 'legacy@example.com', password: 'password');
+        $user = User::create(
+            email: $email ?? 'legacy@example.com',
+            password: 'password',
+            application: Application::create('Default')
+        );
         $this->hashedDefaultPassword = $this->passwordHasher->hashPassword($user, 'password');
 
         return $this->hashedDefaultPassword;
