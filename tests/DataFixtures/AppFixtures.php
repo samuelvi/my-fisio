@@ -47,8 +47,22 @@ class AppFixtures extends Fixture
         PatientFactory::createOne(attributes: ['firstName' => 'Ángel', 'lastName' => 'Martínez']);
         PatientFactory::createOne(attributes: ['firstName' => 'Inés', 'lastName' => 'Pérez']);
 
-        // 9 middle patients (reduced from 13 to keep total at 15)
-        PatientFactory::createMany(number: 9);
+        // 9 deterministic middle patients (keep fixture set stable for E2E assertions)
+        $middlePatients = [
+            ['firstName' => 'Bruno', 'lastName' => 'Ramos'],
+            ['firstName' => 'Clara', 'lastName' => 'Santos'],
+            ['firstName' => 'Diego', 'lastName' => 'Molina'],
+            ['firstName' => 'Elena', 'lastName' => 'Ruiz'],
+            ['firstName' => 'Fabian', 'lastName' => 'Navarro'],
+            ['firstName' => 'Gabriela', 'lastName' => 'Cortes'],
+            ['firstName' => 'Hector', 'lastName' => 'Vidal'],
+            ['firstName' => 'Laura', 'lastName' => 'Prieto'],
+            ['firstName' => 'Pablo', 'lastName' => 'Iglesias'],
+        ];
+
+        foreach ($middlePatients as $middlePatient) {
+            PatientFactory::createOne(attributes: $middlePatient);
+        }
 
         // Last patient (will be at the beginning of the list if sorted by ID DESC)
         $lastPatient = PatientFactory::createOne(attributes: ['firstName' => 'ZLast', 'lastName' => 'Patient']);
