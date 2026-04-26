@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
 import { Customer } from '../../types';
 import { useFormDraft } from '../../presentation/hooks/useFormDraft';
+import { apiClient } from '../../presentation/api/httpClient';
 import FormDraftUI from '../shared/FormDraftUI';
 
 export default function CustomerForm() {
@@ -48,7 +48,7 @@ export default function CustomerForm() {
     const fetchCustomer = async (customerId: string) => {
         setLoading(true);
         try {
-            const response = await axios.get(Routing.generate('api_customers_item_get', { id: customerId }));
+            const response = await apiClient.get(Routing.generate('api_customers_item_get', { id: customerId }));
             const customer = response.data;
             setFormData({
                 firstName: customer.firstName,
@@ -101,9 +101,9 @@ export default function CustomerForm() {
 
         try {
             if (id) {
-                await axios.put(Routing.generate('api_customers_put', { id }), formData);
+                await apiClient.put(Routing.generate('api_customers_put', { id }), formData);
             } else {
-                await axios.post(Routing.generate('api_customers_post'), formData);
+                await apiClient.post(Routing.generate('api_customers_post'), formData);
             }
             draft.clearDraft();
             navigate('/customers', { replace: true });

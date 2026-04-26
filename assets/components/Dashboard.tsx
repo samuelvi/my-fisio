@@ -1,9 +1,10 @@
-import React, { useState, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import React, { useEffect, useState, ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useLanguage } from './LanguageContext';
 import { useNavigate, Link } from 'react-router-dom';
 import Routing from '../routing/init';
 import { DashboardStats, HealthCheck, Appointment, Patient } from '../types';
+import { fetchDashboardSummary } from '../presentation/api/services/dashboardApi';
 
 export default function Dashboard() {
     const { t } = useLanguage();
@@ -16,47 +17,30 @@ export default function Dashboard() {
     });
     const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
     const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
     const [health, setHealth] = useState<HealthCheck>({ status: 'loading', checks: {} });
 
+    const { data, isError, isLoading } = useQuery({
+        queryKey: ['dashboard-summary'],
+        queryFn: fetchDashboardSummary,
+    });
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const today = new Date();
-                const startStr = today.toISOString().split('T')[0] + 'T00:00:00';
-                const endStr = today.toISOString().split('T')[0] + 'T23:59:59';
+        if (!data) {
+            return;
+        }
 
-                const [statsResponse, healthResponse, appointmentsResponse, patientsResponse] = await Promise.all([
-                    axios.get<DashboardStats>(Routing.generate('api_dashboard_stats')),
-                    axios.get<HealthCheck>(Routing.generate('api_health')),
-                    axios.get(Routing.generate('api_appointments_collection'), {
-                        params: { start: startStr, end: endStr }
-                    }),
-                    axios.get(Routing.generate('api_patients_collection'), {
-                        params: { itemsPerPage: 5, 'order[id]': 'desc' }
-                    })
-                ]);
-                
-                setStats(statsResponse.data);
-                setHealth(healthResponse.data);
-                
-                const appData = appointmentsResponse.data['member'] || appointmentsResponse.data['hydra:member'] || [];
-                appData.sort((a: any, b: any) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-                setTodayAppointments(appData);
+        const summary = data;
+        setStats(summary.stats);
+        setHealth(summary.health);
+        setTodayAppointments(summary.appointments);
+        setRecentPatients(summary.recentPatients);
+    }, [data]);
 
-                const patientData = patientsResponse.data['member'] || patientsResponse.data['hydra:member'] || [];
-                setRecentPatients(patientData);
-
-            } catch (error) {
-                console.error('Error fetching dashboard stats:', error);
-                setHealth({ status: 'degraded', checks: {} });
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchStats();
-    }, []);
+    useEffect(() => {
+        if (isError) {
+            setHealth({ status: 'degraded', checks: {} });
+        }
+    }, [isError]);
 
     const StatCard = ({ title, value, colorClass, icon, linkTo }: { title: string; value: number; colorClass: string; icon: ReactNode; linkTo?: string }) => (
         <div 
@@ -82,28 +66,28 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6">
                 <StatCard
                     title={t('total_patients')}
-                    value={loading ? 0 : stats?.totalPatients || 0}
+                    value={isLoading ? 0 : stats?.totalPatients || 0}
                     colorClass="border-primary"
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>}
                     linkTo={Routing.generate('app_home', { reactRouting: 'patients' })}
                 />
                 <StatCard
                     title={t('invoices_this_year')}
-                    value={loading ? 0 : stats?.invoicesThisYear || 0}
+                    value={isLoading ? 0 : stats?.invoicesThisYear || 0}
                     colorClass="border-yellow-500"
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>}
                     linkTo={Routing.generate('app_home', { reactRouting: 'invoices' })}
                 />
                 <StatCard
                     title={t('appointments_today')}
-                    value={loading ? 0 : stats?.appointmentsToday || 0}
+                    value={isLoading ? 0 : stats?.appointmentsToday || 0}
                     colorClass="border-primary"
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>}
                     linkTo={Routing.generate('app_home', { reactRouting: 'appointments' })}
                 />
                 <StatCard
                     title={t('others_today')}
-                    value={loading ? 0 : stats?.othersToday || 0}
+                    value={isLoading ? 0 : stats?.othersToday || 0}
                     colorClass="border-green-500"
                     icon={<svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>}
                     linkTo={Routing.generate('app_home', { reactRouting: 'appointments' })}
@@ -174,7 +158,7 @@ export default function Dashboard() {
                         </span>
                     </div>
                     <div className="p-2 sm:p-4">
-                        {loading ? (
+                        {isLoading ? (
                             <div className="py-12 text-center text-gray-400 font-bold">{t('loading')}...</div>
                         ) : todayAppointments.length === 0 ? (
                             <div className="py-12 text-center text-gray-400 italic">{t('no_upcoming_appointments')}</div>
@@ -221,7 +205,7 @@ export default function Dashboard() {
                         <Link to="/patients" className="text-primary hover:text-primary-dark text-[10px] font-black uppercase tracking-widest transition-colors">{t('view_all')} →</Link>
                     </div>
                     <div className="p-2 sm:p-4">
-                        {loading ? (
+                        {isLoading ? (
                             <div className="py-12 text-center text-gray-400 font-bold">{t('loading')}...</div>
                         ) : recentPatients.length === 0 ? (
                             <div className="py-12 text-center text-gray-400 italic">{t('no_patients_found')}</div>

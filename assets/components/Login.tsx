@@ -1,8 +1,9 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import Routing from '../routing/init';
 import { useLanguage } from './LanguageContext';
+import { apiClient, setAuthorizationToken } from '../presentation/api/httpClient';
+import { clearSessionToken, hasSessionToken, setSessionToken } from '../presentation/auth/sessionStore';
 
 export default function Login() {
     const { language, t, changeLanguage } = useLanguage();
@@ -20,13 +21,13 @@ export default function Login() {
 
         if (isExpired) {
             setSessionExpired(true);
-            localStorage.removeItem('token');
+            clearSessionToken();
         }
     }, [location.search]);
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
-        if (localStorage.getItem('token') && !params.get('expired')) {
+        if (hasSessionToken() && !params.get('expired')) {
             window.location.href = dashboardUrl;
         }
     }, [dashboardUrl, location.search]);
@@ -36,7 +37,7 @@ export default function Login() {
         setError(null);
 
         try {
-            const response = await axios.post(
+            const response = await apiClient.post(
                 Routing.generate('api_login_check'),
                 {
                     username: email,
@@ -51,8 +52,8 @@ export default function Login() {
             );
 
             const jwt = response.data.token;
-            localStorage.setItem('token', jwt);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${jwt}`;
+            setSessionToken(jwt);
+            setAuthorizationToken(jwt);
             window.location.href = dashboardUrl;
             
         } catch (err) {

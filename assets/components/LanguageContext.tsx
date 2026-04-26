@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import axios from 'axios';
+import { setLocaleHeader } from '../presentation/api/httpClient';
 
 interface LanguageContextType {
     language: string;
@@ -23,7 +23,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         const currentAllTranslations = (window as any).APP_TRANSLATIONS || {};
         setTranslations(currentAllTranslations[locale] || {});
         localStorage.setItem('app_locale', locale);
-        axios.defaults.headers.common['X-App-Locale'] = locale;
+        setLocaleHeader(locale);
     }, [locale]);
 
     const t = (key: string, params: Record<string, string | number> | null = null): string => {

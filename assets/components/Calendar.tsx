@@ -28,6 +28,14 @@ function toSimpleDateTimeString(date: Date): string {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
 }
 
+function toSingleDate(value: Date | null | [Date | null, Date | null]): Date | null {
+    if (Array.isArray(value)) {
+        return value[0] ?? null;
+    }
+
+    return value;
+}
+
 interface FormData {
     title: string;
     notes: string;
@@ -677,7 +685,10 @@ export default function Calendar() {
                                                 <DatePicker
                                                     id="appointment-start"
                                                     selected={formData.startsAt ? new Date(formData.startsAt) : null}
-                                                    onChange={(date) => setFormData({...formData, startsAt: date ? toSimpleDateTimeString(date) : ''})}
+                                                    onChange={(date: Date | null | [Date | null, Date | null]) => {
+                                                        const nextDate = toSingleDate(date);
+                                                        setFormData({ ...formData, startsAt: nextDate ? toSimpleDateTimeString(nextDate) : '' });
+                                                    }}
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}
@@ -692,7 +703,10 @@ export default function Calendar() {
                                                 <DatePicker
                                                     id="appointment-end"
                                                     selected={formData.endsAt ? new Date(formData.endsAt) : null}
-                                                    onChange={(date) => setFormData({...formData, endsAt: date ? toSimpleDateTimeString(date) : ''})}
+                                                    onChange={(date: Date | null | [Date | null, Date | null]) => {
+                                                        const nextDate = toSingleDate(date);
+                                                        setFormData({ ...formData, endsAt: nextDate ? toSimpleDateTimeString(nextDate) : '' });
+                                                    }}
                                                     showTimeSelect
                                                     timeFormat="HH:mm"
                                                     timeIntervals={SLOT_DURATION_MINUTES}

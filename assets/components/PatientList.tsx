@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useLanguage } from './LanguageContext';
-import Routing from '../routing/init';
-import { Patient, PatientStatus } from '../types';
+import { Patient } from '../types';
+import { fetchPatientsCollection } from '../presentation/api/services/patientsApi';
 
 export default function PatientList() {
     const { t } = useLanguage();
@@ -49,25 +48,14 @@ export default function PatientList() {
         const currentPage = options.page ?? page;
         const currentSearchTerm = options.searchTerm ?? searchTerm;
         try {
-            const response = await axios.get(Routing.generate('api_patients_collection'), {
-                params: { 
-                    status: statusFilter,
-                    order: sortOrder,
-                    page: currentPage,
-                    itemsPerPage: ITEMS_PER_PAGE + 1,
-                    search: currentSearchTerm,
-                    fuzzy: useFuzzy
-                }
+            const data = await fetchPatientsCollection({
+                status: statusFilter,
+                order: sortOrder,
+                page: currentPage,
+                itemsPerPage: ITEMS_PER_PAGE + 1,
+                search: currentSearchTerm,
+                fuzzy: useFuzzy,
             });
-            
-            let data: Patient[] = [];
-            if (Array.isArray(response.data)) {
-                data = response.data;
-            } else if (response.data && response.data['hydra:member']) {
-                data = response.data['hydra:member'];
-            } else if (response.data && response.data['member']) {
-                data = response.data['member'];
-            }
             
             if (data.length > ITEMS_PER_PAGE) {
                 setHasNextPage(true);

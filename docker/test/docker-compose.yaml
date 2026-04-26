@@ -77,7 +77,7 @@ services:
     image: nginx:alpine
     container_name: test_physiotherapy_nginx
     ports:
-      - "8081:80" # Different port than dev
+      - "${TEST_WEB_PORT:-8081}:80" # Different port than dev (configurable)
     volumes:
       - ../../:/var/www/html
       - ../dev/nginx/nginx.conf:/etc/nginx/nginx.conf
