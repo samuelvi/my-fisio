@@ -14,7 +14,7 @@ export default defineConfig({
   reporter: [['html', { outputFolder: './var/log/playwright/report', open: 'never' }], ['list']],
   outputDir: './var/log/playwright/test-results',
   use: {
-    baseURL: 'http://127.0.0.1:8081',
+    baseURL: process.env.E2E_BASE_URL || 'http://127.0.0.1:8081',
     actionTimeout: 15000,
     navigationTimeout: 30000,
     screenshot: 'only-on-failure',

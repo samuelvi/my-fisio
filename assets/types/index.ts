@@ -49,7 +49,8 @@ export interface Record {
 export type RecordEntry = Record;
 
 export interface Appointment {
-    id: number;
+    id?: number | string;
+    '@id'?: string;
     patientId?: number;
     patientName?: string;
     userId: number;

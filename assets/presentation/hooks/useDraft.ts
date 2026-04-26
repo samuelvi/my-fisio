@@ -89,17 +89,11 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
     if (!isMountedRef.current) return;
 
     const exists = draftService.hasDraft(type);
-    console.log('[useDraft] checkDraft - exists:', exists);
     setHasDraft(exists);
 
     if (exists) {
       const age = draftService.getDraftAge(type);
       const draft = draftService.getDraft(type);
-      console.log('[useDraft] checkDraft - draft:', {
-        age,
-        savedByError: draft?.savedByError,
-        draft
-      });
       setDraftAge(age);
       setDraftSavedByError(draft?.savedByError || false);
     } else {
@@ -153,12 +147,6 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
    * Call this in your catch block to save draft when API fails
    */
   const saveOnNetworkError = useCallback((error: any, data: T) => {
-    console.log('[useDraft] saveOnNetworkError called', {
-      hasResponse: !!error.response,
-      code: error.code,
-      error
-    });
-
     // Check if it's a network error (no response = network failed)
     const isNetworkError =
       !error.response || // No response = network error
@@ -168,12 +156,8 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
       error.code === 'ERR_INTERNET_DISCONNECTED' ||
       (error.message && error.message.toLowerCase().includes('network'));
 
-    console.log('[useDraft] isNetworkError:', isNetworkError);
-
     if (isNetworkError) {
-      console.warn('[useDraft] Network error detected, saving draft with savedByError=true');
       saveDraft(data, true); // Mark as saved by error
-      console.log('[useDraft] Draft saved, emitting event');
 
       // Emit event for other listeners
       window.dispatchEvent(
@@ -181,8 +165,6 @@ export function useDraft<T = unknown>(options: UseDraftOptions): UseDraftReturn<
           detail: { type, data, formId, error: error.message }
         })
       );
-    } else {
-      console.log('[useDraft] Not a network error, skipping draft save');
     }
   }, [type, formId, saveDraft]);
 

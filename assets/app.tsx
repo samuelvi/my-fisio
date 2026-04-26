@@ -1,10 +1,13 @@
 import React, { ReactNode } from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import axios, { AxiosResponse, AxiosError } from 'axios';
+import { QueryClientProvider } from '@tanstack/react-query';
 import './app.css';
 import './routing/init';
 import { LanguageProvider } from './components/LanguageContext';
+import { hasSessionToken } from './presentation/auth/sessionStore';
+import { initializeFrontendBootstrap } from './presentation/bootstrap/frontendBootstrap';
+import { queryClient } from './presentation/query/queryClient';
 
 import Dashboard from './components/Dashboard';
 import Layout from './components/Layout';
@@ -22,61 +25,10 @@ import InvoiceGaps from './components/invoices/InvoiceGaps';
 import CustomerList from './components/customers/CustomerList';
 import CustomerForm from './components/customers/CustomerForm';
 
-axios.defaults.headers.common['Accept'] = 'application/ld+json';
-axios.defaults.headers.common['Content-Type'] = 'application/ld+json';
-
-const colorVars: Record<string, string | undefined> = {
-    '--color-primary': import.meta.env.VITE_COLOR_PRIMARY as string,
-    '--color-primary-light': import.meta.env.VITE_COLOR_PRIMARY_LIGHT as string,
-    '--color-primary-dark': import.meta.env.VITE_COLOR_PRIMARY_DARK as string,
-    '--color-primary-darker': import.meta.env.VITE_COLOR_PRIMARY_DARKER as string,
-    '--color-primary-selected': import.meta.env.VITE_COLOR_PRIMARY_SELECTED as string,
-    '--color-btn-success': import.meta.env.VITE_COLOR_BTN_SUCCESS as string,
-    '--color-btn-danger': import.meta.env.VITE_COLOR_BTN_DANGER as string,
-    '--color-btn-secondary': import.meta.env.VITE_COLOR_BTN_SECONDARY as string,
-    '--color-btn-info': import.meta.env.VITE_COLOR_BTN_INFO as string,
-    '--color-calendar-appointment': import.meta.env.VITE_COLOR_CALENDAR_APPOINTMENT as string,
-    '--color-calendar-other': import.meta.env.VITE_COLOR_CALENDAR_OTHER as string,
-    '--color-calendar-text-other': import.meta.env.VITE_COLOR_CALENDAR_TEXT_OTHER as string,
-    '--color-calendar-event-default': import.meta.env.VITE_COLOR_CALENDAR_EVENT_DEFAULT as string,
-};
-
-Object.entries(colorVars).forEach(([key, value]) => {
-    if (value) {
-        document.documentElement.style.setProperty(key, value);
-    }
-});
-
-const token = localStorage.getItem('token');
-if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
-
-axios.interceptors.response.use(
-    (response: AxiosResponse) => {
-        if (response.data && (response.data as any).code === 401) {
-            localStorage.removeItem('token');
-            delete axios.defaults.headers.common['Authorization'];
-            window.location.href = '/login?expired=1';
-            return new Promise(() => {});
-        }
-        return response;
-    },
-    (error: AxiosError) => {
-        const isUnauthorized = error.response && error.response.status === 401;
-        
-        if (isUnauthorized && !window.location.pathname.includes('/login')) {
-            localStorage.removeItem('token');
-            delete axios.defaults.headers.common['Authorization'];
-            window.location.href = '/login?expired=1';
-            return new Promise(() => {});
-        }
-        return Promise.reject(error);
-    }
-);
+initializeFrontendBootstrap(true);
 
 const ProtectedRoute = ({ children }: { children: ReactNode }) => {
-    const isAuthenticated = !!localStorage.getItem('token');
+    const isAuthenticated = hasSessionToken();
     if (!isAuthenticated) {
         return <Navigate to="/login?expired=1" replace />;
     }
@@ -84,7 +36,7 @@ const ProtectedRoute = ({ children }: { children: ReactNode }) => {
 };
 
 function App() {
-    const isAuthenticated = !!localStorage.getItem('token');
+    const isAuthenticated = hasSessionToken();
 
     return (
         <BrowserRouter>
@@ -242,9 +194,11 @@ if (rootElement) {
     const root = ReactDOM.createRoot(rootElement);
     root.render(
         <React.StrictMode>
-            <LanguageProvider>
-                <App />
-            </LanguageProvider>
+            <QueryClientProvider client={queryClient}>
+                <LanguageProvider>
+                    <App />
+                </LanguageProvider>
+            </QueryClientProvider>
         </React.StrictMode>
     );
 }

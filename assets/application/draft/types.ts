@@ -5,6 +5,7 @@
  */
 
 import { DraftType } from '../../domain/Draft';
+import { DraftData } from '../../domain/Draft';
 
 /**
  * Actions available for draft management
@@ -31,7 +32,7 @@ export interface DraftRepository {
   save<T>(type: DraftType, data: T, formId: string, savedByError?: boolean): void;
 
   /** Get draft from storage */
-  get<T>(type: DraftType): T | null;
+  get<T>(type: DraftType): DraftData<T> | null;
 
   /** Remove draft from storage */
   remove(type: DraftType): void;

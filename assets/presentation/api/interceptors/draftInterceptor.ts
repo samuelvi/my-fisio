@@ -6,33 +6,7 @@
 
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { DRAFT_EVENTS } from '../../../application/draft/types';
-
-/**
- * Network error codes that should trigger draft save
- */
-const NETWORK_ERROR_CODES = [
-  'ERR_NETWORK',
-  'ECONNABORTED',
-  'ETIMEDOUT',
-  'ERR_BAD_REQUEST'
-];
-
-/**
- * Check if error is a network error (not server error)
- */
-function isNetworkError(error: AxiosError): boolean {
-  // Network errors have no response (connection failed before reaching server)
-  if (!error.response) {
-    return true;
-  }
-
-  // Check for specific network error codes
-  if (error.code && NETWORK_ERROR_CODES.includes(error.code)) {
-    return true;
-  }
-
-  return false;
-}
+import { isNetworkError } from '../utils/httpErrorUtils';
 
 /**
  * Setup draft interceptor on axios instance
@@ -48,8 +22,6 @@ export function setupDraftInterceptor(axiosInstance: AxiosInstance = axios): voi
     // Error response - check if network error
     (error: AxiosError) => {
       if (isNetworkError(error)) {
-        console.warn('[DraftInterceptor] Network error detected, emitting event', error.code || error.message);
-
         // Emit network error event
         // Components using DraftService will listen for this and save draft
         window.dispatchEvent(

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { useLanguage } from '../LanguageContext';
 import Routing from '../../routing/init';
 import { Customer } from '../../types';
+import { apiClient } from '../../presentation/api/httpClient';
 
 export default function CustomerList() {
     const { t } = useLanguage();
@@ -45,7 +45,7 @@ export default function CustomerList() {
             if (filters.name.trim()) params['fullName'] = filters.name.trim();
             if (filters.taxId.trim()) params['taxId'] = filters.taxId.trim();
             
-            const response = await axios.get(Routing.generate('api_customers_collection'), { params });
+            const response = await apiClient.get(Routing.generate('api_customers_collection'), { params });
             const responseData = response.data;
             
             let data: Customer[] = [];

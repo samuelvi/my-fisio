@@ -224,7 +224,7 @@ describe('LocalStorageDraftRepository', () => {
       expect(keys).toContain('draft_invoice');
       expect(keys).toContain('draft_patient');
       expect(keys).toContain('draft_customer');
-      expect(keys).toHaveLength(3);
+      expect(keys).toHaveLength(4);
     });
   });
 
