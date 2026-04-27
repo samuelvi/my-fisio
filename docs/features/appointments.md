@@ -26,7 +26,8 @@ The Appointment Scheduling module provides a visual interface for managing the d
 - **Bulk Operations**: "Delete Empty Gaps" to clean up the calendar view.
 
 ### 4. Resilience
-- **Offline Handling**: If an appointment creation or move fails due to network issues, a [Draft](draft-system.md) is saved, and the user is alerted. The UI optimistically updates but reverts if the server rejects the change.
+- **Draft Recovery on Submit**: Appointment draft recovery is available only in the create/edit modal submit flow. The client pre-saves modal form data before submit, clears it on success, and marks it as error draft on network failure.
+- **No Offline Queue for Calendar Interactions**: Drag/drop and resize keep the existing optimistic update + revert behavior on failure. No offline queue/replay is implemented in this module.
 
 ## User Workflows
 
@@ -42,6 +43,14 @@ The Appointment Scheduling module provides a visual interface for managing the d
 3. System validates availability:
     - **Success**: Appointment stays in new slot.
     - **Failure**: Appointment snaps back to original slot, and an error alert appears.
+
+### Draft Recovery in Modal (Create/Edit)
+1. User opens appointment modal and fills fields.
+2. User clicks save.
+3. Modal form draft is pre-saved.
+4. If save succeeds, draft is cleared.
+5. If save fails due to network error, draft is marked as error draft and recovery alert is shown.
+6. User can restore or discard draft from the calendar screen.
 
 ## Technical Details
 

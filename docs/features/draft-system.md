@@ -9,11 +9,19 @@ The Draft System provides automatic data recovery for forms when network errors 
 - ✅ **Network Error Recovery**: Automatically saves form data when API calls fail due to network issues
 - ✅ **Visual Alerts**: Red alert banner when draft is saved due to network error
 - ✅ **Restore & Discard**: Users can restore or permanently discard saved drafts
-- ✅ **Multi-Form Support**: Supports invoices, patients, and customers
+- ✅ **Multi-Form Support**: Supports invoices, patients, customers, records, and appointments (modal submit flow)
 - ✅ **Persistent Storage**: Uses localStorage to survive browser restarts
 - ❌ **NO Auto-Save**: Does NOT save automatically every N seconds (removed feature)
 
 ## How It Works
+
+### Canonical Trigger Source
+
+Draft persistence is triggered at component level using `draft.saveDraft(...)` and `draft.saveOnNetworkError(...)`.
+
+- This is the canonical pattern for this codebase.
+- There is no active global Axios interceptor driving draft persistence in runtime.
+- Appointment draft behavior follows the same component-level pattern.
 
 ### Normal Flow (No Errors)
 
@@ -221,6 +229,12 @@ CI=true npx playwright test tests/e2e/drafts/
 1. Ensure `draft.clearDraft()` is called after successful API call
 2. Check that navigation happens AFTER clearing draft
 3. Verify no errors in console
+
+## Explicitly Out of Scope
+
+- No offline queue/replay for calendar drag/drop/resize operations
+- No background sync worker for deferred appointment updates
+- No backend endpoint changes for draft recovery
 
 ## See Also
 
