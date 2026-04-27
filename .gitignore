@@ -118,3 +118,10 @@ tests/e2e/features/tests/
 # Scripts locales de despliegue
 /deploy/
 composer.phar
+.gitmodules
+opencode-bundle
+
+.opencode
+.opencode.local
+readme-opencode-bundle-init.md
+.gitmodules

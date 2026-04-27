@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Command\Migration;
 
+// bin/console app:migration:populate-customers
+
 use App\Domain\Entity\Customer;
 use App\Domain\Entity\Invoice;
 use App\Domain\Entity\Patient;

@@ -1,4 +1,4 @@
-.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-fix-cache-perms test-e2e-ui prod-build prod-deploy
+.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-fix-cache-perms test-e2e-ui prod-build prod-deploy opencode-init opencode-link opencode-verify opencode-open opencode-start
 
 # Default target
 .DEFAULT_GOAL := help
@@ -88,7 +88,7 @@ prod-release: ## Build and deploy (config in .env.local via DEPLOY_SERVER)
 
 ##@ Container Access (Dev)
 
-dev-shell-php: ## Access PHP container shell
+dev-shell-php dev-shell: ## Access PHP container shell
 	@echo "$(GREEN)Accessing PHP container...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php sh
 
@@ -414,6 +414,20 @@ build-assets: ## Build all assets (Composer + npm + Vite + routes + cache)
 	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
 
 ##@ Utilities
+
+opencode-init: ## Initialize OpenCode bundle runtime (step 1)
+	$(MAKE) -C opencode-bundle bundle-init-all
+
+opencode-link: ## Link OpenCode bundle config into this repo (step 2)
+	$(MAKE) -C opencode-bundle link-parent
+
+opencode-verify: ## Verify OpenCode bundle integration
+	$(MAKE) -C opencode-bundle bundle-verify-all
+
+opencode-open: ## Open OpenCode CLI from bundle
+	$(MAKE) -C opencode-bundle opencode-all ARGS="$(ARGS)"
+
+opencode-start: opencode-init opencode-link opencode-verify opencode-open ## Full OpenCode startup (init + link + verify + open CLI)
 
 mailpit: ## Open MailPit web interface
 	@echo "$(GREEN)Opening MailPit...$(NC)"

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Command\Migration;
 
-use App\Domain\Entity\Application;
 use App\Domain\Entity\User;
+use App\Domain\Entity\Application;
 use App\Domain\Enum\PatientStatus;
 use App\Infrastructure\Audit\AuditService;
 use DateTime;
@@ -13,7 +13,6 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Exception;
 
-use function in_array;
 use function is_string;
 
 use const JSON_ERROR_NONE;
@@ -26,6 +25,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+
+// bin/console app:migrate-legacy-data
 
 #[AsCommand(
     name: 'app:migrate-legacy-data',
@@ -41,6 +42,8 @@ final class MigrateLegacyDataCommand extends Command
     private const TYPE_DATETIME = 'datetime';
     private const TYPE_JSON = 'json';
     private const TYPE_SERIALIZED = 'serialized';
+
+    private const DATABASE_FILE = 'db5018529229_hosting-data_io.sql';
 
     private const MAPPINGS = [
         'users' => [
@@ -168,7 +171,7 @@ final class MigrateLegacyDataCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $dumpFile = $this->projectDir . '/private/db5018529229_hosting-data_io.sql';
+        $dumpFile = $this->projectDir . '/private/' . self::DATABASE_FILE;
 
         if (!file_exists($dumpFile)) {
             $io->error(sprintf('Dump file not found at "%s"', $dumpFile));
@@ -295,9 +298,9 @@ final class MigrateLegacyDataCommand extends Command
 
         foreach ($columns as $index => $colConfig) {
             $rawValue = $row[$index] ?? null;
-//            if ('users' === $targetTable && 'password' === $colConfig['target']) {
-//                $rawValue = $this->getDefaultHashedPassword($row[1] ?? null);
-//            }
+            if ('users' === $targetTable && 'password' === $colConfig['target']) {
+                $rawValue = $this->getDefaultHashedPassword($row[1] ?? null);
+            }
 
             $targetColumns[] = $colConfig['target'];
             $paramName = $colConfig['target'];
