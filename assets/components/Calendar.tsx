@@ -14,6 +14,8 @@ import Routing from '../routing/init';
 import { Appointment, Patient } from '../types';
 import StatusAlert from './shared/StatusAlert';
 import PatientAutocomplete from './shared/PatientAutocomplete';
+import FormDraftUI from './shared/FormDraftUI';
+import { useFormDraft } from '../presentation/hooks/useFormDraft';
 
 registerLocale('en', enUS);
 registerLocale('es', es);
@@ -46,6 +48,25 @@ interface FormData {
     patientId: number | null;
 }
 
+const DEFAULT_FORM_DATA: FormData = {
+    title: '',
+    notes: '',
+    type: 'appointment',
+    startsAt: '',
+    endsAt: '',
+    allDay: false,
+    patientId: null
+};
+
+function normalizeDraftFormData(data: Partial<FormData>): FormData {
+    return {
+        ...DEFAULT_FORM_DATA,
+        ...data,
+        allDay: Boolean(data.allDay),
+        patientId: typeof data.patientId === 'number' ? data.patientId : null
+    };
+}
+
 export default function Calendar() {
     const { t, language } = useLanguage();
     const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -57,15 +78,7 @@ export default function Calendar() {
     const [alertMessage, setAlertMessage] = useState<string>('');
     const calendarRef = useRef<FullCalendar>(null);
     const titleInputRef = useRef<HTMLInputElement>(null);
-    const [formData, setFormData] = useState<FormData>({
-        title: '',
-        notes: '',
-        type: 'appointment',
-        startsAt: '',
-        endsAt: '',
-        allDay: false,
-        patientId: null
-    });
+    const [formData, setFormData] = useState<FormData>(DEFAULT_FORM_DATA);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [patientError, setPatientError] = useState<string | undefined>(undefined);
     const [validationError, setValidationError] = useState<string | null>(null);
@@ -171,6 +184,41 @@ export default function Calendar() {
         setValidationError(null);
     }, [formData.startsAt, formData.endsAt, modalOpen, MAX_DURATION, t]);
 
+    const loadPatientById = useCallback(async (patientId: number | null) => {
+        setSelectedPatient(null);
+
+        if (!patientId) {
+            return;
+        }
+
+        try {
+            const response = await axios.get<Patient>(Routing.generate('api_patients_get', { id: patientId }));
+            setSelectedPatient(response.data);
+        } catch (err) {
+            console.error('Failed to fetch patient details', err);
+        }
+    }, []);
+
+    const appointmentFormId = currentEvent && currentEvent.id
+        ? `appointment-edit-${String(currentEvent.id).split('/').pop() || currentEvent.id}`
+        : 'appointment-new';
+
+    const appointmentDraft = useFormDraft<FormData>({
+        type: 'appointment',
+        formId: appointmentFormId,
+        onRestore: (data) => {
+            const restoredData = normalizeDraftFormData(data);
+
+            setFormData(restoredData);
+            setPatientError(undefined);
+            setValidationError(null);
+            setShowNoTypeConfirmModal(false);
+            setModalOpen(true);
+
+            void loadPatientById(restoredData.patientId);
+        }
+    });
+
     const getEventColors = (title: string | null, type: string | null) => {
         if (!title || title.trim() === '') {
             return { bg: 'rgb(245, 239, 224)', text: '#92400e' };
@@ -254,13 +302,10 @@ export default function Calendar() {
             return;
         }
         setFormData({
-            title: '',
-            notes: '',
-            type: 'appointment',
+            ...DEFAULT_FORM_DATA,
             startsAt: selectInfo.startStr,
             endsAt: selectInfo.endStr,
-            allDay: selectInfo.allDay,
-            patientId: null
+            allDay: selectInfo.allDay
         });
         setSelectedPatient(null);
         setPatientError(undefined);
@@ -286,17 +331,8 @@ export default function Calendar() {
             patientId: pId
         });
 
-        setSelectedPatient(null);
+        void loadPatientById(pId ?? null);
         setPatientError(undefined);
-
-        if (pId) {
-            try {
-                const response = await axios.get<Patient>(Routing.generate('api_patients_get', { id: pId }));
-                setSelectedPatient(response.data);
-            } catch (err) {
-                console.error("Failed to fetch patient details", err);
-            }
-        }
 
         setCurrentEvent(app);
         setModalOpen(true);
@@ -361,6 +397,8 @@ export default function Calendar() {
     };
 
     const saveAppointment = async () => {
+        appointmentDraft.saveDraft(formData);
+
         try {
             const payload = { ...formData, userId: 1 };
             if (currentEvent) {
@@ -372,12 +410,15 @@ export default function Calendar() {
             } else {
                 await axios.post(Routing.generate('api_appointments_post'), payload);
             }
+
+            appointmentDraft.clearDraft();
             setModalOpen(false);
             setShowNoTypeConfirmModal(false);
             setShowAlert(false);
             if (calendarRef.current) calendarRef.current.getApi().refetchEvents();
         } catch (error: any) {
             console.error('Error saving appointment:', error);
+            appointmentDraft.saveOnNetworkError(error, formData);
             handleApiError(error);
         }
     };
@@ -538,6 +579,25 @@ export default function Calendar() {
                 title={alertTitle}
                 message={alertMessage}
             />
+
+            <FormDraftUI
+                hasDraft={appointmentDraft.hasDraft}
+                draftAge={appointmentDraft.draftAge}
+                draftSavedByError={appointmentDraft.draftSavedByError}
+                showRestoreModal={appointmentDraft.showRestoreModal}
+                showDiscardModal={appointmentDraft.showDiscardModal}
+                onRestore={appointmentDraft.openRestoreModal}
+                onDiscard={appointmentDraft.openDiscardModal}
+                onRestoreConfirm={() => {
+                    void appointmentDraft.handleRestoreDraft();
+                }}
+                onDiscardConfirm={() => {
+                    void appointmentDraft.handleDiscardDraft();
+                }}
+                onRestoreCancel={appointmentDraft.closeRestoreModal}
+                onDiscardCancel={appointmentDraft.closeDiscardModal}
+            />
+
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">{t('clinic_calendar')}</h2>
                 <div className="flex flex-wrap gap-2 items-center">

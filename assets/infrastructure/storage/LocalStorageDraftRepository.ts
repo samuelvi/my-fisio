@@ -14,7 +14,8 @@ const STORAGE_KEYS: Record<DraftType, string> = {
   invoice: 'draft_invoice',
   patient: 'draft_patient',
   customer: 'draft_customer',
-  record: 'draft_record'
+  record: 'draft_record',
+  appointment: 'draft_appointment'
 } as const;
 
 /**

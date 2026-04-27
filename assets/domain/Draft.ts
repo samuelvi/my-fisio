@@ -5,7 +5,7 @@
  * or browser closure. Following DDD principles, this is a Value Object.
  */
 
-export type DraftType = 'invoice' | 'patient' | 'customer' | 'record';
+export type DraftType = 'invoice' | 'patient' | 'customer' | 'record' | 'appointment';
 
 export interface DraftData<T = unknown> {
   /** Type of draft (invoice, patient, customer) */
