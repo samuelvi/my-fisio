@@ -68,10 +68,29 @@ describe('LocalStorageDraftRepository', () => {
       repository.save('invoice', { a: 1 }, 'form-1');
       repository.save('patient', { b: 2 }, 'form-2');
       repository.save('customer', { c: 3 }, 'form-3');
+      repository.save('record', { d: 4 }, 'form-4');
+      repository.save('appointment', { e: 5 }, 'form-5');
 
       expect(mockLocalStorage['draft_invoice']).toBeDefined();
       expect(mockLocalStorage['draft_patient']).toBeDefined();
       expect(mockLocalStorage['draft_customer']).toBeDefined();
+      expect(mockLocalStorage['draft_record']).toBeDefined();
+      expect(mockLocalStorage['draft_appointment']).toBeDefined();
+    });
+
+    it('should persist appointment draft with savedByError flag', () => {
+      const payload = { title: 'Network Error Appointment' };
+
+      repository.save('appointment', payload, 'appointment-new', true);
+
+      const stored = mockLocalStorage['draft_appointment'];
+      expect(stored).toBeDefined();
+
+      const parsed = JSON.parse(stored);
+      expect(parsed.type).toBe('appointment');
+      expect(parsed.data).toEqual(payload);
+      expect(parsed.formId).toBe('appointment-new');
+      expect(parsed.savedByError).toBe(true);
     });
 
     it('should handle save errors gracefully', () => {
@@ -224,7 +243,9 @@ describe('LocalStorageDraftRepository', () => {
       expect(keys).toContain('draft_invoice');
       expect(keys).toContain('draft_patient');
       expect(keys).toContain('draft_customer');
-      expect(keys).toHaveLength(4);
+      expect(keys).toContain('draft_record');
+      expect(keys).toContain('draft_appointment');
+      expect(keys).toHaveLength(5);
     });
   });
 
@@ -233,12 +254,16 @@ describe('LocalStorageDraftRepository', () => {
       mockLocalStorage['draft_invoice'] = 'test1';
       mockLocalStorage['draft_patient'] = 'test2';
       mockLocalStorage['draft_customer'] = 'test3';
+      mockLocalStorage['draft_record'] = 'test4';
+      mockLocalStorage['draft_appointment'] = 'test5';
 
       repository.clearAll();
 
       expect(localStorage.removeItem).toHaveBeenCalledWith('draft_invoice');
       expect(localStorage.removeItem).toHaveBeenCalledWith('draft_patient');
       expect(localStorage.removeItem).toHaveBeenCalledWith('draft_customer');
+      expect(localStorage.removeItem).toHaveBeenCalledWith('draft_record');
+      expect(localStorage.removeItem).toHaveBeenCalledWith('draft_appointment');
     });
 
     it('should handle clear errors gracefully', () => {
