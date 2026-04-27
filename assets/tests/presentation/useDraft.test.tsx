@@ -1,79 +1,271 @@
-import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+/**
+ * Unit Tests - useDraft Hook
+ *
+ * Tests for the React hook that manages draft functionality
+ */
+
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { useDraft } from '../../presentation/hooks/useDraft';
 import { draftService } from '../../application/draft/DraftService';
 
+// Mock DraftService
 vi.mock('../../application/draft/DraftService', () => ({
   draftService: {
     hasDraft: vi.fn(),
     getDraftAge: vi.fn(),
-    getDraft: vi.fn(),
     saveDraft: vi.fn(),
     restoreDraft: vi.fn(),
     discardDraft: vi.fn(),
-    clearDraft: vi.fn(),
-  },
+    clearDraft: vi.fn()
+  }
 }));
 
 describe('useDraft', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(draftService.hasDraft).mockReturnValue(false);
-    vi.mocked(draftService.getDraftAge).mockReturnValue(null);
-    vi.mocked(draftService.getDraft).mockReturnValue(null);
+    vi.useFakeTimers();
+
+    // Mock window.dispatchEvent
+    global.window.dispatchEvent = vi.fn();
   });
 
-  it('loads empty draft state by default', () => {
-    const { result } = renderHook(() => useDraft({ type: 'invoice', formId: 'invoice-new' }));
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('should initialize with no draft', () => {
+    (draftService.hasDraft as any).mockReturnValue(false);
+    (draftService.getDraftAge as any).mockReturnValue(null);
+
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
 
     expect(result.current.hasDraft).toBe(false);
     expect(result.current.draftAge).toBeNull();
   });
 
-  it('saves draft explicitly', () => {
-    const { result } = renderHook(() => useDraft({ type: 'invoice', formId: 'invoice-new' }));
-
-    act(() => {
-      result.current.saveDraft({ total: 100 });
-    });
-
-    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', { total: 100 }, 'invoice-new', false);
-  });
-
-  it('restores draft and invokes callback', async () => {
-    const onRestore = vi.fn();
-    vi.mocked(draftService.restoreDraft).mockResolvedValueOnce({ total: 250 });
+  it('should detect existing draft', () => {
+    (draftService.hasDraft as any).mockReturnValue(true);
+    (draftService.getDraftAge as any).mockReturnValue('hace 5 minutos');
 
     const { result } = renderHook(() =>
       useDraft({
         type: 'invoice',
-        formId: 'invoice-new',
-        onRestore,
-      }),
+        formId: 'test-form'
+      })
+    );
+
+    expect(result.current.hasDraft).toBe(true);
+    expect(result.current.draftAge).toBe('hace 5 minutos');
+  });
+
+  it('should save draft immediately', () => {
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
+
+    const data = { test: 'data' };
+
+    act(() => {
+      result.current.saveDraft(data);
+    });
+
+    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', data, 'test-form', true);
+  });
+
+  it('should restore draft and call onRestore callback', async () => {
+    const restoredData = { test: 'restored' };
+    (draftService.restoreDraft as any).mockResolvedValue(restoredData);
+
+    const onRestore = vi.fn();
+
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form',
+        onRestore
+      })
     );
 
     await act(async () => {
-      await result.current.restoreDraft();
+      const data = await result.current.restoreDraft();
+      expect(data).toEqual(restoredData);
     });
 
-    expect(onRestore).toHaveBeenCalledWith({ total: 250 });
+    expect(draftService.restoreDraft).toHaveBeenCalledWith('invoice');
+    expect(onRestore).toHaveBeenCalledWith(restoredData);
   });
 
-  it('saves draft on network errors only', () => {
-    const { result } = renderHook(() => useDraft({ type: 'invoice', formId: 'invoice-new' }));
+  it('should discard draft and call onDiscard callback', async () => {
+    const onDiscard = vi.fn();
 
-    act(() => {
-      result.current.saveOnNetworkError({ response: null, code: 'ERR_NETWORK' }, { total: 100 });
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form',
+        onDiscard
+      })
+    );
+
+    await act(async () => {
+      await result.current.discardDraft();
     });
 
-    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', { total: 100 }, 'invoice-new', true);
+    expect(draftService.discardDraft).toHaveBeenCalledWith('invoice');
+    expect(onDiscard).toHaveBeenCalled();
+  });
 
-    vi.clearAllMocks();
+  it('should clear draft', () => {
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
 
     act(() => {
-      result.current.saveOnNetworkError({ response: { status: 422 }, code: 'ERR_BAD_RESPONSE' }, { total: 100 });
+      result.current.clearDraft();
+    });
+
+    expect(draftService.clearDraft).toHaveBeenCalledWith('invoice');
+  });
+
+
+  it('should save on network error', () => {
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
+
+    const error = { response: null, message: 'Network Error' };
+    const data = { test: 'data' };
+
+    act(() => {
+      result.current.saveOnNetworkError(error, data);
+    });
+
+    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', data, 'test-form');
+    expect(window.dispatchEvent).toHaveBeenCalled();
+  });
+
+  it('should detect network error by missing response', () => {
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
+
+    const error = { response: null };
+    const data = { test: 'data' };
+
+    act(() => {
+      result.current.saveOnNetworkError(error, data);
+    });
+
+    expect(draftService.saveDraft).toHaveBeenCalled();
+  });
+
+  it('should detect network error by ERR_NETWORK code', () => {
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
+
+    const error = { response: null, code: 'ERR_NETWORK' };
+    const data = { test: 'data' };
+
+    act(() => {
+      result.current.saveOnNetworkError(error, data);
+    });
+
+    expect(draftService.saveDraft).toHaveBeenCalled();
+  });
+
+  it('should NOT save on server error (non-network)', () => {
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
+
+    const error = { response: { status: 500 }, code: 'ERR_BAD_RESPONSE' };
+    const data = { test: 'data' };
+
+    act(() => {
+      result.current.saveOnNetworkError(error, data);
     });
 
     expect(draftService.saveDraft).not.toHaveBeenCalled();
+  });
+
+
+  it('should listen to draft saved events', async () => {
+    (draftService.hasDraft as any).mockReturnValue(false);
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
+
+    expect(result.current.hasDraft).toBe(false);
+
+    // Simulate draft saved
+    (draftService.hasDraft as any).mockReturnValue(true);
+    (draftService.getDraftAge as any).mockReturnValue('hace unos segundos');
+
+    // Dispatch event
+    act(() => {
+      window.dispatchEvent(
+        new CustomEvent('draft:saved', {
+          detail: { type: 'invoice' }
+        })
+      );
+    });
+
+    // Force recheck
+    await waitFor(() => {
+      expect(result.current.hasDraft).toBe(true);
+    });
+  });
+
+  it('should update draft age every minute', async () => {
+    (draftService.hasDraft as any).mockReturnValue(true);
+    (draftService.getDraftAge as any).mockReturnValueOnce('hace 1 minuto');
+
+    const { result } = renderHook(() =>
+      useDraft({
+        type: 'invoice',
+        formId: 'test-form'
+      })
+    );
+
+    expect(result.current.draftAge).toBe('hace 1 minuto');
+
+    // Change the return value for next call
+    (draftService.getDraftAge as any).mockReturnValueOnce('hace 2 minutos');
+
+    // Advance time by 60 seconds
+    act(() => {
+      vi.advanceTimersByTime(60000);
+    });
+
+    await waitFor(() => {
+      expect(result.current.draftAge).toBe('hace 2 minutos');
+    });
   });
 });
