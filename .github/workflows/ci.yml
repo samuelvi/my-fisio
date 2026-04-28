@@ -230,26 +230,91 @@ jobs:
       - name: Run Playwright E2E tests
         run: |
           echo "🎭 Running E2E tests..."
-          npx playwright test
+          npx playwright test --reporter=html,line,json=playwright-results.json,junit=playwright-results.xml
         env:
           CI: true
+          PLAYWRIGHT_HTML_OUTPUT_DIR: var/log/playwright/report
+
+      - name: Summarize Playwright failures
+        if: always()
+        run: |
+          {
+            echo "## Playwright E2E summary"
+            if [ -f playwright-results.json ]; then
+              node -e "
+                const fs = require('fs');
+                const data = JSON.parse(fs.readFileSync('playwright-results.json', 'utf8'));
+                const failures = [];
+                const walk = (suite, path = []) => {
+                  const suites = suite.suites || [];
+                  for (const childSuite of suites) {
+                    walk(childSuite, [...path, childSuite.title || '']);
+                  }
+                  const specs = suite.specs || [];
+                  for (const spec of specs) {
+                    for (const test of spec.tests || []) {
+                      for (const result of test.results || []) {
+                        if (result.status === 'failed' || result.status === 'timedOut') {
+                          const location = `${spec.file || 'unknown'}:${(spec.line || 0) + 1}`;
+                          const titlePath = [...path, spec.title].filter(Boolean).join(' > ');
+                          const err = (result.error && result.error.message) ? result.error.message.split('\\n')[0] : 'No error message';
+                          failures.push({ location, titlePath, err });
+                        }
+                      }
+                    }
+                  }
+                };
+                walk(data.suites ? { suites: data.suites } : data);
+                if (failures.length === 0) {
+                  console.log('✅ All Playwright tests passed');
+                } else {
+                  console.log(`❌ Failed tests: ${failures.length}`);
+                  console.log('');
+                  for (const failure of failures.slice(0, 20)) {
+                    console.log(`- ${failure.titlePath}`);
+                    console.log(`  - File: ${failure.location}`);
+                    console.log(`  - Error: ${failure.err}`);
+                  }
+                  if (failures.length > 20) {
+                    console.log(`- ... and ${failures.length - 20} more`);
+                  }
+                }
+              "
+            else
+              echo "⚠️ playwright-results.json was not generated"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       # --- Artifacts ---
       - name: Upload Playwright report
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: var/log/playwright/report/
+          path: |
+            var/log/playwright/report/
+            playwright-report/
           retention-days: 14
 
       - name: Upload test screenshots
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-screenshots
           path: var/log/playwright/test-results/**/*.png
           retention-days: 7
+
+      - name: Upload Playwright raw results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-raw-results
+          path: |
+            playwright-results.json
+            playwright-results.xml
+            var/log/playwright/test-results/**/*
+          if-no-files-found: warn
+          retention-days: 14
 
       # --- Cleanup ---
       - name: Stop containers
