@@ -230,20 +230,23 @@ jobs:
       - name: Run Playwright E2E tests
         run: |
           echo "🎭 Running E2E tests..."
-          npx playwright test --reporter=html,line,json=playwright-results.json,junit=playwright-results.xml
+          mkdir -p var/log/playwright
+          npx playwright test --reporter=html,line,json,junit
         env:
           CI: true
           PLAYWRIGHT_HTML_OUTPUT_DIR: var/log/playwright/report
+          PLAYWRIGHT_JSON_OUTPUT_NAME: var/log/playwright/playwright-results.json
+          PLAYWRIGHT_JUNIT_OUTPUT_NAME: var/log/playwright/playwright-results.xml
 
       - name: Summarize Playwright failures
         if: always()
         run: |
           {
             echo "## Playwright E2E summary"
-            if [ -f playwright-results.json ]; then
+            if [ -f var/log/playwright/playwright-results.json ]; then
               node -e "
                 const fs = require('fs');
-                const data = JSON.parse(fs.readFileSync('playwright-results.json', 'utf8'));
+                const data = JSON.parse(fs.readFileSync('var/log/playwright/playwright-results.json', 'utf8'));
                 const failures = [];
                 const walk = (suite, path = []) => {
                   const suites = suite.suites || [];
@@ -281,7 +284,7 @@ jobs:
                 }
               "
             else
-              echo "⚠️ playwright-results.json was not generated"
+              echo "⚠️ var/log/playwright/playwright-results.json was not generated"
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -310,8 +313,8 @@ jobs:
         with:
           name: playwright-raw-results
           path: |
-            playwright-results.json
-            playwright-results.xml
+            var/log/playwright/playwright-results.json
+            var/log/playwright/playwright-results.xml
             var/log/playwright/test-results/**/*
           if-no-files-found: warn
           retention-days: 14
