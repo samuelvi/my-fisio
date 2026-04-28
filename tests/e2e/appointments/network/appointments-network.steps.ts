@@ -78,7 +78,7 @@ When('I drag the appointment {string} to another time slot', async ({ page }, ti
 });
 
 When('I dismiss the alert', async ({ page }) => {
-  const alert = page.getByRole('alert');
+  const alert = page.locator('#status-alert');
   await alert.getByRole('button').click();
 });
 
@@ -87,28 +87,28 @@ When('I dismiss the alert', async ({ page }) => {
 // =============================================================================
 
 Then('I should see the status alert', async ({ page }) => {
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.locator('#status-alert')).toBeVisible();
 });
 
 Then('I should see the status alert with connection error', async ({ page }) => {
-  const alert = page.getByRole('alert');
+  const alert = page.locator('#status-alert');
   await expect(alert).toBeVisible();
   await expect(alert).toContainText(/Error de conexi.n|Connection Error/i);
 });
 
 Then('I should see the status alert with server error', async ({ page }) => {
-  const alert = page.getByRole('alert');
+  const alert = page.locator('#status-alert');
   await expect(alert).toBeVisible();
   await expect(alert).toContainText(/Error del servidor|Server Error/i);
 });
 
 Then('the alert should contain {string}', async ({ page }, text: string) => {
-  const alert = page.getByRole('alert');
+  const alert = page.locator('#status-alert');
   await expect(alert).toContainText(text);
 });
 
 Then('the status alert should not be visible', async ({ page }) => {
-  await expect(page.getByRole('alert')).not.toBeVisible();
+  await expect(page.locator('#status-alert')).not.toBeVisible();
 });
 
 Then('the appointment modal should not be visible', async ({ page }) => {

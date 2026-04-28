@@ -244,51 +244,45 @@ jobs:
           {
             echo "## Playwright E2E summary"
             if [ -f var/log/playwright/playwright-results.json ]; then
-              node <<'NODE'
-              const fs = require('fs');
-              const data = JSON.parse(fs.readFileSync('var/log/playwright/playwright-results.json', 'utf8'));
+              node -e 'const fs = require("fs");
+              const data = JSON.parse(fs.readFileSync("var/log/playwright/playwright-results.json", "utf8"));
               const failures = [];
-
               const walk = (suite, path = []) => {
                 const suites = suite.suites || [];
                 for (const childSuite of suites) {
-                  walk(childSuite, [...path, childSuite.title || '']);
+                  walk(childSuite, path.concat(childSuite.title || ""));
                 }
-
                 const specs = suite.specs || [];
                 for (const spec of specs) {
                   for (const test of spec.tests || []) {
                     for (const result of test.results || []) {
-                      if (result.status === 'failed' || result.status === 'timedOut') {
-                        const location = `${spec.file || 'unknown'}:${(spec.line || 0) + 1}`;
-                        const titlePath = [...path, spec.title].filter(Boolean).join(' > ');
-                        const err = result.error && result.error.message
-                          ? result.error.message.split('\n')[0]
-                          : 'No error message';
+                      if (result.status === "failed" || result.status === "timedOut") {
+                        const location = (spec.file || "unknown") + ":" + ((spec.line || 0) + 1);
+                        const titlePath = path.concat(spec.title).filter(Boolean).join(" > ");
+                        const err = (result.error && result.error.message)
+                          ? result.error.message.split("\\n")[0]
+                          : "No error message";
                         failures.push({ location, titlePath, err });
                       }
                     }
                   }
                 }
               };
-
               walk(data.suites ? { suites: data.suites } : data);
-
               if (failures.length === 0) {
-                console.log('✅ All Playwright tests passed');
+                console.log("✅ All Playwright tests passed");
               } else {
-                console.log(`❌ Failed tests: ${failures.length}`);
-                console.log('');
+                console.log("❌ Failed tests: " + failures.length);
+                console.log("");
                 for (const failure of failures.slice(0, 20)) {
-                  console.log(`- ${failure.titlePath}`);
-                  console.log(`  - File: ${failure.location}`);
-                  console.log(`  - Error: ${failure.err}`);
+                  console.log("- " + failure.titlePath);
+                  console.log("  - File: " + failure.location);
+                  console.log("  - Error: " + failure.err);
                 }
                 if (failures.length > 20) {
-                  console.log(`- ... and ${failures.length - 20} more`);
+                  console.log("- ... and " + (failures.length - 20) + " more");
                 }
-              }
-              NODE
+              }'
             else
               echo "⚠️ var/log/playwright/playwright-results.json was not generated"
             fi
