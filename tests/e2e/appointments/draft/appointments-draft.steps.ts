@@ -75,6 +75,10 @@ When('I click the restore appointment draft button', async ({ page }) => {
   await page.getByRole('button', { name: /Recuperar borrador|Restore draft/i }).first().click();
 });
 
+When('I click the discard appointment draft button', async ({ page }) => {
+  await page.getByRole('button', { name: /Descartar borrador|Discard draft/i }).first().click();
+});
+
 When('I confirm the appointment draft action', async ({ page }) => {
   await page.getByTestId('confirm-draft-btn').click();
   await expect(page.getByTestId('confirm-draft-btn')).toBeHidden();
@@ -105,6 +109,11 @@ Then('the appointment title field should have value {string}', async ({ page }, 
 
 Then('the appointment notes field should have value {string}', async ({ page }, value: string) => {
   await expect(page.getByLabel(/Notes|Notas/i)).toHaveValue(value);
+});
+
+Then('I should not see the appointment draft alert', async ({ page }) => {
+  await expect(page.getByRole('button', { name: /Recuperar borrador|Restore draft/i })).not.toBeVisible();
+  await expect(page.getByRole('button', { name: /Descartar borrador|Discard draft/i })).not.toBeVisible();
 });
 
 function normalizeDraftRows(rows: Record<string, string>): AppointmentDraftData {

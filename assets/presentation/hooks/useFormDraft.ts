@@ -68,8 +68,12 @@ export function useFormDraft<T>(options: UseFormDraftOptions<T>): UseFormDraftRe
   }, [draft]);
 
   const handleDiscardDraft = useCallback(async () => {
-    await draft.discardDraft();
     setShowDiscardModal(false);
+    try {
+      await draft.discardDraft();
+    } finally {
+      setShowDiscardModal(false);
+    }
   }, [draft]);
 
   const openRestoreModal = useCallback(() => setShowRestoreModal(true), []);

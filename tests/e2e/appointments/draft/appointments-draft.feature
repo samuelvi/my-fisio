@@ -51,3 +51,18 @@ Feature: Appointment Draft Recovery
     And I confirm the appointment draft action
     And I click save appointment
     Then the appointment draft should not exist
+
+  @reset
+  Scenario: Discard appointment draft hides draft alert
+    Given an appointment draft exists with savedByError true and data:
+      | title    | Draft To Discard      |
+      | notes    | Discard me            |
+      | type     | appointment           |
+      | startsAt | 2030-01-15T13:00:00   |
+      | endsAt   | 2030-01-15T14:00:00   |
+      | allDay   | false                 |
+      | patientId|                       |
+    When I click the discard appointment draft button
+    And I confirm the appointment draft action
+    Then the appointment draft should not exist
+    And I should not see the appointment draft alert

@@ -52,7 +52,6 @@ export default function DraftAlert({
   className = ''
 }: DraftAlertProps) {
   const { t } = useLanguage();
-  console.log('[DraftAlert] Render:', { show, draftAge, variant });
 
   if (!show) {
     return null;
