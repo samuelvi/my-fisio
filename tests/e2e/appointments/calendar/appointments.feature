@@ -8,6 +8,10 @@ Feature: Appointments Calendar Management
     And I navigate to "/appointments"
     And I should see a heading matching "Clinic Calendar|Calendario de la Cl.nica"
 
+  Scenario: Generate empty gaps without undefined title
+    When I generate empty gaps in a week without appointments
+    Then no generated gap should display the title "undefined"
+
   Scenario: Create a new appointment
     When I click the new appointment button
     And I should see a heading matching "New Appointment|Nueva Cita"

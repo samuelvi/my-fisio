@@ -258,7 +258,7 @@ export default function Calendar() {
                 const colors = getEventColors(app.title, app.type);
                 return {
                     id: eventId ?? '',
-                    title: app.title,
+                    title: app.title ?? '',
                     start: app.startsAt,
                     end: app.endsAt,
                     allDay: app.allDay,
