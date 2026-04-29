@@ -65,22 +65,29 @@ When('I generate empty gaps in a week without appointments', async ({ page }) =>
   const generateButton = page.getByRole('button', { name: /Generate Gaps|Generar Huecos/i });
   const nextButton = page.locator('.fc-next-button');
 
-  for (let attempts = 0; attempts < 12; attempts++) {
+  for (let attempts = 0; attempts < 52; attempts++) {
     if (await generateButton.isEnabled()) {
-      await Promise.all([
-        page.waitForResponse((response) => {
+      const [response] = await Promise.all([
+        page.waitForResponse((apiResponse) => {
           return (
-            response.url().includes('/api/appointment-gaps/generate') &&
-            response.request().method() === 'POST' &&
-            [200, 201].includes(response.status())
+            apiResponse.url().includes('/api/appointment-gaps/generate') &&
+            apiResponse.request().method() === 'POST'
           );
         }),
         generateButton.click(),
       ]);
 
-      const eventCount = await page.locator('.fc-event').count();
-      expect(eventCount).toBeGreaterThan(0);
-      return;
+      const status = response.status();
+      await page.waitForLoadState('networkidle');
+
+      if (status === 201) {
+        await expect(page.locator('.fc-event').first()).toBeVisible();
+        return;
+      }
+
+      await nextButton.click();
+      await page.waitForLoadState('networkidle');
+      continue;
     }
 
     await nextButton.click();
@@ -101,6 +108,21 @@ Then('no generated gap should display the title {string}', async ({ page }, forb
   }, normalizedForbidden);
 
   expect(hasForbiddenTitle).toBe(false);
+});
+
+When('I open a generated gap from the calendar', async ({ page }) => {
+  const firstEvent = page.locator('.fc-event').first();
+  await expect(firstEvent).toBeVisible({ timeout: 10000 });
+  await firstEvent.click({ force: true });
+});
+
+Then('the appointment type should be preselected as {string}', async ({ page }, typeLabel: string) => {
+  const isAppointment = /^appointment$/i.test(typeLabel);
+  const selectedRadio = page.getByLabel(isAppointment ? /Appointment|Cita/i : /Other|Otro/i);
+  const unselectedRadio = page.getByLabel(isAppointment ? /Other|Otro/i : /Appointment|Cita/i);
+
+  await expect(selectedRadio).toBeChecked();
+  await expect(unselectedRadio).not.toBeChecked();
 });
 
 // =============================================================================

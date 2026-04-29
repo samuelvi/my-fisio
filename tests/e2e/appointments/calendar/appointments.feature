@@ -11,6 +11,8 @@ Feature: Appointments Calendar Management
   Scenario: Generate empty gaps without undefined title
     When I generate empty gaps in a week without appointments
     Then no generated gap should display the title "undefined"
+    When I open a generated gap from the calendar
+    Then the appointment type should be preselected as "Appointment"
 
   Scenario: Create a new appointment
     When I click the new appointment button
