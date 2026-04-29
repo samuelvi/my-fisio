@@ -11,6 +11,7 @@ interface ImportMetaEnv {
 
   readonly VITE_MAX_APPOINTMENT_DURATION?: string;
   readonly VITE_DEFAULT_APPOINTMENT_DURATION?: string;
+  readonly VITE_DEFAULT_APPOINTMENT_TYPE?: string;
   readonly VITE_CALENDAR_SLOT_DURATION_MINUTES?: string;
   readonly VITE_CALENDAR_FIRST_DAY?: string;
   readonly VITE_CALENDAR_SCROLL_TIME?: string;

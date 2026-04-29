@@ -48,10 +48,18 @@ interface FormData {
     patientId: number | null;
 }
 
+type AppointmentType = 'appointment' | 'other';
+
+function normalizeAppointmentType(value: unknown): AppointmentType {
+    return value === 'other' ? 'other' : 'appointment';
+}
+
+const DEFAULT_APPOINTMENT_TYPE = normalizeAppointmentType(import.meta.env.VITE_DEFAULT_APPOINTMENT_TYPE);
+
 const DEFAULT_FORM_DATA: FormData = {
     title: '',
     notes: '',
-    type: 'appointment',
+    type: DEFAULT_APPOINTMENT_TYPE,
     startsAt: '',
     endsAt: '',
     allDay: false,
@@ -62,6 +70,7 @@ function normalizeDraftFormData(data: Partial<FormData>): FormData {
     return {
         ...DEFAULT_FORM_DATA,
         ...data,
+        type: normalizeAppointmentType(data.type),
         allDay: Boolean(data.allDay),
         patientId: typeof data.patientId === 'number' ? data.patientId : null
     };
@@ -324,7 +333,7 @@ export default function Calendar() {
         setFormData({
             title: app.title || '',
             notes: app.extendedProps.notes || '',
-            type: app.extendedProps.type || '',
+            type: normalizeAppointmentType(app.extendedProps.type),
             startsAt: app.startStr,
             endsAt: app.endStr,
             allDay: app.allDay,
