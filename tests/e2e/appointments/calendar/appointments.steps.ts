@@ -61,6 +61,48 @@ When('I save the appointment', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /New Appointment|Nueva Cita/i })).toBeHidden({ timeout: 10000 });
 });
 
+When('I generate empty gaps in a week without appointments', async ({ page }) => {
+  const generateButton = page.getByRole('button', { name: /Generate Gaps|Generar Huecos/i });
+  const nextButton = page.locator('.fc-next-button');
+
+  for (let attempts = 0; attempts < 12; attempts++) {
+    if (await generateButton.isEnabled()) {
+      await Promise.all([
+        page.waitForResponse((response) => {
+          return (
+            response.url().includes('/api/appointment-gaps/generate') &&
+            response.request().method() === 'POST' &&
+            [200, 201].includes(response.status())
+          );
+        }),
+        generateButton.click(),
+      ]);
+
+      const eventCount = await page.locator('.fc-event').count();
+      expect(eventCount).toBeGreaterThan(0);
+      return;
+    }
+
+    await nextButton.click();
+    await page.waitForLoadState('networkidle');
+  }
+
+  throw new Error('Could not find a week without appointments to generate gaps');
+});
+
+Then('no generated gap should display the title {string}', async ({ page }, forbiddenTitle: string) => {
+  const normalizedForbidden = forbiddenTitle.trim().toLowerCase();
+
+  const hasForbiddenTitle = await page.locator('.fc-event-title').evaluateAll((elements, forbidden) => {
+    return elements.some((element) => {
+      const text = (element.textContent ?? '').trim().toLowerCase();
+      return text === forbidden;
+    });
+  }, normalizedForbidden);
+
+  expect(hasForbiddenTitle).toBe(false);
+});
+
 // =============================================================================
 // Calendar Assertions (calendar-specific)
 // =============================================================================
@@ -137,4 +179,3 @@ async function buildLocalDateTime(page, { hour, minute }: { hour: number; minute
     };
   }, { hour, minute });
 }
-

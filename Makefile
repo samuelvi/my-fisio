@@ -1,4 +1,4 @@
-.PHONY: help dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-fix-cache-perms test-e2e-ui prod-build prod-deploy opencode-init opencode-link opencode-verify opencode-open opencode-start
+.PHONY: help guard-real-repo dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-fix-cache-perms test-e2e-ui prod-build prod-deploy opencode-init opencode-link opencode-verify opencode-open opencode-start
 
 # Default target
 .DEFAULT_GOAL := help
@@ -8,6 +8,12 @@ DOCKER_COMPOSE_DEV = docker-compose -f docker/dev/docker-compose.yaml -f docker/
 TEST_WEB_PORT ?= 8081
 E2E_BASE_URL ?= http://127.0.0.1:$(TEST_WEB_PORT)
 DOCKER_COMPOSE_TEST = TEST_WEB_PORT=$(TEST_WEB_PORT) docker-compose -f docker/test/docker-compose.yaml
+
+guard-real-repo: ## Ensure commands run from BackendTinaV3 root
+	@if [ "$$(basename "$$(pwd)")" = "opencode-bundle" ] || [ ! -f "composer.json" ] || [ ! -f "playwright.config.ts" ] || [ ! -d "src" ] || [ ! -d "tests" ]; then \
+		echo "$(YELLOW)Error: run make from BackendTinaV3 project root, not from opencode-bundle/subdirectories.$(NC)"; \
+		exit 1; \
+	fi
 
 # Colors for terminal output
 GREEN  := [0;32m
@@ -23,15 +29,15 @@ help: ## Display this help message
 
 ##@ Docker Management (Dev)
 
-dev-build: ## Build all Docker containers (Dev)
+dev-build: guard-real-repo ## Build all Docker containers (Dev)
 	@echo "$(GREEN)Building Docker containers (Dev)...$(NC)"
 	$(DOCKER_COMPOSE_DEV) build
 
-dev-up: ## Start all containers in background (Dev)
+dev-up: guard-real-repo ## Start all containers in background (Dev)
 	@echo "$(GREEN)Starting containers (Dev)...$(NC)"
 	$(DOCKER_COMPOSE_DEV) up -d
 
-dev-down: ## Stop and remove all containers (Dev)
+dev-down: guard-real-repo ## Stop and remove all containers (Dev)
 	@echo "$(YELLOW)Stopping containers (Dev)...$(NC)"
 	$(DOCKER_COMPOSE_DEV) down
 
@@ -57,15 +63,15 @@ jwt-setup-test: ## Generate JWT keys (Test)
 	@echo "$(GREEN)Checking JWT keys (Test)...$(NC)"
 	$(DOCKER_COMPOSE_TEST) exec -T php_test sh -c "mkdir -p config/jwt && php bin/console lexik:jwt:generate-keypair --skip-if-exists && chmod 666 config/jwt/*.pem"
 
-test-build: ## Build all Docker containers (Test)
+test-build: guard-real-repo ## Build all Docker containers (Test)
 	@echo "$(GREEN)Building Docker containers (Test)...$(NC)"
 	$(DOCKER_COMPOSE_TEST) build
 
-test-up: ## Start all containers in background (Test)
+test-up: guard-real-repo ## Start all containers in background (Test)
 	@echo "$(GREEN)Starting containers (Test)...$(NC)"
 	$(DOCKER_COMPOSE_TEST) up -d
 
-test-down: ## Stop and remove all containers (Test)
+test-down: guard-real-repo ## Stop and remove all containers (Test)
 	@echo "$(YELLOW)Stopping containers (Test)...$(NC)"
 	$(DOCKER_COMPOSE_TEST) down -v
 
@@ -229,7 +235,7 @@ quality-check: phpstan cs-check ## Run all quality checks (PHPStan + CS Fixer)
 
 ##@ Testing (PHPUnit)
 
-test: ## Run PHPUnit unit tests
+test: guard-real-repo ## Run PHPUnit unit tests
 	@echo "$(GREEN)Running PHPUnit tests...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
@@ -258,7 +264,7 @@ test-fix-cache-perms: ## Recreate test cache/proxies with writable permissions
 	@echo "$(GREEN)Fixing test cache permissions...$(NC)"
 	$(DOCKER_COMPOSE_TEST) exec -T php_test sh -c "rm -rf var/cache/test 2>/dev/null || true; mkdir -p var/cache/test/doctrine/orm/Proxies && chmod -R 777 var/cache"
 
-test-e2e: ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests/e2e/login.spec.ts")
+test-e2e: guard-real-repo ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests/e2e/login.spec.ts")
 	@echo "$(GREEN)Running E2E Tests (Headless)...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
@@ -272,7 +278,7 @@ test-e2e: ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests
 	npx bddgen test -c playwright.config.ts
 	E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test $(file)
 
-test-e2e-ui: ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="tests/e2e/login.spec.ts")
+test-e2e-ui: guard-real-repo ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="tests/e2e/login.spec.ts")
 	@echo "$(GREEN)Running E2E Tests (UI Mode)...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
