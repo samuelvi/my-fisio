@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { useDraft } from '../../presentation/hooks/useDraft';
 import { draftService } from '../../application/draft/DraftService';
 
@@ -14,6 +14,7 @@ vi.mock('../../application/draft/DraftService', () => ({
   draftService: {
     hasDraft: vi.fn(),
     getDraftAge: vi.fn(),
+    getDraft: vi.fn(),
     saveDraft: vi.fn(),
     restoreDraft: vi.fn(),
     discardDraft: vi.fn(),
@@ -25,12 +26,10 @@ describe('useDraft', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-
-    // Mock window.dispatchEvent
-    global.window.dispatchEvent = vi.fn();
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     vi.useRealTimers();
   });
 
@@ -78,7 +77,7 @@ describe('useDraft', () => {
       result.current.saveDraft(data);
     });
 
-    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', data, 'test-form', true);
+    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', data, 'test-form', false);
   });
 
   it('should restore draft and call onRestore callback', async () => {
@@ -137,8 +136,6 @@ describe('useDraft', () => {
 
     expect(draftService.clearDraft).toHaveBeenCalledWith('invoice');
   });
-
-
   it('should save on network error', () => {
     const { result } = renderHook(() =>
       useDraft({
@@ -149,13 +146,14 @@ describe('useDraft', () => {
 
     const error = { response: null, message: 'Network Error' };
     const data = { test: 'data' };
+    const dispatchEvent = vi.spyOn(window, 'dispatchEvent');
 
     act(() => {
       result.current.saveOnNetworkError(error, data);
     });
 
-    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', data, 'test-form');
-    expect(window.dispatchEvent).toHaveBeenCalled();
+    expect(draftService.saveDraft).toHaveBeenCalledWith('invoice', data, 'test-form', true);
+    expect(dispatchEvent).toHaveBeenCalled();
   });
 
   it('should detect network error by missing response', () => {
@@ -211,9 +209,7 @@ describe('useDraft', () => {
 
     expect(draftService.saveDraft).not.toHaveBeenCalled();
   });
-
-
-  it('should listen to draft saved events', async () => {
+  it('should listen to draft saved events', () => {
     (draftService.hasDraft as any).mockReturnValue(false);
     const { result } = renderHook(() =>
       useDraft({
@@ -237,13 +233,10 @@ describe('useDraft', () => {
       );
     });
 
-    // Force recheck
-    await waitFor(() => {
-      expect(result.current.hasDraft).toBe(true);
-    });
+    expect(result.current.hasDraft).toBe(true);
   });
 
-  it('should update draft age every minute', async () => {
+  it('should update draft age every minute', () => {
     (draftService.hasDraft as any).mockReturnValue(true);
     (draftService.getDraftAge as any).mockReturnValueOnce('hace 1 minuto');
 
@@ -264,8 +257,6 @@ describe('useDraft', () => {
       vi.advanceTimersByTime(60000);
     });
 
-    await waitFor(() => {
-      expect(result.current.draftAge).toBe('hace 2 minutos');
-    });
+    expect(result.current.draftAge).toBe('hace 2 minutos');
   });
 });

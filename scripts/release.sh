@@ -112,7 +112,7 @@ ssh "$HOST" "REMOTE_PATH=$REMOTE_PATH" /bin/bash << 'EOF'
     echo "Using composer command: $COMPOSER_CMD"
 
     echo "  > Cleaning up development files..."
-    rm -rf .DS_Store .dockerignore .editorconfig .env.prod .features-gen .gitignore .gitignore.additions .phpunit.cache agents assets claude-* gemini-* openai-* skills docs package.json package-lock.json test-results sync-server.sh
+    rm -rf .DS_Store .dockerignore .editorconfig .env.prod .features-gen .gitignore .gitignore.additions .npmrc .phpunit.cache agents assets claude-* gemini-* openai-* skills docs package.json pnpm-lock.yaml pnpm-workspace.yaml test-results sync-server.sh
 
     echo "  > Checking JWT keys..."
     mkdir -p config/jwt

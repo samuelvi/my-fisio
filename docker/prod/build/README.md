@@ -71,9 +71,9 @@ The build script (`build.sh`) performs these steps in order:
    - Exports Symfony routes to JSON for frontend
    - Used by React Router integration
 
-4. **Install NPM dependencies**
-   - Clean install with `npm ci`
-   - Uses package-lock.json for reproducible builds
+4. **Install pnpm dependencies**
+   - Clean install with `pnpm install --frozen-lockfile`
+   - Uses pnpm-lock.yaml for reproducible builds
 
 5. **Build frontend assets**
    - Vite compilation in production mode
@@ -144,9 +144,9 @@ The Dockerfile includes Composer installation. Rebuild the image:
 docker-compose -f docker/prod/docker-compose.build.yaml build --no-cache
 ```
 
-### NPM build fails
+### pnpm build fails
 
-Ensure Node.js and NPM are installed in the container. Check Dockerfile for Node installation.
+Ensure Node.js 22 and pnpm are installed in the container. Check Dockerfile for Node installation.
 
 ### .env.local.php not generated
 
@@ -172,7 +172,7 @@ docker-compose -f docker/prod/docker-compose.build.yaml run --rm build /bin/sh
 
 # Inside the container, run individual commands:
 composer install --no-dev --optimize-autoloader
-npm run build
+pnpm run build
 php bin/console cache:warmup --env=prod
 ```
 

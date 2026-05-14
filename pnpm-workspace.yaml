@@ -1,0 +1,4 @@
+ignoreScripts: true
+
+allowBuilds:
+  esbuild: false

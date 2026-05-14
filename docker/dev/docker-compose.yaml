@@ -115,7 +115,7 @@ services:
 
   # Node.js for Vite watch (HMR)
   node_watch:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: dev_physiotherapy_node_watch
     working_dir: /var/www/html
     volumes:
@@ -127,7 +127,7 @@ services:
     environment:
       - VITE_WATCH_STRATEGY=events
       - VITE_WATCH_POLL_INTERVAL=300
-    command: sh -c "npm install && sh ./docker/dev/vite-watch.sh"
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && sh ./docker/dev/vite-watch.sh"
 
 networks:
   physiotherapy_network:

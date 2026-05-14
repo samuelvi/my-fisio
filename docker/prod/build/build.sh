@@ -36,15 +36,15 @@ php bin/console fos:js-routing:dump \
 echo -e "${GREEN}✓ FOS JS routes generated${NC}"
 echo ""
 
-# Step 3: Install NPM dependencies
-echo -e "${YELLOW}[3/7] Installing NPM dependencies...${NC}"
-npm ci --prefer-offline --no-audit
-echo -e "${GREEN}✓ NPM dependencies installed${NC}"
+# Step 3: Install pnpm dependencies
+echo -e "${YELLOW}[3/7] Installing pnpm dependencies...${NC}"
+pnpm install --frozen-lockfile --prefer-offline
+echo -e "${GREEN}✓ pnpm dependencies installed${NC}"
 echo ""
 
 # Step 4: Build frontend assets
 echo -e "${YELLOW}[4/7] Building React assets with Vite...${NC}"
-npm run build
+pnpm run build
 echo -e "${GREEN}✓ Frontend assets compiled${NC}"
 echo ""
 

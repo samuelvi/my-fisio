@@ -91,7 +91,7 @@ services:
   # We might not need this running constantly for E2E if we build assets first, 
   # but useful if we want to test HMR or serve assets.
   node_test:
-    image: node:20-alpine
+    image: node:22-alpine
     container_name: test_physiotherapy_node
     profiles:
       - node
@@ -103,7 +103,7 @@ services:
       - ../../:/var/www/html
     networks:
       - physiotherapy_test_network
-    command: sh -c "npm install && npm run build --mode test && tail -f /dev/null" # Build and stay alive
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm run build:test && tail -f /dev/null" # Build and stay alive
 
 networks:
   physiotherapy_test_network:

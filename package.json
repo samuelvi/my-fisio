@@ -1,6 +1,10 @@
 {
     "type": "module",
     "private": true,
+    "packageManager": "pnpm@11.1.1",
+    "engines": {
+        "node": ">=22"
+    },
     "scripts": {
         "dev": "vite --mode dev",
         "build": "vite build --mode prod",

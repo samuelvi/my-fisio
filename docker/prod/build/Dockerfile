@@ -2,6 +2,8 @@
 # This Dockerfile creates a container to prepare the application for production deployment
 # It installs dependencies, compiles assets, and optimizes the application
 
+FROM node:22-alpine AS node
+
 FROM php:8.4-fpm-alpine AS builder
 
 # Install system dependencies
@@ -15,9 +17,16 @@ RUN apk add --no-cache \
     libpng-dev \
     libjpeg-turbo-dev \
     freetype-dev \
-    oniguruma-dev \
-    nodejs \
-    npm
+    libstdc++ \
+    oniguruma-dev
+
+# Install Node.js 22 and pnpm for frontend dependency management
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack \
+    && corepack enable \
+    && COREPACK_ENABLE_DOWNLOAD_PROMPT=0 corepack prepare pnpm@11.1.1 --activate
 
 # Install PHP extensions required for production
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \

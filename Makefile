@@ -1,4 +1,4 @@
-.PHONY: help guard-real-repo dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-fix-cache-perms test-e2e-ui prod-build prod-deploy opencode-init opencode-link opencode-verify opencode-open opencode-start
+.PHONY: help guard-real-repo node22-guard dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-fix-cache-perms test-e2e-ui prod-build prod-deploy opencode-init opencode-link opencode-verify opencode-open opencode-start
 
 # Default target
 .DEFAULT_GOAL := help
@@ -14,6 +14,9 @@ guard-real-repo: ## Ensure commands run from BackendTinaV3 root
 		echo "$(YELLOW)Error: run make from BackendTinaV3 project root, not from opencode-bundle/subdirectories.$(NC)"; \
 		exit 1; \
 	fi
+
+node22-guard: ## Ensure host Node supports pnpm 11
+	@node -e "const major = Number(process.versions.node.split('.')[0]); if (major < 22) { console.error('Node.js 22+ is required for pnpm 11. Current: ' + process.version); process.exit(1); }"
 
 # Colors for terminal output
 GREEN  := [0;32m
@@ -82,7 +85,7 @@ test-shell-php: ## Access PHP container shell (Test)
 	$(DOCKER_COMPOSE_TEST) exec php_test sh
 
 test-assets-build: ## Build frontend assets in test environment
-	$(DOCKER_COMPOSE_TEST) run --rm node_test npm run build:test
+	$(DOCKER_COMPOSE_TEST) run --rm node_test sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm run build:test"
 
 ##@ Production Build & Deploy
 
@@ -264,7 +267,7 @@ test-fix-cache-perms: ## Recreate test cache/proxies with writable permissions
 	@echo "$(GREEN)Fixing test cache permissions...$(NC)"
 	$(DOCKER_COMPOSE_TEST) exec -T php_test sh -c "rm -rf var/cache/test 2>/dev/null || true; mkdir -p var/cache/test/doctrine/orm/Proxies && chmod -R 777 var/cache"
 
-test-e2e: guard-real-repo ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests/e2e/login.spec.ts")
+test-e2e: guard-real-repo node22-guard ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests/e2e/login.spec.ts")
 	@echo "$(GREEN)Running E2E Tests (Headless)...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
@@ -275,10 +278,10 @@ test-e2e: guard-real-repo ## Run Playwright E2E tests (Headless) (use: make test
 	make test-fix-cache-perms
 	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console cache:clear
 	make test-reset-db
-	npx bddgen test -c playwright.config.ts
-	E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test $(file)
+	corepack pnpm exec bddgen test -c playwright.config.ts
+	E2E_BASE_URL="$(E2E_BASE_URL)" corepack pnpm exec playwright test $(file)
 
-test-e2e-ui: guard-real-repo ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="tests/e2e/login.spec.ts")
+test-e2e-ui: guard-real-repo node22-guard ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="tests/e2e/login.spec.ts")
 	@echo "$(GREEN)Running E2E Tests (UI Mode)...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
@@ -287,10 +290,10 @@ test-e2e-ui: guard-real-repo ## Run Playwright E2E tests (UI Mode) (use: make te
 	fi
 	make jwt-setup-test
 	make test-fix-cache-perms
-	npx bddgen test -c playwright.config.ts
-	E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test --ui $(file)
+	corepack pnpm exec bddgen test -c playwright.config.ts
+	E2E_BASE_URL="$(E2E_BASE_URL)" corepack pnpm exec playwright test --ui $(file)
 
-test-e2e-video: ## Run E2E test with video recording (use: make test-e2e-video file="tests/e2e/login.spec.ts")
+test-e2e-video: guard-real-repo node22-guard ## Run E2E test with video recording (use: make test-e2e-video file="tests/e2e/login.spec.ts")
 	@echo "$(GREEN)Running E2E Test with Video Recording...$(NC)"
 	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
 		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
@@ -300,10 +303,10 @@ test-e2e-video: ## Run E2E test with video recording (use: make test-e2e-video f
 	make jwt-setup-test
 	make test-fix-cache-perms
 	make test-reset-db
-	npx bddgen test -c playwright.config.ts
+	corepack pnpm exec bddgen test -c playwright.config.ts
 	@echo "$(YELLOW)Enabling video recording...$(NC)"
 	@perl -i -pe 's/video: '\''retain-on-failure'\''/video: '\''on'\''/' playwright.config.cjs
-	@E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test $(file) || true
+	@E2E_BASE_URL="$(E2E_BASE_URL)" corepack pnpm exec playwright test $(file) || true
 	@echo "$(YELLOW)Restoring video config...$(NC)"
 	@perl -i -pe 's/video: '\''on'\''/video: '\''retain-on-failure'\''/' playwright.config.cjs
 	@echo ""
@@ -320,7 +323,7 @@ test-e2e-video: ## Run E2E test with video recording (use: make test-e2e-video f
 		echo "   open $$VIDEO_PATH"; \
 		echo ""; \
 		echo "$(GREEN)To view HTML report:$(NC)"; \
-		echo "   npx playwright show-report var/log/playwright/report"; \
+		echo "   corepack pnpm exec playwright show-report var/log/playwright/report"; \
 	else \
 		echo "$(YELLOW)⚠ No video found. Test may have been skipped or failed to record.$(NC)"; \
 	fi
@@ -394,7 +397,7 @@ clean-cache: ## Remove Symfony cache and logs
 
 ##@ Build Assets
 
-build-assets: ## Build all assets (Composer + npm + Vite + routes + cache)
+build-assets: ## Build all assets (Composer + pnpm + Vite + routes + cache)
 	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
 	@echo "$(GREEN)║  Building all assets for development...                   ║$(NC)"
 	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
@@ -402,11 +405,11 @@ build-assets: ## Build all assets (Composer + npm + Vite + routes + cache)
 	@echo "$(GREEN)[1/5] Installing Composer dependencies...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php composer install --no-interaction --prefer-dist --optimize-autoloader
 	@echo ""
-	@echo "$(GREEN)[2/5] Installing npm dependencies...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec node_watch npm install
+	@echo "$(GREEN)[2/5] Installing pnpm dependencies...$(NC)"
+	$(DOCKER_COMPOSE_DEV) exec node_watch sh -c "corepack enable && pnpm install --frozen-lockfile"
 	@echo ""
 	@echo "$(GREEN)[3/5] Building frontend assets with Vite...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec node_watch npm run build
+	$(DOCKER_COMPOSE_DEV) exec node_watch pnpm run build
 	@echo ""
 	@echo "$(GREEN)[4/5] Generating JavaScript routes...$(NC)"
 	$(DOCKER_COMPOSE_DEV) exec php php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
