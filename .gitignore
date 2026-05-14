@@ -125,3 +125,4 @@ opencode-bundle
 .opencode.local
 readme-opencode-bundle-init.md
 .gitmodules
+.mcprules-*
