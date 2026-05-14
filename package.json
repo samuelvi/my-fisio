@@ -12,7 +12,12 @@
         "typecheck": "tsc --noEmit",
         "test:unit": "vitest run",
         "test:unit:watch": "vitest",
-        "lint": "eslint assets --ext .ts,.tsx"
+        "lint": "eslint assets --ext .ts,.tsx",
+        "deps:check": "node scripts/security/check-package.mjs",
+        "deps:add": "node scripts/security/pnpm-safe-add.mjs --save-prod",
+        "deps:add:dev": "node scripts/security/pnpm-safe-add.mjs --save-dev",
+        "deps:audit": "pnpm audit --audit-level high",
+        "deps:install": "pnpm install --frozen-lockfile --ignore-scripts"
     },
     "dependencies": {
         "@fullcalendar/daygrid": "^6.1.19",

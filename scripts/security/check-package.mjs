@@ -5,6 +5,7 @@ import {
   fetchNpmPackageMetadata,
   fetchOsvVulnerabilities,
   formatRiskReport,
+  normalizeCliArgs,
   readDependencyPolicy
 } from './dependency-security.mjs';
 
@@ -27,7 +28,7 @@ async function checkPackage(spec, policy) {
 }
 
 async function main() {
-  const args = process.argv.slice(2);
+  const args = normalizeCliArgs(process.argv.slice(2));
   if (args.length === 0) {
     printUsage();
     process.exit(2);

@@ -227,4 +227,10 @@ describe('dependency security evaluation', () => {
       })
     ).toContain('BLOCK risky-package');
   });
+
+  it('drops pnpm argument separators from CLI args', async () => {
+    const { normalizeCliArgs } = await loadModule();
+
+    expect(normalizeCliArgs(['--', 'axios@1.6.0'])).toEqual(['axios@1.6.0']);
+  });
 });

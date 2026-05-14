@@ -28,6 +28,10 @@ export function parsePackageSpec(spec) {
   };
 }
 
+export function normalizeCliArgs(args) {
+  return args.filter((arg) => arg !== '--');
+}
+
 export async function readDependencyPolicy(path = 'config/dependency-policy.json') {
   const content = await readFile(path, 'utf8');
   return JSON.parse(content);
