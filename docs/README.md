@@ -38,6 +38,9 @@ docs/
 │   ├── deployment.md
 │   └── maintenance.md
 │
+├── security/                # Security operation guides
+│   └── dependency-installation.md
+│
 ├── guides/                  # User & developer guides
 │   └── audit-readme.md
 │
@@ -83,6 +86,10 @@ Installation, deployment, and maintenance guides:
 - **deployment.md**: Production deployment procedures
 - **maintenance.md**: Ongoing maintenance tasks
 
+### Security
+Security operation guides:
+- **dependency-installation.md**: Safe frontend dependency checks, install workflow, Make targets, and CI gates
+
 ### Guides
 Step-by-step guides for users and developers:
 - **audit-readme.md**: How to use the audit system
@@ -114,6 +121,12 @@ cat docs/operations/deployment.md
 ```bash
 cat docs/features/audit-system.md
 cat docs/guides/audit-readme.md
+```
+
+**Adding frontend dependencies safely:**
+```bash
+cat docs/security/dependency-installation.md
+make deps-check pkg=@heroicons/react@2.2.0
 ```
 
 ## 📚 Related Resources
@@ -149,6 +162,7 @@ For complete navigation, see:
 | Database change | architecture/database-schema.md, data-model.md |
 | Deployment change | operations/deployment.md |
 | Security change | specifications/07-SECURITY-AND-COMPLIANCE.md |
+| Dependency security change | security/dependency-installation.md, operations/installation.md, specifications/07-SECURITY-AND-COMPLIANCE.md |
 | Validation change | specifications/08-VALIDATIONS-AND-QUALITY.md |
 
 ### Documentation Update Format

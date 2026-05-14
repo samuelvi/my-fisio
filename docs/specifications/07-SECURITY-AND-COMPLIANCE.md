@@ -31,6 +31,7 @@ This document provides a comprehensive specification of security architecture, a
 | **Rate Limiting** | ⚠️ Not implemented | High |
 | **Two-Factor Authentication** | ⚠️ Not implemented | Medium |
 | **Security Monitoring** | ⚠️ Not implemented | High |
+| **Frontend Dependency Supply Chain Controls** | ✅ Implemented | High |
 | **Penetration Testing** | ⚠️ Pending | Critical |
 
 ---
@@ -95,6 +96,26 @@ This document provides a comprehensive specification of security architecture, a
 - Attacker intercepts unencrypted HTTP traffic, steals JWT token
 - Attacker uses token to impersonate user
 - **Mitigation:** HTTPS enforced (⚠️ Production only)
+
+### 2.4 Frontend Dependency Supply Chain Controls
+
+**Scope:** npm packages managed by pnpm for the React frontend.
+
+**Implementation:** The repository uses `pnpm-workspace.yaml`, `config/dependency-policy.json`, `scripts/security/*`, Make targets, and CI gates to reduce dependency installation risk.
+
+**Controls:**
+- lifecycle scripts are disabled with `ignoreScripts: true`;
+- `allowBuilds.esbuild` is explicitly `false`;
+- package additions must go through `make deps-add` or `make deps-add-dev`;
+- `make deps-check` checks npm registry metadata and OSV vulnerabilities before installation;
+- deprecated packages and missing metadata are blocked;
+- `HIGH` and `CRITICAL` OSV vulnerabilities are blocked;
+- package versions younger than 7 days require manual review;
+- packages with `preinstall`, `install`, `postinstall`, or `prepare` scripts require manual review;
+- patched transitive versions can be pinned with `pnpm-workspace.yaml` overrides when upstream packages lag behind security advisories;
+- CI runs `pnpm run deps:audit` and `pnpm run deps:check -- --lockfile` after installing from the lockfile.
+
+**Operational Guide:** [../security/dependency-installation.md](../security/dependency-installation.md)
 
 ---
 

@@ -1,0 +1,254 @@
+import { describe, expect, it } from 'vitest';
+
+type RegistryMetadata = {
+  name: string;
+  deprecated?: string;
+  version: string;
+  publishedAt?: string;
+  scripts?: Record<string, string>;
+};
+
+type OsvVulnerability = {
+  id: string;
+  summary?: string;
+  severity?: Array<{ type: string; score: string }>;
+  database_specific?: { severity?: string };
+};
+
+type Policy = {
+  blockSeverities: string[];
+  reviewLifecycleScripts: string[];
+  minimumVersionAgeDays: number;
+  allowedPackages: string[];
+  blockedPackages: string[];
+};
+
+const policy: Policy = {
+  blockSeverities: ['HIGH', 'CRITICAL'],
+  reviewLifecycleScripts: ['preinstall', 'install', 'postinstall', 'prepare'],
+  minimumVersionAgeDays: 7,
+  allowedPackages: [],
+  blockedPackages: []
+};
+
+const now = new Date('2026-05-14T10:00:00.000Z');
+
+async function loadModule() {
+  return import('../../../scripts/security/dependency-security.mjs') as Promise<{
+    evaluatePackageRisk: (input: {
+      spec: string;
+      metadata: RegistryMetadata | null;
+      vulnerabilities: OsvVulnerability[];
+      policy: Policy;
+      now: Date;
+    }) => {
+      status: 'PASS' | 'BLOCK' | 'REVIEW_REQUIRED';
+      reasons: string[];
+    };
+    parsePackageSpec: (spec: string) => { name: string; version: string | null };
+    mapNpmMetadataToSelectedVersion: (
+      registryDocument: {
+        name: string;
+        'dist-tags'?: { latest?: string };
+        versions?: Record<string, { deprecated?: string; scripts?: Record<string, string> }>;
+        time?: Record<string, string>;
+      },
+      requestedVersion: string | null
+    ) => RegistryMetadata | null;
+    formatRiskReport: (
+      spec: string,
+      result: { status: 'PASS' | 'BLOCK' | 'REVIEW_REQUIRED'; reasons: string[] }
+    ) => string;
+    normalizeCliArgs: (args: string[]) => string[];
+  }>;
+}
+
+describe('dependency security evaluation', () => {
+  it('parses scoped package specs with versions', async () => {
+    const { parsePackageSpec } = await loadModule();
+
+    expect(parsePackageSpec('@scope/name@1.2.3')).toEqual({
+      name: '@scope/name',
+      version: '1.2.3'
+    });
+  });
+
+  it('blocks packages that are explicitly denied by policy', async () => {
+    const { evaluatePackageRisk } = await loadModule();
+
+    const result = evaluatePackageRisk({
+      spec: 'left-pad',
+      metadata: { name: 'left-pad', version: '1.3.0', publishedAt: '2024-01-01T00:00:00.000Z' },
+      vulnerabilities: [],
+      policy: { ...policy, blockedPackages: ['left-pad'] },
+      now
+    });
+
+    expect(result.status).toBe('BLOCK');
+    expect(result.reasons).toContain('Package left-pad is blocked by policy.');
+  });
+
+  it('blocks packages with missing registry metadata', async () => {
+    const { evaluatePackageRisk } = await loadModule();
+
+    const result = evaluatePackageRisk({
+      spec: 'missing-package',
+      metadata: null,
+      vulnerabilities: [],
+      policy,
+      now
+    });
+
+    expect(result.status).toBe('BLOCK');
+    expect(result.reasons).toContain('Registry metadata was not found for missing-package.');
+  });
+
+  it('blocks deprecated packages', async () => {
+    const { evaluatePackageRisk } = await loadModule();
+
+    const result = evaluatePackageRisk({
+      spec: 'deprecated-package',
+      metadata: {
+        name: 'deprecated-package',
+        version: '1.0.0',
+        deprecated: 'Use maintained-package instead.',
+        publishedAt: '2024-01-01T00:00:00.000Z'
+      },
+      vulnerabilities: [],
+      policy,
+      now
+    });
+
+    expect(result.status).toBe('BLOCK');
+    expect(result.reasons).toContain('Package deprecated-package is deprecated: Use maintained-package instead.');
+  });
+
+  it('blocks high severity OSV vulnerabilities', async () => {
+    const { evaluatePackageRisk } = await loadModule();
+
+    const result = evaluatePackageRisk({
+      spec: 'risky-package',
+      metadata: { name: 'risky-package', version: '2.0.0', publishedAt: '2024-01-01T00:00:00.000Z' },
+      vulnerabilities: [{ id: 'GHSA-1234', database_specific: { severity: 'HIGH' } }],
+      policy,
+      now
+    });
+
+    expect(result.status).toBe('BLOCK');
+    expect(result.reasons).toContain('Vulnerability GHSA-1234 has blocked severity HIGH.');
+  });
+
+  it('requires review for lifecycle scripts', async () => {
+    const { evaluatePackageRisk } = await loadModule();
+
+    const result = evaluatePackageRisk({
+      spec: 'scripted-package',
+      metadata: {
+        name: 'scripted-package',
+        version: '1.0.0',
+        publishedAt: '2024-01-01T00:00:00.000Z',
+        scripts: { postinstall: 'node install.js' }
+      },
+      vulnerabilities: [],
+      policy,
+      now
+    });
+
+    expect(result.status).toBe('REVIEW_REQUIRED');
+    expect(result.reasons).toContain('Package scripted-package defines lifecycle script postinstall.');
+  });
+
+  it('requires review for versions younger than the policy threshold', async () => {
+    const { evaluatePackageRisk } = await loadModule();
+
+    const result = evaluatePackageRisk({
+      spec: 'fresh-package',
+      metadata: { name: 'fresh-package', version: '1.0.0', publishedAt: '2026-05-12T10:00:00.000Z' },
+      vulnerabilities: [],
+      policy,
+      now
+    });
+
+    expect(result.status).toBe('REVIEW_REQUIRED');
+    expect(result.reasons).toContain('Package fresh-package@1.0.0 is 2 days old, below the 7 day threshold.');
+  });
+
+  it('passes old packages without blocked risk signals', async () => {
+    const { evaluatePackageRisk } = await loadModule();
+
+    const result = evaluatePackageRisk({
+      spec: 'safe-package',
+      metadata: { name: 'safe-package', version: '1.0.0', publishedAt: '2024-01-01T00:00:00.000Z' },
+      vulnerabilities: [],
+      policy,
+      now
+    });
+
+    expect(result).toEqual({ status: 'PASS', reasons: [] });
+  });
+
+  it('selects explicit package versions from npm registry metadata', async () => {
+    const { mapNpmMetadataToSelectedVersion } = await loadModule();
+
+    const metadata = mapNpmMetadataToSelectedVersion(
+      {
+        name: 'demo-package',
+        'dist-tags': { latest: '2.0.0' },
+        versions: {
+          '1.0.0': { scripts: { postinstall: 'node install.js' } },
+          '2.0.0': {}
+        },
+        time: {
+          '1.0.0': '2024-01-01T00:00:00.000Z',
+          '2.0.0': '2024-06-01T00:00:00.000Z'
+        }
+      },
+      '1.0.0'
+    );
+
+    expect(metadata).toEqual({
+      name: 'demo-package',
+      version: '1.0.0',
+      deprecated: undefined,
+      publishedAt: '2024-01-01T00:00:00.000Z',
+      scripts: { postinstall: 'node install.js' }
+    });
+  });
+
+  it('selects latest package versions when no version is requested', async () => {
+    const { mapNpmMetadataToSelectedVersion } = await loadModule();
+
+    const metadata = mapNpmMetadataToSelectedVersion(
+      {
+        name: 'demo-package',
+        'dist-tags': { latest: '2.0.0' },
+        versions: { '2.0.0': {} },
+        time: { '2.0.0': '2024-06-01T00:00:00.000Z' }
+      },
+      null
+    );
+
+    expect(metadata).not.toBeNull();
+    if (!metadata) {
+      throw new Error('Expected registry metadata for latest version.');
+    }
+    expect(metadata.version).toBe('2.0.0');
+  });
+
+  it('formats blocked package reports for humans', async () => {
+    const { formatRiskReport } = await loadModule();
+
+    expect(
+      formatRiskReport('risky-package', {
+        status: 'BLOCK',
+        reasons: ['Vulnerability GHSA-1234 has blocked severity HIGH.']
+      })
+    ).toContain('BLOCK risky-package');
+  });
+
+  it('drops pnpm argument separators from CLI args', async () => {
+    const { normalizeCliArgs } = await loadModule();
+
+    expect(normalizeCliArgs(['--', 'axios@1.6.0'])).toEqual(['axios@1.6.0']);
+  });
+});
