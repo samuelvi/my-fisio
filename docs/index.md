@@ -59,6 +59,7 @@
 │   ├── index.md                      # THIS FILE - Master index
 │   ├── architecture/                 # System architecture & design
 │   ├── features/                     # Feature documentation
+│   ├── security/                     # Security operation guides
 │   ├── specifications/               # Complete specifications
 │   ├── operations/                   # Installation & deployment
 │   └── guides/                       # User & developer guides
@@ -239,23 +240,38 @@ sequenceDiagram
 | **Deployment** | Production deployment procedures | [operations/deployment.md](operations/deployment.md) |
 | **Maintenance** | Ongoing maintenance tasks | [operations/maintenance.md](operations/maintenance.md) |
 
+## Security
+
+| Document | Description | Path |
+|----------|-------------|------|
+| **Dependency Installation** | Safe frontend dependency checks, install workflow, Make targets, and CI gates | [security/dependency-installation.md](security/dependency-installation.md) |
+
 ### Quick Commands
 
 ```bash
 # Setup development environment
-make install
+make dev-install
 
 # Start services
-make start
+make dev-up
 
 # Run tests
 make test
 
-# Build frontend
-make build
+# Build frontend assets
+make build-assets
+
+# Check a frontend dependency before installing
+make deps-check pkg=@heroicons/react@2.2.0
+
+# Add a frontend dependency safely
+make deps-add pkg=@heroicons/react@2.2.0
+
+# Audit frontend dependencies
+make deps-audit
 
 # Deploy to production
-make deploy
+make prod-deploy
 ```
 
 ---

@@ -18,6 +18,20 @@ guard-real-repo: ## Ensure commands run from BackendTinaV3 root
 node22-guard: ## Ensure host Node supports pnpm 11
 	@node -e "const major = Number(process.versions.node.split('.')[0]); if (major < 22) { console.error('Node.js 22+ is required for pnpm 11. Current: ' + process.version); process.exit(1); }"
 
+# Colors for terminal output
+GREEN  := [0;32m
+YELLOW := [0;33m
+NC     := [0m # No Color
+
+##@ General
+
+help: ## Display this help message
+	@echo "$(GREEN)Physiotherapy Clinic Management System - Development Commands$(NC)"
+	@echo ""
+	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(GREEN)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+
+##@ Dependency Security
+
 require-pkg: ## Require pkg=package-name for dependency commands
 	@if [ -z "$(pkg)" ]; then \
 		echo "$(YELLOW)Usage: make $@ pkg=package-name$(NC)"; \
@@ -38,18 +52,6 @@ deps-audit: node22-guard ## Audit current frontend dependencies
 
 deps-install: node22-guard ## Install dependencies without lifecycle scripts
 	pnpm run deps:install
-
-# Colors for terminal output
-GREEN  := [0;32m
-YELLOW := [0;33m
-NC     := [0m # No Color
-
-##@ General
-
-help: ## Display this help message
-	@echo "$(GREEN)Physiotherapy Clinic Management System - Development Commands$(NC)"
-	@echo ""
-	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(GREEN)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 ##@ Docker Management (Dev)
 

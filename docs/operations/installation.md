@@ -124,6 +124,44 @@ make composer-update
 make composer-dump-autoload
 ```
 
+## Frontend Dependency Management
+
+Frontend dependencies are managed with pnpm and must use the safe dependency workflow. Do not run direct `pnpm add` for repository dependencies.
+
+The full policy is documented in [../security/dependency-installation.md](../security/dependency-installation.md).
+
+### Check A Package Without Installing
+
+```bash
+make deps-check pkg=@heroicons/react@2.2.0
+```
+
+### Add A Production Dependency Safely
+
+```bash
+make deps-add pkg=@heroicons/react@2.2.0
+```
+
+### Add A Development Dependency Safely
+
+```bash
+make deps-add-dev pkg=vitest@2.1.9
+```
+
+### Audit Current Frontend Dependencies
+
+```bash
+make deps-audit
+```
+
+### Install From Lockfile Without Lifecycle Scripts
+
+```bash
+make deps-install
+```
+
+The safe workflow requires `pnpm config get ignoreScripts` to return `true`. CI also verifies `allowBuilds.esbuild` remains `false`.
+
 ## Database Management
 
 ### Create Database
