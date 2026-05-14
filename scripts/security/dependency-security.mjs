@@ -109,3 +109,66 @@ export function evaluatePackageRisk({ spec, metadata, vulnerabilities, policy, n
 
   return { status: 'PASS', reasons: [] };
 }
+
+export function mapNpmMetadataToSelectedVersion(registryDocument, requestedVersion) {
+  const version = requestedVersion ?? registryDocument['dist-tags']?.latest;
+  const versionMetadata = registryDocument.versions?.[version];
+  if (!version || !versionMetadata) {
+    return null;
+  }
+
+  return {
+    name: registryDocument.name,
+    version,
+    deprecated: versionMetadata.deprecated,
+    publishedAt: registryDocument.time?.[version],
+    scripts: versionMetadata.scripts ?? {}
+  };
+}
+
+export async function fetchNpmPackageMetadata(spec, fetchImpl = fetch) {
+  const { name, version } = parsePackageSpec(spec);
+  const encodedName = name.startsWith('@') ? name.replace('/', '%2F') : name;
+  const response = await fetchImpl(`https://registry.npmjs.org/${encodedName}`);
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error(`npm registry request failed for ${name}: HTTP ${response.status}`);
+  }
+
+  const registryDocument = await response.json();
+  return mapNpmMetadataToSelectedVersion(registryDocument, version);
+}
+
+export async function fetchOsvVulnerabilities(metadata, fetchImpl = fetch) {
+  if (!metadata) {
+    return [];
+  }
+
+  const response = await fetchImpl('https://api.osv.dev/v1/query', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({
+      package: { ecosystem: 'npm', name: metadata.name },
+      version: metadata.version
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`OSV request failed for ${metadata.name}@${metadata.version}: HTTP ${response.status}`);
+  }
+
+  const body = await response.json();
+  return body.vulns ?? [];
+}
+
+export function formatRiskReport(spec, result) {
+  if (result.status === 'PASS') {
+    return `PASS ${spec}`;
+  }
+
+  return [`${result.status} ${spec}`, ...result.reasons.map((reason) => `- ${reason}`)].join('\n');
+}

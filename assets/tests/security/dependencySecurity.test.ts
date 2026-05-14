@@ -172,4 +172,59 @@ describe('dependency security evaluation', () => {
 
     expect(result).toEqual({ status: 'PASS', reasons: [] });
   });
+
+  it('selects explicit package versions from npm registry metadata', async () => {
+    const { mapNpmMetadataToSelectedVersion } = await loadModule();
+
+    const metadata = mapNpmMetadataToSelectedVersion(
+      {
+        name: 'demo-package',
+        'dist-tags': { latest: '2.0.0' },
+        versions: {
+          '1.0.0': { scripts: { postinstall: 'node install.js' } },
+          '2.0.0': {}
+        },
+        time: {
+          '1.0.0': '2024-01-01T00:00:00.000Z',
+          '2.0.0': '2024-06-01T00:00:00.000Z'
+        }
+      },
+      '1.0.0'
+    );
+
+    expect(metadata).toEqual({
+      name: 'demo-package',
+      version: '1.0.0',
+      deprecated: undefined,
+      publishedAt: '2024-01-01T00:00:00.000Z',
+      scripts: { postinstall: 'node install.js' }
+    });
+  });
+
+  it('selects latest package versions when no version is requested', async () => {
+    const { mapNpmMetadataToSelectedVersion } = await loadModule();
+
+    const metadata = mapNpmMetadataToSelectedVersion(
+      {
+        name: 'demo-package',
+        'dist-tags': { latest: '2.0.0' },
+        versions: { '2.0.0': {} },
+        time: { '2.0.0': '2024-06-01T00:00:00.000Z' }
+      },
+      null
+    );
+
+    expect(metadata.version).toBe('2.0.0');
+  });
+
+  it('formats blocked package reports for humans', async () => {
+    const { formatRiskReport } = await loadModule();
+
+    expect(
+      formatRiskReport('risky-package', {
+        status: 'BLOCK',
+        reasons: ['Vulnerability GHSA-1234 has blocked severity HIGH.']
+      })
+    ).toContain('BLOCK risky-package');
+  });
 });
