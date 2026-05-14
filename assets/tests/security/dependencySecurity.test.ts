@@ -46,6 +46,20 @@ async function loadModule() {
       reasons: string[];
     };
     parsePackageSpec: (spec: string) => { name: string; version: string | null };
+    mapNpmMetadataToSelectedVersion: (
+      registryDocument: {
+        name: string;
+        'dist-tags'?: { latest?: string };
+        versions?: Record<string, { deprecated?: string; scripts?: Record<string, string> }>;
+        time?: Record<string, string>;
+      },
+      requestedVersion: string | null
+    ) => RegistryMetadata | null;
+    formatRiskReport: (
+      spec: string,
+      result: { status: 'PASS' | 'BLOCK' | 'REVIEW_REQUIRED'; reasons: string[] }
+    ) => string;
+    normalizeCliArgs: (args: string[]) => string[];
   }>;
 }
 
@@ -214,6 +228,10 @@ describe('dependency security evaluation', () => {
       null
     );
 
+    expect(metadata).not.toBeNull();
+    if (!metadata) {
+      throw new Error('Expected registry metadata for latest version.');
+    }
     expect(metadata.version).toBe('2.0.0');
   });
 

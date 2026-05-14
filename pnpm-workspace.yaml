@@ -1,4 +1,13 @@
 ignoreScripts: true
 
+overrides:
+  "anymatch>picomatch": "2.3.2"
+  "glob>minimatch": "9.0.7"
+  "micromatch>picomatch": "2.3.2"
+  "readdirp>picomatch": "2.3.2"
+  "tinyglobby>picomatch": "4.0.4"
+  "vite>picomatch": "4.0.4"
+  "vite>rollup": "4.59.0"
+
 allowBuilds:
   esbuild: false

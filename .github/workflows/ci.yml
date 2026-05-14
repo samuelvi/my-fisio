@@ -194,6 +194,17 @@ jobs:
       - name: Install pnpm dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify pnpm lifecycle scripts are disabled
+        run: |
+          test "$(pnpm config get ignoreScripts)" = "true"
+          test "$(pnpm config get allowBuilds.esbuild)" = "false"
+
+      - name: Audit frontend dependency vulnerabilities
+        run: pnpm run deps:audit
+
+      - name: Check frontend dependency lockfile policy
+        run: pnpm run deps:check -- --lockfile
+
       - name: Typecheck frontend
         run: pnpm run typecheck
 
