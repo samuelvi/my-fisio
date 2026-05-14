@@ -1,0 +1,7 @@
+{
+  "blockSeverities": ["HIGH", "CRITICAL"],
+  "reviewLifecycleScripts": ["preinstall", "install", "postinstall", "prepare"],
+  "minimumVersionAgeDays": 7,
+  "allowedPackages": [],
+  "blockedPackages": []
+}
