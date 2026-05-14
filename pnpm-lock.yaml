@@ -17,6 +17,9 @@ importers:
 
   .:
     dependencies:
+      '@fullcalendar/core':
+        specifier: 6.1.20
+        version: 6.1.20
       '@fullcalendar/daygrid':
         specifier: ^6.1.19
         version: 6.1.20(@fullcalendar/core@6.1.20)
@@ -41,6 +44,9 @@ importers:
       axios:
         specifier: ^1.16.0
         version: 1.16.0
+      date-fns:
+        specifier: 4.1.0
+        version: 4.1.0
       fuse.js:
         specifier: ^7.1.0
         version: 7.1.0
