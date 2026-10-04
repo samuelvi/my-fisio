@@ -9,9 +9,9 @@ TEST_WEB_PORT ?= 8081
 E2E_BASE_URL ?= http://127.0.0.1:$(TEST_WEB_PORT)
 DOCKER_COMPOSE_TEST = TEST_WEB_PORT=$(TEST_WEB_PORT) docker-compose -f docker/test/docker-compose.yaml
 
-guard-real-repo: ## Ensure commands run from BackendTinaV3 root
+guard-real-repo: ## Ensure commands run from the pcms project root
 	@if [ "$$(basename "$$(pwd)")" = "opencode-bundle" ] || [ ! -f "composer.json" ] || [ ! -f "playwright.config.ts" ] || [ ! -d "src" ] || [ ! -d "tests" ]; then \
-		echo "$(YELLOW)Error: run make from BackendTinaV3 project root, not from opencode-bundle/subdirectories.$(NC)"; \
+		echo "$(YELLOW)Error: run make from the pcms project root, not from opencode-bundle/subdirectories.$(NC)"; \
 		exit 1; \
 	fi
 

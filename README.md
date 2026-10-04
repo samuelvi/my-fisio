@@ -1,4 +1,4 @@
-# Physiotherapy Clinic Management System
+# PCMS — Physiotherapy Clinic Management System
 
 Comprehensive management system for physiotherapy clinics with modern architecture based on Domain-Driven Design (DDD) and Event Sourcing.
 
@@ -39,8 +39,8 @@ Comprehensive management system for physiotherapy clinics with modern architectu
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd New3
+git clone <repository-url> pcms
+cd pcms
 
 # Automatic installation (build, start and configure)
 make dev-install

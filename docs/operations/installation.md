@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide provides step-by-step instructions for setting up the Physiotherapy Clinic Management System.
+This guide provides step-by-step instructions for setting up PCMS (Physiotherapy Clinic Management System).
 
 ## Prerequisites
 
@@ -9,6 +9,13 @@ This guide provides step-by-step instructions for setting up the Physiotherapy C
 - Make (optional, but highly recommended)
 
 ## Quick Installation
+
+Clone the repository into the default project directory, `pcms`:
+
+```bash
+git clone <repository-url> pcms
+cd pcms
+```
 
 ### Option 1: Full Installation (Recommended for first-time setup)
 

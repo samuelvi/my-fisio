@@ -1,5 +1,5 @@
 {
-    "name": "physiotherapy/clinic-management",
+    "name": "physiotherapy/pcms",
     "description": "Physiotherapy Clinic Management System with DDD and Event Sourcing",
     "type": "project",
     "license": "proprietary",
