@@ -1,59 +1,38 @@
-# Frontend Architecture
+# Frontend architecture
 
-Modern React SPA (Single Page Application) built with TypeScript, Vite, and Tailwind CSS.
+React 18 SPA with TypeScript, Vite, Tailwind CSS and React Router 7.
 
-## Core Concepts
+## Entry points and layers
 
-### 1. Routing & Navigation
-- **Library**: `react-router-dom` v6.
-- **Entry Point**: `assets/app.tsx`.
-- **Strategy**:
-    - **Internal Navigation**: Uses `<Navigate />` and `useNavigate()` to maintain SPA state without full reloads.
-    - **Protection**: `ProtectedRoute` wrapper component checks for JWT token presence.
-    - **Login Integration**: The `/login` route is part of the main Router, preventing context loss during redirection.
+| Path | Purpose |
+| --- | --- |
+| `assets/app.tsx` | Main router, protected screens and providers |
+| `assets/login.tsx` | Standalone login entry |
+| `assets/components/` | Existing screens and shared components |
+| `assets/application/`, `assets/domain/` | Frontend use cases and contracts |
+| `assets/infrastructure/` | Adapters and persistence integrations |
+| `assets/presentation/` | Bootstrap, API client, session store and query client |
+| `assets/routing/` | FOSJsRouting integration |
+| `assets/tests/` | Frontend tests |
 
-### 2. State Management
-- **Local State**: `useState` for component-specific data (forms, UI toggles).
-- **Server State**: Direct API calls via `axios` (Standard REST).
-- **Draft State**: Custom `useFormDraft` hook persists form data to `localStorage` to prevent data loss.
+Follow the structure of the feature being changed. Some screens use older direct
+API calls while others use the supporting layers and TanStack Query.
 
-### 3. Authentication Flow
-1. User enters credentials in `/login`.
-2. App requests token from `/api/login_check`.
-3. Token stored in `localStorage`.
-4. `axios` interceptor attaches `Authorization: Bearer <token>` to all subsequent requests.
-5. If API returns `401 Unauthorized`, interceptor redirects to `/login?expired=1`.
+## Session and data
 
-### 4. Internationalization (i18n)
-- **Pattern**: Server-Side Injection.
-- **Mechanism**: Symfony renders the initial HTML with a global `window.APP_TRANSLATIONS` object derived from `messages.es.yaml`.
-- **Context**: `LanguageContext` provider exposes a `t()` helper to components.
-- **Benefit**: Zero-latency translations and no "flicker" on load.
+- `/api/login_check` returns a JWT. `presentation/auth/sessionStore.ts` stores it
+  in `localStorage`; the HTTP client sends it in the Authorization header.
+- `presentation/bootstrap/frontendBootstrap.ts` restores the token, applies
+  theme variables and installs the unauthorized-response handler.
+- `presentation/query/queryClient.ts` defines shared TanStack Query defaults.
+- Draft recovery is described in the [draft guide](../features/draft-system.md).
 
-## Directory Structure
+## Translations and routes
 
-```
-assets/
-├── app.tsx                 # Router & Main Component
-├── login.tsx               # Login Entry Point
-├── components/             # React Components
-│   ├── shared/             # Reusable UI (Alerts, Loaders)
-│   ├── invoices/           # Domain-specific components
-│   ├── customers/          # Domain-specific components
-│   ├── Calendar.tsx        # FullCalendar wrapper
-│   └── ...
-├── domain/                 # Business logic interfaces
-├── infrastructure/         # API services (optional)
-└── types/                  # TypeScript definitions
-```
+`templates/default/index.html.twig` injects `window.APP_TRANSLATIONS`, populated
+by `TranslationExtension` from Symfony catalogs. `LanguageContext` exposes the
+translation helper and persists language selection locally.
 
-## Key Components
-
-### `App.tsx`
-Handles the global routing table. Ensure all new pages are registered here inside the `<Routes>` block.
-
-### `FormDraftUI`
-A visual component that alerts users when they have unsaved data recovered from a crash or network error. Used in `PatientForm`, `InvoiceForm`, etc.
-
-### `RecordTimeline`
-A complex composite component that renders the clinical history of a patient, demonstrating the "Master-Detail" pattern within a single view.
+Export exposed backend routes with `make dump-routes` after changing them.
+`make build-assets` does this before Vite builds. See [configuration](../operations/configuration.md)
+for environment settings and [testing](../testing/e2e.md) for validation.

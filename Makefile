@@ -1,475 +1,270 @@
-.PHONY: help guard-real-repo node22-guard require-pkg deps-check deps-add deps-add-dev deps-audit deps-install dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup db-create db-drop db-migrate db-migration-create db-fixtures db-reset db-validate install-all-packages phpstan-install phpstan cs-fixer-install cs-check cs-fix rector-install rector rector-fix quality-tools quality-check test test-unit test-e2e test-all test-coverage dev-install init-symfony wait-for-services db-setup success-message dev-quick-start dev-clean clean-cache build-assets mailpit urls test-up test-down test-build test-logs test-shell-php test-reset-db test-fix-cache-perms test-e2e-ui prod-build prod-deploy opencode-init opencode-link opencode-verify opencode-open opencode-start
-
-# Default target
 .DEFAULT_GOAL := help
+# Lifecycle, migrations and test preparation must run in order, even with make -j.
+.NOTPARALLEL:
 
-# Docker compose file locations
-DOCKER_COMPOSE_DEV = docker-compose -f docker/dev/docker-compose.yaml -f docker/dev/docker-compose.override.yaml
+DOCKER_COMPOSE ?= docker compose
+DOCKER_COMPOSE_DEV = $(DOCKER_COMPOSE) -f docker/dev/docker-compose.yaml -f docker/dev/docker-compose.override.yaml
 TEST_WEB_PORT ?= 8081
 E2E_BASE_URL ?= http://127.0.0.1:$(TEST_WEB_PORT)
-DOCKER_COMPOSE_TEST = TEST_WEB_PORT=$(TEST_WEB_PORT) docker-compose -f docker/test/docker-compose.yaml
+DOCKER_COMPOSE_TEST = TEST_WEB_PORT=$(TEST_WEB_PORT) $(DOCKER_COMPOSE) -f docker/test/docker-compose.yaml
+PHP = $(DOCKER_COMPOSE_DEV) exec -T php
+CONSOLE = $(PHP) php bin/console
+NODE = $(DOCKER_COMPOSE_DEV) exec -T node_watch
+TEST_PHP = $(DOCKER_COMPOSE_TEST) exec -T php_test
+TEST_CONSOLE = $(TEST_PHP) php bin/console
 
-guard-real-repo: ## Ensure commands run from the pcms project root
-	@if [ "$$(basename "$$(pwd)")" = "opencode-bundle" ] || [ ! -f "composer.json" ] || [ ! -f "playwright.config.ts" ] || [ ! -d "src" ] || [ ! -d "tests" ]; then \
-		echo "$(YELLOW)Error: run make from the pcms project root, not from opencode-bundle/subdirectories.$(NC)"; \
-		exit 1; \
-	fi
+.PHONY: help guard-real-repo node22-guard require-pkg require-cmd
+.PHONY: deps-check deps-add deps-add-dev deps-audit deps-install
+.PHONY: dev-build dev-up dev-down dev-restart dev-logs dev-ps dev-clean
+.PHONY: dev-shell dev-shell-php dev-shell-db dev-shell-redis dev-shell-node dev-watch-logs
+.PHONY: composer composer-install composer-update composer-dump-autoload symfony dump-routes cache-clear cache-warmup clean-cache
+.PHONY: db-create db-drop db-migrate db-migration-create db-fixtures db-populate-customers db-reset db-validate db-setup
+.PHONY: phpstan cs-check cs-fix rector rector-fix quality-check
+.PHONY: test-build test-up test-down test-logs test-shell-php test-assets-build test-prepare test-reset-db test-fix-cache-perms
+.PHONY: test test-unit test-coverage test-frontend test-e2e-prepare test-e2e test-e2e-ui test-e2e-video test-all
+.PHONY: dev-install dev-quick-start jwt-setup jwt-setup-test build-assets prod-release urls mailpit
+.PHONY: opencode-init opencode-link opencode-verify opencode-open opencode-start
 
-node22-guard: ## Ensure host Node supports pnpm 11
-	@node -e "const major = Number(process.versions.node.split('.')[0]); if (major < 22) { console.error('Node.js 22+ is required for pnpm 11. Current: ' + process.version); process.exit(1); }"
+##@ Project
 
-# Colors for terminal output
-GREEN  := [0;32m
-YELLOW := [0;33m
-NC     := [0m # No Color
+help: ## List available commands
+	@awk 'BEGIN {FS = ":.*##"; print "PCMS — make <target>"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  %-24s %s\n", $$1, $$2} /^##@/ {printf "\n%s\n", substr($$0, 5)}' $(MAKEFILE_LIST)
 
-##@ General
+guard-real-repo:
+	@test -f composer.json && test -f playwright.config.ts && test -d src && test -d tests || { echo "Run make from the pcms project root."; exit 1; }
 
-help: ## Display this help message
-	@echo "$(GREEN)Physiotherapy Clinic Management System - Development Commands$(NC)"
-	@echo ""
-	@awk 'BEGIN {FS = ":.*##"; printf "Usage:\n  make $(YELLOW)<target>$(NC)\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  $(YELLOW)%-20s$(NC) %s\n", $$1, $$2 } /^##@/ { printf "\n$(GREEN)%s$(NC)\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
+node22-guard:
+	@node -e "if (Number(process.versions.node.split('.')[0]) < 22) { console.error('Node.js 22+ is required.'); process.exit(1); }"
 
-##@ Dependency Security
+require-pkg:
+	@test -n "$(pkg)" || { echo 'Usage: make deps-check|deps-add|deps-add-dev pkg=package'; exit 1; }
 
-require-pkg: ## Require pkg=package-name for dependency commands
-	@if [ -z "$(pkg)" ]; then \
-		echo "$(YELLOW)Usage: make $@ pkg=package-name$(NC)"; \
-		exit 1; \
-	fi
+require-cmd:
+	@test -n "$(cmd)" || { echo 'Usage: make composer|symfony cmd="command"'; exit 1; }
 
-deps-check: node22-guard require-pkg ## Check dependency risk without installing (use: make deps-check pkg=axios)
-	pnpm run deps:check -- $(pkg)
+dev-install: dev-build dev-up composer-install jwt-setup db-setup dump-routes urls ## Install the project from its lockfiles
 
-deps-add: node22-guard require-pkg ## Safely add production dependency (use: make deps-add pkg=axios)
-	pnpm run deps:add -- $(pkg)
+dev-quick-start: dev-install
 
-deps-add-dev: node22-guard require-pkg ## Safely add development dependency (use: make deps-add-dev pkg=vitest)
-	pnpm run deps:add:dev -- $(pkg)
+##@ Development containers
 
-deps-audit: node22-guard ## Audit current frontend dependencies
-	pnpm run deps:audit
-
-deps-install: node22-guard ## Install dependencies without lifecycle scripts
-	pnpm run deps:install
-
-##@ Docker Management (Dev)
-
-dev-build: guard-real-repo ## Build all Docker containers (Dev)
-	@echo "$(GREEN)Building Docker containers (Dev)...$(NC)"
+dev-build: guard-real-repo ## Build development images
 	$(DOCKER_COMPOSE_DEV) build
 
-dev-up: guard-real-repo ## Start all containers in background (Dev)
-	@echo "$(GREEN)Starting containers (Dev)...$(NC)"
-	$(DOCKER_COMPOSE_DEV) up -d
+dev-up: guard-real-repo ## Start services and wait for health checks
+	$(DOCKER_COMPOSE_DEV) up -d --wait --wait-timeout 120
 
-dev-down: guard-real-repo ## Stop and remove all containers (Dev)
-	@echo "$(YELLOW)Stopping containers (Dev)...$(NC)"
+dev-down: guard-real-repo ## Stop development containers
 	$(DOCKER_COMPOSE_DEV) down
 
-dev-restart: dev-down dev-up ## Restart all containers (Dev)
+dev-restart: dev-down dev-up ## Recreate development containers
 
-dev-logs: ## Show logs from all containers (Dev) (use: make dev-logs service=php)
-	@if [ -z "$(service)" ]; then \
-		$(DOCKER_COMPOSE_DEV) logs -f; \
-	else \
-		$(DOCKER_COMPOSE_DEV) logs -f $(service); \
-	fi
+dev-logs: ## Follow logs (optional: service=php)
+	$(DOCKER_COMPOSE_DEV) logs -f $(service)
 
-dev-ps: ## Show running containers (Dev)
+dev-ps: ## Show service status
 	$(DOCKER_COMPOSE_DEV) ps
 
-##@ Docker Management (Test)
+dev-shell: dev-shell-php
 
-jwt-setup: ## Generate JWT keys (Dev)
-	@echo "$(GREEN)Checking JWT keys (Dev)...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec -T php sh -c "mkdir -p config/jwt && if [ -f config/jwt/private.pem ] && ! openssl rsa -check -in config/jwt/private.pem -passin pass:\"\$${JWT_PASSPHRASE}\" -noout > /dev/null 2>&1; then echo 'Invalid keys, regenerating...'; rm -f config/jwt/private.pem config/jwt/public.pem; fi; php bin/console lexik:jwt:generate-keypair --skip-if-exists && chmod 666 config/jwt/*.pem"
-
-jwt-setup-test: ## Generate JWT keys (Test)
-	@echo "$(GREEN)Checking JWT keys (Test)...$(NC)"
-	$(DOCKER_COMPOSE_TEST) exec -T php_test sh -c "mkdir -p config/jwt && php bin/console lexik:jwt:generate-keypair --skip-if-exists && chmod 666 config/jwt/*.pem"
-
-test-build: guard-real-repo ## Build all Docker containers (Test)
-	@echo "$(GREEN)Building Docker containers (Test)...$(NC)"
-	$(DOCKER_COMPOSE_TEST) build
-
-test-up: guard-real-repo ## Start all containers in background (Test)
-	@echo "$(GREEN)Starting containers (Test)...$(NC)"
-	$(DOCKER_COMPOSE_TEST) up -d
-
-test-down: guard-real-repo ## Stop and remove all containers (Test)
-	@echo "$(YELLOW)Stopping containers (Test)...$(NC)"
-	$(DOCKER_COMPOSE_TEST) down -v
-
-test-logs: ## Show logs from all containers (Test)
-	$(DOCKER_COMPOSE_TEST) logs -f
-
-test-shell-php: ## Access PHP container shell (Test)
-	$(DOCKER_COMPOSE_TEST) exec php_test sh
-
-test-assets-build: ## Build frontend assets in test environment
-	$(DOCKER_COMPOSE_TEST) run --rm node_test sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm run build:test"
-
-##@ Production Build & Deploy
-
-##@ Production Build & Deploy
-
-prod-release: ## Build and deploy (config in .env.local via DEPLOY_SERVER)
-	@SERVER="$(server)" TAG="$(tag)" ./scripts/release.sh
-
-
-##@ Container Access (Dev)
-
-dev-shell-php dev-shell: ## Access PHP container shell
-	@echo "$(GREEN)Accessing PHP container...$(NC)"
+dev-shell-php: ## Open PHP shell
 	$(DOCKER_COMPOSE_DEV) exec php sh
 
-dev-shell-db: ## Access MariaDB database shell
-	@echo "$(GREEN)Accessing MariaDB...$(NC)"
+dev-shell-db: ## Open MariaDB shell
 	$(DOCKER_COMPOSE_DEV) exec mariadb mariadb -u physiotherapy_user -pphysiotherapy_pass physiotherapy_db
 
-dev-shell-redis: ## Access Redis CLI
-	@echo "$(GREEN)Accessing Redis CLI...$(NC)"
+dev-shell-redis: ## Open Redis CLI
 	$(DOCKER_COMPOSE_DEV) exec redis redis-cli
 
-dev-shell-node: ## Access Node watch container shell
-	@echo "$(GREEN)Accessing Node watch container...$(NC)"
+dev-shell-node: ## Open Node shell
 	$(DOCKER_COMPOSE_DEV) exec node_watch sh
 
-dev-watch-logs: ## Show logs from Vite watch container
+dev-watch-logs: ## Follow Vite logs
 	$(DOCKER_COMPOSE_DEV) logs -f node_watch
 
-##@ Symfony & Composer
-
-composer: ## Run composer command (use: make composer cmd="install")
-	@if [ -z "$(cmd)" ]; then \
-		echo "$(YELLOW)Usage: make composer cmd=\"your-command\"$(NC)"
-	else \
-		$(DOCKER_COMPOSE_DEV) exec php composer $(cmd); \
-	fi
-
-composer-install: ## Install composer dependencies
-	@echo "$(GREEN)Installing composer dependencies...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer install --no-interaction --prefer-dist --optimize-autoloader
-
-composer-update: ## Update composer dependencies
-	@echo "$(GREEN)Updating composer dependencies...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer update --no-interaction
-
-composer-dump-autoload: ## Regenerate autoload files
-	@echo "$(GREEN)Dumping autoload...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer dump-autoload --optimize
-
-symfony: ## Run Symfony console command (use: make symfony cmd="cache:clear")
-	@if [ -z "$(cmd)" ]; then \
-		echo "$(YELLOW)Usage: make symfony cmd=\"your-command\"$(NC)"
-	else \
-		$(DOCKER_COMPOSE_DEV) exec php php bin/console $(cmd); \
-	fi
-
-dump-routes: ## Dump FOS JS Routing routes to JSON
-	@echo "$(GREEN)Dumping exposed routes...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
-
-cache-clear: ## Clear Symfony cache
-	@echo "$(GREEN)Clearing cache...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console cache:clear
-
-cache-warmup: ## Warmup Symfony cache
-	@echo "$(GREEN)Warming up cache...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console cache:warmup
-
-##@ Database
-
-db-create: ## Create database
-	@echo "$(GREEN)Creating database...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console doctrine:database:create --if-not-exists
-	@echo "$(GREEN)MariaDB uses utf8mb4_unicode_ci collation by default$(NC)"
-	@echo "$(GREEN)MariaDB extensions are automatically configured via init scripts$(NC)"
-
-db-drop: ## Drop database
-	@echo "$(YELLOW)Dropping database...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:database:drop --force
-
-db-migrate: ## Run database migrations
-	@echo "$(GREEN)Running migrations...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:migrations:migrate --no-interaction
-
-db-migration-create: ## Create new migration (use: make db-migration-create name="YourMigration")
-	@if [ -z "$(name)" ]; then \
-		$(DOCKER_COMPOSE_DEV) exec php php bin/console doctrine:migrations:generate; \
-	else \
-		$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:migrations:generate --namespace="$(name)"; \
-	fi
-
-db-fixtures: ## Load database fixtures
-	@echo "$(GREEN)Loading fixtures...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php bin/console doctrine:fixtures:load --no-interaction
-
-db-populate-customers: ## Populate customers from existing data (use reset=1 to restart)
-	@echo "$(GREEN)Populating customers...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php bin/console app:migration:populate-customers --reset=$(reset)
-
-db-reset: db-drop db-create db-migrate db-fixtures ## Reset database (drop, create, migrate, fixtures)
-
-db-validate: ## Validate doctrine mapping
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console doctrine:schema:validate
-
-##@ Symfony Package Installation
-
-install-packages: composer-install ## Install recommended packages (Redis, Event Store, API)
-	@echo "$(GREEN)Installing recommended packages...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require snc/redis-bundle broadway/broadway broadway/event-store-dbal api
-
-##@ Code Quality
-
-phpstan-install: ## Install PHPStan
-	@echo "$(GREEN)Installing PHPStan...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require --dev phpstan/phpstan phpstan/phpstan-symfony phpstan/phpstan-doctrine
-
-phpstan: ## Run PHPStan analysis
-	@echo "$(GREEN)Running PHPStan...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php vendor/bin/phpstan analyse src --level=8
-
-cs-fixer-install: ## Install PHP CS Fixer
-	@echo "$(GREEN)Installing PHP CS Fixer...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require --dev friendsofphp/php-cs-fixer
-
-cs-check: ## Check code style
-	@echo "$(GREEN)Checking code style...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php vendor/bin/php-cs-fixer fix --dry-run --diff
-
-cs-fix: ## Fix code style
-	@echo "$(GREEN)Fixing code style...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php vendor/bin/php-cs-fixer fix
-
-rector-install: ## Install Rector
-	@echo "$(GREEN)Installing Rector...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer require --dev rector/rector
-
-rector: ## Run Rector
-	@echo "$(GREEN)Running Rector...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php vendor/bin/rector process src --dry-run
-
-rector-fix: ## Run Rector and apply changes
-	@echo "$(GREEN)Running Rector with fixes...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php vendor/bin/rector process src
-
-quality-tools: phpstan-install cs-fixer-install rector-install ## Install all quality tools (PHPStan, CS Fixer, Rector)
-
-quality-check: phpstan cs-check ## Run all quality checks (PHPStan + CS Fixer)
-
-##@ Testing (PHPUnit)
-
-test: guard-real-repo ## Run PHPUnit unit tests
-	@echo "$(GREEN)Running PHPUnit tests...$(NC)"
-	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
-		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
-		make test-up; \
-		sleep 5; \
-	fi
-	$(DOCKER_COMPOSE_TEST) exec -T php_test composer install --no-interaction --prefer-dist --optimize-autoloader
-	make jwt-setup-test
-	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/phpunit
-
-test-unit: test ## Alias for 'test' (Run PHPUnit tests)
-
-test-coverage: ## Run tests with coverage
-	@echo "$(GREEN)Running tests with coverage...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php php bin/phpunit --coverage-html var/coverage
-
-##@ E2E Testing (Playwright)
-
-test-reset-db: ## Reset Test Database
-	@echo "$(GREEN)Resetting Test Database...$(NC)"
-	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:schema:drop --force --full-database
-	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:schema:create
-	$(DOCKER_COMPOSE_TEST) exec php_test php bin/console doctrine:fixtures:load --no-interaction
-
-test-fix-cache-perms: ## Recreate test cache/proxies with writable permissions
-	@echo "$(GREEN)Fixing test cache permissions...$(NC)"
-	$(DOCKER_COMPOSE_TEST) exec -T php_test sh -c "rm -rf var/cache/test 2>/dev/null || true; mkdir -p var/cache/test/doctrine/orm/Proxies && chmod -R 777 var/cache"
-
-test-e2e: guard-real-repo node22-guard ## Run Playwright E2E tests (Headless) (use: make test-e2e file="tests/e2e/login.spec.ts")
-	@echo "$(GREEN)Running E2E Tests (Headless)...$(NC)"
-	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
-		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
-		make test-up; \
-		sleep 5; \
-	fi
-	make jwt-setup-test
-	make test-fix-cache-perms
-	$(DOCKER_COMPOSE_TEST) exec -T php_test php bin/console cache:clear
-	make test-reset-db
-	corepack pnpm exec bddgen test -c playwright.config.ts
-	E2E_BASE_URL="$(E2E_BASE_URL)" corepack pnpm exec playwright test $(file)
-
-test-e2e-ui: guard-real-repo node22-guard ## Run Playwright E2E tests (UI Mode) (use: make test-e2e-ui file="tests/e2e/login.spec.ts")
-	@echo "$(GREEN)Running E2E Tests (UI Mode)...$(NC)"
-	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
-		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
-		make test-up; \
-		sleep 5; \
-	fi
-	make jwt-setup-test
-	make test-fix-cache-perms
-	corepack pnpm exec bddgen test -c playwright.config.ts
-	E2E_BASE_URL="$(E2E_BASE_URL)" corepack pnpm exec playwright test --ui $(file)
-
-test-e2e-video: guard-real-repo node22-guard ## Run E2E test with video recording (use: make test-e2e-video file="tests/e2e/login.spec.ts")
-	@echo "$(GREEN)Running E2E Test with Video Recording...$(NC)"
-	@if [ -z "$$$(docker ps -q -f name=test_physiotherapy_php)" ]; then \
-		echo "$(YELLOW)Starting Test Environment...$(NC)"; \
-		make test-up; \
-		sleep 5; \
-	fi
-	make jwt-setup-test
-	make test-fix-cache-perms
-	make test-reset-db
-	corepack pnpm exec bddgen test -c playwright.config.ts
-	@echo "$(YELLOW)Enabling video recording...$(NC)"
-	@perl -i -pe 's/video: '\''retain-on-failure'\''/video: '\''on'\''/' playwright.config.cjs
-	@E2E_BASE_URL="$(E2E_BASE_URL)" corepack pnpm exec playwright test $(file) || true
-	@echo "$(YELLOW)Restoring video config...$(NC)"
-	@perl -i -pe 's/video: '\''on'\''/video: '\''retain-on-failure'\''/' playwright.config.cjs
-	@echo ""
-	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(GREEN)║  Test completed! Video recording:                         ║$(NC)"
-	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
-	@echo ""
-	@VIDEO_PATH=$$(find var/log/playwright/test-results -name "*.webm" -type f 2>/dev/null | head -n 1); \
-	if [ -n "$$VIDEO_PATH" ]; then \
-		echo "$(GREEN)📹 Video saved at:$(NC)"; \
-		echo "   $(YELLOW)$$VIDEO_PATH$(NC)"; \
-		echo ""; \
-		echo "$(GREEN)To open the video:$(NC)"; \
-		echo "   open $$VIDEO_PATH"; \
-		echo ""; \
-		echo "$(GREEN)To view HTML report:$(NC)"; \
-		echo "   corepack pnpm exec playwright show-report var/log/playwright/report"; \
-	else \
-		echo "$(YELLOW)⚠ No video found. Test may have been skipped or failed to record.$(NC)"; \
-	fi
-
-test-all: test test-e2e ## Run full test suite (unit + E2E)
-
-##@ Project Setup
-
-dev-install: dev-build dev-up wait-for-services init-symfony install-packages jwt-setup db-setup dump-routes success-message ## Full project installation (Dev)
-
-init-symfony: ## Initialize Symfony application
-	@echo "$(GREEN)Initializing Symfony application...$(NC)"
-	@if [ ! -f "bin/console" ]; then \
-		echo "$(YELLOW)Creating Symfony skeleton...$(NC)"; \
-		$(DOCKER_COMPOSE_DEV) exec php composer create-project symfony/skeleton:"7.4.*" temp; \
-		$(DOCKER_COMPOSE_DEV) exec php sh -c "cp -r temp/* temp/.* . 2>/dev/null || true"; \
-		$(DOCKER_COMPOSE_DEV) exec php rm -rf temp; \
-	else \
-		echo "$(GREEN)Symfony already initialized$(NC)"; \
-	fi
-
-wait-for-services: ## Wait for services to be ready
-	@echo "$(YELLOW)Waiting for services to be ready...$(NC)"
-	@sleep 5
-	@until $(DOCKER_COMPOSE_DEV) exec mariadb mariadb -u physiotherapy_user -pphysiotherapy_pass -e "SELECT 1" > /dev/null 2>&1; do \
-		echo "$(YELLOW)Waiting for MariaDB...$(NC)"; \
-		sleep 2; \
-	done
-	@echo "$(GREEN)MariaDB is ready!$(NC)"
-	@until $(DOCKER_COMPOSE_DEV) exec redis redis-cli ping > /dev/null 2>&1; do \
-		echo "$(YELLOW)Waiting for Redis...$(NC)"; \
-		sleep 2; \
-	done
-	@echo "$(GREEN)Redis is ready!$(NC)"
-
-
-db-setup: db-create db-migrate ## Setup database (create + migrate)
-
-success-message: ## Display success message
-	@echo ""
-	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(GREEN)║  Project installed successfully!                          ║$(NC)"
-	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
-	@echo ""
-	@echo "$(GREEN)Service URLs:$(NC)"
-	@echo "  • Application:      $(YELLOW)http://localhost$(NC)"
-	@echo "  • Vite Dev Server:  $(YELLOW)http://localhost:5173$(NC)"
-	@echo "  • MailPit UI:       $(YELLOW)http://localhost:8025$(NC)"
-	@echo "  • Adminer UI:       $(YELLOW)http://localhost:8080$(NC)"
-	@echo "  • MariaDB:          $(YELLOW)localhost:3306$(NC)"
-	@echo "  • Redis:            $(YELLOW)localhost:6379$(NC)"
-	@echo ""
-	@echo "$(GREEN)Next steps:$(NC)"
-	@echo "  1. Run 'make symfony cmd=\"make:controller\"' to create your first controller"
-	@echo "  2. Run 'make symfony cmd=\"make:entity\"' to create entities"
-	@echo "  3. Run 'make db-migration-create' to create migrations"
-	@echo "  4. Run 'make help' to see all available commands"
-	@echo ""
-
-dev-quick-start: dev-build dev-up wait-for-services composer-install jwt-setup db-setup success-message ## Quick start (assumes Symfony is already initialized)
-
-##@ Cleanup
-
-dev-clean: dev-down ## Stop containers and remove volumes
-	@echo "$(YELLOW)Removing volumes...$(NC)"
+dev-clean: guard-real-repo ## Remove development containers and Docker volumes (not bind-mounted data)
 	$(DOCKER_COMPOSE_DEV) down -v
 
-clean-cache: ## Remove Symfony cache and logs
-	@echo "$(YELLOW)Cleaning cache and logs...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php rm -rf var/cache/* var/log/*
+##@ Dependencies
 
-##@ Build Assets
+composer: require-cmd ## Run Composer (cmd="validate")
+	$(PHP) composer $(cmd)
 
-build-assets: ## Build all assets (Composer + pnpm + Vite + routes + cache)
-	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(GREEN)║  Building all assets for development...                   ║$(NC)"
-	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
-	@echo ""
-	@echo "$(GREEN)[1/5] Installing Composer dependencies...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php composer install --no-interaction --prefer-dist --optimize-autoloader
-	@echo ""
-	@echo "$(GREEN)[2/5] Installing pnpm dependencies...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec node_watch sh -c "corepack enable && pnpm install --frozen-lockfile"
-	@echo ""
-	@echo "$(GREEN)[3/5] Building frontend assets with Vite...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec node_watch pnpm run build
-	@echo ""
-	@echo "$(GREEN)[4/5] Generating JavaScript routes...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console fos:js-routing:dump --format=json --target=assets/routing/routes.json
-	@echo ""
-	@echo "$(GREEN)[5/5] Clearing and warming up cache...$(NC)"
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console cache:clear
-	$(DOCKER_COMPOSE_DEV) exec php php bin/console cache:warmup
-	@echo ""
-	@echo "$(GREEN)╔════════════════════════════════════════════════════════════╗$(NC)"
-	@echo "$(GREEN)║  ✓ Build completed successfully!                          ║$(NC)"
-	@echo "$(GREEN)╚════════════════════════════════════════════════════════════╝$(NC)"
+composer-install: ## Install locked PHP dependencies, including development tools
+	$(PHP) composer install --no-interaction --prefer-dist --optimize-autoloader
+
+composer-update: ## Update PHP dependencies and lockfile
+	$(PHP) composer update --no-interaction
+
+composer-dump-autoload: ## Regenerate PHP autoload files
+	$(PHP) composer dump-autoload --optimize
+
+deps-check: node22-guard require-pkg ## Check a frontend package (pkg=name@version)
+	pnpm run deps:check -- $(pkg)
+
+deps-add: node22-guard require-pkg ## Add a checked frontend dependency (pkg=name@version)
+	pnpm run deps:add -- $(pkg)
+
+deps-add-dev: node22-guard require-pkg ## Add a checked frontend dev dependency (pkg=name@version)
+	pnpm run deps:add:dev -- $(pkg)
+
+deps-audit: node22-guard ## Audit frontend dependencies
+	pnpm run deps:audit
+
+deps-install: node22-guard ## Install locked frontend dependencies without lifecycle scripts
+	pnpm run deps:install
+
+##@ Symfony and database
+
+symfony: require-cmd ## Run console command (cmd="debug:router")
+	$(CONSOLE) $(cmd)
+
+jwt-setup: ## Generate development JWT keys
+	$(PHP) sh -c 'mkdir -p config/jwt; if [ -f config/jwt/private.pem ] && ! openssl rsa -check -in config/jwt/private.pem -passin "pass:$$JWT_PASSPHRASE" -noout >/dev/null 2>&1; then rm -f config/jwt/private.pem config/jwt/public.pem; fi; php bin/console lexik:jwt:generate-keypair --skip-if-exists && chmod 666 config/jwt/*.pem'
+
+dump-routes: ## Generate frontend API routes
+	$(CONSOLE) fos:js-routing:dump --format=json --target=assets/routing/routes.json
+
+cache-clear: ## Clear Symfony cache
+	$(CONSOLE) cache:clear
+
+cache-warmup: ## Warm Symfony cache
+	$(CONSOLE) cache:warmup
+
+clean-cache: ## Delete Symfony cache and logs
+	$(PHP) sh -c 'rm -rf var/cache/* var/log/*'
+
+db-create: ## Create database if missing
+	$(CONSOLE) doctrine:database:create --if-not-exists
+
+db-drop: ## Drop development database
+	$(CONSOLE) doctrine:database:drop --force
+
+db-migrate: ## Apply migrations
+	$(CONSOLE) doctrine:migrations:migrate --no-interaction
+
+db-migration-create: ## Generate an empty migration (optional: name=namespace)
+	$(CONSOLE) doctrine:migrations:generate $(if $(name),--namespace="$(name)")
+
+db-fixtures: ## Replace development data with fixtures
+	$(CONSOLE) doctrine:fixtures:load --no-interaction
+
+db-populate-customers: ## Populate billing customers (optional: reset=1)
+	$(CONSOLE) app:migration:populate-customers --reset=$(or $(reset),0)
+
+db-setup: db-create db-migrate
+
+db-reset: db-drop db-setup db-fixtures ## Recreate development database with fixtures
+
+db-validate: ## Validate Doctrine mappings and schema
+	$(CONSOLE) doctrine:schema:validate
+
+##@ Build and quality
+
+build-assets: dump-routes ## Build frontend assets, then refresh cache
+	$(NODE) pnpm run build
+	$(MAKE) cache-clear cache-warmup
+
+phpstan: ## Run PHPStan
+	$(PHP) vendor/bin/phpstan analyse src --level=8
+
+cs-check: ## Check PHP style
+	$(PHP) vendor/bin/php-cs-fixer fix --dry-run --diff
+
+cs-fix: ## Fix PHP style
+	$(PHP) vendor/bin/php-cs-fixer fix
+
+rector: ## Preview Rector changes
+	$(PHP) vendor/bin/rector process src --dry-run
+
+rector-fix: ## Apply Rector changes
+	$(PHP) vendor/bin/rector process src
+
+quality-check: phpstan cs-check ## Run PHP static analysis and style checks
+
+##@ Tests
+
+test-build: guard-real-repo ## Build test images
+	$(DOCKER_COMPOSE_TEST) build
+
+test-up: guard-real-repo ## Start test services (TEST_WEB_PORT=8081)
+	$(DOCKER_COMPOSE_TEST) up -d --wait --wait-timeout 120
+
+test-down: guard-real-repo ## Stop test containers, retaining database files
+	$(DOCKER_COMPOSE_TEST) down --remove-orphans
+
+test-logs: ## Follow test logs
+	$(DOCKER_COMPOSE_TEST) logs -f $(service)
+
+test-shell-php: ## Open test PHP shell
+	$(DOCKER_COMPOSE_TEST) exec php_test sh
+
+test-assets-build: ## Install locked frontend dependencies and build test assets
+	$(DOCKER_COMPOSE_TEST) run --rm node_test sh -c 'corepack enable && pnpm install --frozen-lockfile && pnpm run build:test'
+
+jwt-setup-test:
+	$(TEST_PHP) sh -c 'mkdir -p config/jwt && php bin/console lexik:jwt:generate-keypair --skip-if-exists && chmod 666 config/jwt/*.pem'
+
+test-prepare: test-up
+	$(TEST_PHP) sh -c 'if [ ! -f vendor/autoload.php ]; then composer install --no-interaction --prefer-dist --optimize-autoloader; fi'
+	$(MAKE) jwt-setup-test
+
+test: test-prepare ## Run PHPUnit
+	$(TEST_PHP) php bin/phpunit
+
+test-unit: test
+
+test-coverage: test-prepare ## Run PHPUnit with HTML coverage (requires a coverage driver)
+	$(TEST_PHP) php bin/phpunit --coverage-html var/coverage
+
+test-frontend: ## Run Vitest in the development Node container
+	$(NODE) pnpm run test:unit
+
+test-reset-db: ## Replace test database with fixtures
+	$(TEST_CONSOLE) doctrine:schema:drop --force --full-database
+	$(TEST_CONSOLE) doctrine:schema:create
+	$(TEST_CONSOLE) doctrine:fixtures:load --no-interaction
+
+test-fix-cache-perms:
+	$(TEST_PHP) sh -c 'rm -rf var/cache/test && mkdir -p var/cache/test/doctrine/orm/Proxies && chmod -R 777 var/cache/test'
+
+test-e2e-prepare: node22-guard test-prepare test-fix-cache-perms
+	$(TEST_CONSOLE) cache:clear
+	$(MAKE) test-reset-db
+	corepack pnpm exec bddgen test -c playwright.config.ts
+
+test-e2e: test-e2e-prepare ## Run Playwright (optional: file=path, args="--project=bdd")
+	E2E_BASE_URL="$(E2E_BASE_URL)" corepack pnpm exec playwright test $(file) $(args)
+
+test-e2e-ui: ## Run Playwright UI
+	$(MAKE) test-e2e args="--ui $(args)"
+
+test-e2e-video: ## Keep videos for all selected Playwright tests
+	PLAYWRIGHT_VIDEO=on $(MAKE) test-e2e
+
+test-all: test test-frontend test-e2e ## Run PHP, frontend and browser tests
 
 ##@ Utilities
 
-opencode-init: ## Initialize OpenCode bundle runtime (step 1)
+prod-release: ## Build and deploy (optional: server=host tag=version)
+	@SERVER="$(server)" TAG="$(tag)" ./scripts/release.sh
+
+urls: ## Show development URLs
+	@printf '%s\n' 'Application: http://localhost' 'Vite: http://localhost:5173' 'MailPit: http://localhost:8025' 'Adminer: http://localhost:8080' 'MariaDB: localhost:3306' 'Redis: localhost:6379'
+
+mailpit: ## Open MailPit
+	@open http://localhost:8025 2>/dev/null || xdg-open http://localhost:8025 2>/dev/null || echo 'http://localhost:8025'
+
+opencode-init:
 	$(MAKE) -C opencode-bundle bundle-init-all
 
-opencode-link: ## Link OpenCode bundle config into this repo (step 2)
+opencode-link:
 	$(MAKE) -C opencode-bundle link-parent
 
-opencode-verify: ## Verify OpenCode bundle integration
+opencode-verify:
 	$(MAKE) -C opencode-bundle bundle-verify-all
 
-opencode-open: ## Open OpenCode CLI from bundle
+opencode-open:
 	$(MAKE) -C opencode-bundle opencode-all ARGS="$(ARGS)"
 
-opencode-start: opencode-init opencode-link opencode-verify opencode-open ## Full OpenCode startup (init + link + verify + open CLI)
-
-mailpit: ## Open MailPit web interface
-	@echo "$(GREEN)Opening MailPit...$(NC)"
-	@open http://localhost:8025 2>/dev/null || xdg-open http://localhost:8025 2>/dev/null || echo "Please open http://localhost:8025 in your browser"
-
-urls: ## Show all service URLs
-	@echo "$(GREEN)Service URLs:$(NC)"
-	@echo "  Application:      http://localhost"
-	@echo "  Vite Dev Server:  http://localhost:5173"
-	@echo "  MailPit UI:       http://localhost:8025"
-	@echo "  Adminer UI:       http://localhost:8080"
-	@echo "  MariaDB:          localhost:3306"
-	@echo "  Redis:            localhost:6379"
+opencode-start: opencode-init opencode-link opencode-verify opencode-open ## Start the optional local OpenCode bundle

@@ -43,8 +43,8 @@ The Billing module handles the financial aspect of the clinic. It allows for the
 
 ### Backend Structure
 - **Entity**: `App\Domain\Entity\Invoice`
-- **Generators**: `App\Domain\Service\InvoiceNumberGenerator` (Ensures atomic sequences)
-- **PDF Engine**: `App\Infrastructure\Service\PdfGenerator` (Wraps `dompdf`)
+- **Number validation and formatting**: `App\Application\Service\InvoiceNumberValidator` and `InvoiceFormatter`
+- **PDF export**: `App\Infrastructure\Api\Controller\InvoiceExportController` (Uses `dompdf`)
 
 ### Frontend Components
 - **List**: `assets/components/invoices/InvoiceList.tsx`

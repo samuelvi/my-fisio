@@ -1,472 +1,81 @@
-# Installation Guide
+# Local installation
 
-This guide provides step-by-step instructions for setting up PCMS (Physiotherapy Clinic Management System).
+## Requirements
 
-## Prerequisites
+- Docker and Compose v2 with `up --wait --wait-timeout` support.
+- Make.
+- Node 22+ and pnpm 11.1.1 on the host for dependency tooling and Playwright.
+  PHP and the development frontend run in containers.
 
-- Docker Engine 20.10+
-- Docker Compose 2.0+
-- Make (optional, but highly recommended)
-
-## Quick Installation
-
-Clone the repository into the default project directory, `pcms`:
+## First run
 
 ```bash
 git clone <repository-url> pcms
 cd pcms
-```
-
-### Option 1: Full Installation (Recommended for first-time setup)
-
-This will build containers, initialize Symfony, install all packages, and set up the database.
-
-```bash
 make dev-install
 ```
 
-This command executes the following steps:
-1. Builds all Docker containers
-2. Starts all services
-3. Waits for MariaDB and Redis to be ready
-4. Initializes Symfony 7.4 skeleton
-5. Installs all Composer dependencies
-6. Installs recommended packages (Redis Bundle, Broadway Event Store)
-7. Creates and migrates the database
-8. Displays success message with service URLs
+`dev-install` builds images, starts services with health checks, installs
+`composer.lock`, generates JWT keys, creates/migrates the database and exports
+frontend routes. The Node service installs `pnpm-lock.yaml` and starts Vite.
+Symfony and the required packages are already part of the project.
 
-### Option 2: Quick Start (When Symfony is already initialized)
-
-If you already have Symfony initialized and just need to start the project:
-
-```bash
-make dev-quick-start
-```
-
-## Step-by-Step Installation
-
-If you prefer to install components individually:
-
-### 1. Build Docker Containers
-
-```bash
-make dev-build
-```
-
-### 2. Start All Services
-
-```bash
-make dev-up
-```
-
-### 3. Wait for Services
-
-```bash
-make wait-for-services
-```
-
-### 4. Install Composer Dependencies
-
-```bash
-make composer-install
-```
-
-### 5. Install Additional Packages
-
-```bash
-# Install all recommended packages (Redis, Event Store, API)
-make install-all-packages
-```
-
-### 6. Set Up Database
-
-```bash
-make db-setup
-```
-
-This will create the database, ensure the `case_insensitive` collation exists, and run all migrations.
-
-## Installing Development Tools
-
-### Code Quality Tools
-
-Install all quality tools at once:
-
-```bash
-make quality-tools
-```
-
-Or install individually:
-
-```bash
-make phpstan-install      # Static analysis
-make cs-fixer-install     # Code style fixer
-make rector-install       # Automated refactoring
-```
-
-## Package Management
-
-### Managing Packages
-
-Use the generic `composer` command to manage your packages:
-
-```bash
-# Install a production package
-make composer cmd="require vendor/package-name"
-
-# Install a development package
-make composer cmd="require --dev vendor/package-name"
-
-# Remove a package
-make composer cmd="remove vendor/package-name"
-```
-
-### Updating Packages
-
-```bash
-# Update all packages
-make composer-update
-
-# Update composer autoloader
-make composer-dump-autoload
-```
-
-## Frontend Dependency Management
-
-Frontend dependencies are managed with pnpm and must use the safe dependency workflow. Do not run direct `pnpm add` for repository dependencies.
-
-The full policy is documented in [../security/dependency-installation.md](../security/dependency-installation.md).
-
-### Check A Package Without Installing
-
-```bash
-make deps-check pkg=@heroicons/react@2.2.0
-```
-
-### Add A Production Dependency Safely
-
-```bash
-make deps-add pkg=@heroicons/react@2.2.0
-```
-
-### Add A Development Dependency Safely
-
-```bash
-make deps-add-dev pkg=vitest@2.1.9
-```
-
-### Audit Current Frontend Dependencies
-
-```bash
-make deps-audit
-```
-
-### Install From Lockfile Without Lifecycle Scripts
-
-```bash
-make deps-install
-```
-
-The safe workflow requires `pnpm config get ignoreScripts` to return `true`. CI also verifies `allowBuilds.esbuild` remains `false`.
-
-## Database Management
-
-### Create Database
-
-```bash
-make db-create
-```
-
-This command also ensures the `case_insensitive` collation is available for patient search fields.
-
-### Run Migrations
-
-```bash
-make db-migrate
-```
-
-### Create New Migration
-
-```bash
-make db-migration-create
-```
-
-### Load Fixtures (Test Data)
+On a new local database, load the demo user and sample records:
 
 ```bash
 make db-fixtures
 ```
 
-### Reset Database
+This replaces database contents. The demo credentials and dataset are defined in
+[`AppFixtures.php`](../../tests/DataFixtures/AppFixtures.php).
 
-This will drop, recreate, migrate, and load fixtures:
+## Services
 
-```bash
-make db-reset
-```
+| Service | Local address |
+| --- | --- |
+| Application | http://localhost |
+| Vite / HMR | http://localhost:5173 |
+| MailPit | http://localhost:8025 |
+| Adminer | http://localhost:8080 |
+| MariaDB | localhost:3306 |
+| Redis | localhost:6379 |
 
-### Validate Schema
+Adminer uses server `mariadb`, database `physiotherapy_db`, user
+`physiotherapy_user`, and development password `physiotherapy_pass`.
+`make urls` prints the same service addresses.
 
-```bash
-make db-validate
-```
-
-## Running the Application
-
-Once installed, access the application at:
-
-- **Application**: http://localhost
-- **MailPit UI**: http://localhost:8025 (Email testing)
-- **MariaDB**: localhost:3306
-- **Redis**: localhost:6379
-
-View all URLs:
+## Working on the project
 
 ```bash
-make urls
-```
-
-## Container Access
-
-### Access PHP container
-
-```bash
-make dev-shell-php
-```
-
-## Asset Management
-
-### Build All Assets (Dev)
-
-This command installs all dependencies (Composer & npm), generates routes, and builds frontend assets in a single step within the development containers.
-
-```bash
-make build-assets
-```
-
-### Access MariaDB Database
-
-```bash
-make dev-shell-db
-```
-
-### Access Redis CLI
-
-```bash
-make dev-shell-redis
-```
-
-## Symfony Commands
-
-### Run Any Symfony Console Command
-
-```bash
-make symfony cmd="your:command"
-
-# Examples:
+make dev-up
+make dev-logs service=php
 make symfony cmd="debug:router"
-make symfony cmd="make:controller HomeController"
-make symfony cmd="make:entity Patient"
+make db-migrate
+make dev-down
 ```
 
-### Clear Cache
+Use `make composer-install` after PHP dependency changes and `make deps-install`
+after frontend dependency changes. PHPStan, CS Fixer and Rector are already
+declared development dependencies; they need no separate installation targets.
+Follow the [dependency policy](../security/dependency-installation.md) to add packages.
 
-```bash
-make cache-clear
-```
+Vite serves frontend edits through HMR. `make build-assets` exports routes before
+building the production-mode frontend and refreshing Symfony cache; it assumes
+dependencies are installed. `make dump-routes` alone refreshes exposed API routes.
 
-### Warmup Cache
-
-```bash
-make cache-warmup
-```
-
-## Testing
-
-### Run Unit/Integration Tests (PHPUnit)
-
-```bash
-make test
-```
-
-### Run Tests with Coverage
-
-```bash
-make test-coverage
-```
-
-The coverage report will be available at `var/coverage/index.html`.
-
-### Run E2E Tests (Playwright)
-
-For local development, **single worker execution is strongly recommended** to ensure database stability during resets:
-
-```bash
-npx playwright test --workers=1
-```
-
-Or using the Makefile shortcut (which defaults to safer settings):
-
-```bash
-make test-e2e
-```
-
-To run a specific test file:
-
-```bash
-npx playwright test tests/e2e/patients/create/patients-create.feature --workers=1
-```
-
-## Code Quality
-
-### Run PHPStan (Static Analysis)
-
-```bash
-make phpstan
-```
-
-### Check Code Style
-
-```bash
-make cs-check
-```
-
-### Fix Code Style
-
-```bash
-make cs-fix
-```
-
-### Run Rector (Dry Run)
-
-```bash
-make rector
-```
-
-### Apply Rector Changes
-
-```bash
-make rector-fix
-```
-
-### Run All Quality Checks
-
-```bash
-make quality-check
-```
+See [configuration](configuration.md) for local overrides and [testing](../testing/e2e.md)
+for the separate test environment. `make dev-quick-start` remains an alias for
+`make dev-install`.
 
 ## Troubleshooting
 
-### Services Not Starting
+- **Service fails:** run `make dev-ps` and `make dev-logs service=<service>`.
+- **Files do not refresh:** check `make dev-watch-logs`. The development Compose
+  override enables polling; see [watch settings](configuration.md#frontend-watch).
+- **Cache permissions:** inspect `var/` ownership from `make dev-shell-php` and
+  adjust it for the container user, then run `make cache-clear`.
+- **Dependency mismatch:** reinstall the relevant lockfile instead of adding packages.
+- **Need a clean local dataset:** `make db-reset` drops and recreates the development database.
 
-```bash
-# Check logs
-make dev-logs
-
-# Or check specific service
-make dev-logs service=php
-make dev-logs service=mariadb
-```
-
-### Permission Issues
-
-```bash
-# Access PHP container and fix permissions
-make dev-shell-php
-chown -R www-data:www-data var/
-```
-
-### Database Connection Issues
-
-```bash
-# Check MariaDB status
-make dev-ps
-
-# Restart MariaDB
-docker-compose -f docker/dev/docker-compose.yaml restart mariadb
-```
-
-### Reset Everything
-
-If you need to start fresh:
-
-```bash
-# Stop and remove all containers and volumes
-make dev-clean
-
-# Rebuild and reinstall
-make dev-install
-```
-
-## Environment Configuration
-
-### Environment Variables
-
-Edit `.env` file to configure environment variables:
-
-```bash
-# Database
-DATABASE_URL="mysql://user:pass@mariadb:3306/db?serverVersion=mariadb-11.0.0&charset=utf8mb4"
-
-# Redis
-REDIS_URL=redis://redis:6379
-
-# Mailer (MailPit for development)
-MAILER_DSN=smtp://mailpit:1025
-
-# Application
-APP_ENV=dev
-APP_DEBUG=1
-APP_SECRET=your_secret_here
-```
-
-### Local Overrides
-
-Create `.env.local` for local overrides (this file is gitignored):
-
-```bash
-cp .env .env.local
-# Edit .env.local with your local settings
-```
-
-## Next Steps
-
-After installation:
-
-1. **Create Your First Controller**:
-   ```bash
-   make symfony cmd="make:controller HomeController"
-   ```
-
-2. **Create Entities**:
-   ```bash
-   make symfony cmd="make:entity Patient"
-   ```
-
-3. **Generate Migrations**:
-   ```bash
-   make db-migration-create
-   ```
-
-4. **Run Migrations**:
-   ```bash
-   make db-migrate
-   ```
-
-5. **Install Code Quality Tools**:
-   ```bash
-   make quality-tools
-   ```
-
-## Getting Help
-
-View all available commands:
-
-```bash
-make help
-```
-
-For more information, see:
-- [README.md](../README.md) - General project information
-- [AGENTS.md](./AGENTS.md) - Architecture and conventions
-- [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md) - Database schema documentation
+`make dev-down` retains data. `make dev-clean` also removes Docker-managed volumes,
+but does not remove the database/Redis bind-mount directories under `docker/dev/`.

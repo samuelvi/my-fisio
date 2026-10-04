@@ -57,7 +57,7 @@ The Appointment Scheduling module provides a visual interface for managing the d
 ### Backend Structure
 - **Entity**: `App\Domain\Entity\Appointment`
 - **Repository**: `App\Infrastructure\Persistence\Doctrine\Repository\DoctrineAppointmentRepository`
-- **Controller**: `App\Infrastructure\Api\Controller\AppointmentController` (Custom gap logic)
+- **Controller**: `App\Infrastructure\Api\Controller\AppointmentGapController` (Custom gap logic)
 
 ### Frontend Components
 - **Main View**: `assets/components/Calendar.tsx` (Wraps FullCalendar)

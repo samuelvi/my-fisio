@@ -18,7 +18,7 @@ export default defineConfig({
     actionTimeout: 15000,
     navigationTimeout: 30000,
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: process.env.PLAYWRIGHT_VIDEO === 'on' ? 'on' : 'retain-on-failure',
     trace: 'on-first-retry',
   },
   expect: {

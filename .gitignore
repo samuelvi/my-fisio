@@ -126,3 +126,6 @@ opencode-bundle
 readme-opencode-bundle-init.md
 .gitmodules
 .mcprules-*
+
+# Generated memory search indexes
+/memory-bank/graph/

@@ -1,114 +1,73 @@
-# E2E Testing
+# Testing
 
-Tests E2E con Playwright-BDD. Stack: Playwright + Gherkin + TypeScript.
+## Suites
 
-## Estructura
+| Command | Suite | Runtime |
+| --- | --- | --- |
+| `make test` | PHPUnit | Test PHP container |
+| `make test-frontend` | Vitest | Development Node container |
+| `make test-e2e` | Playwright specs and Gherkin scenarios | Host browser runner + test containers |
+| `make quality-check` | PHPStan and CS Fixer | Development PHP container |
 
-```
-tests/e2e/
-├── common/
-│   ├── bdd.ts              # Fixtures y exports de Given/When/Then
-│   ├── auth.ts             # Helpers de autenticación
-│   └── steps/              # Steps genéricos reutilizables
-│       ├── navigation.steps.ts   # "I navigate to", "I should be on"
-│       ├── forms.steps.ts        # "I fill in", "I click the button"
-│       └── assertions.steps.ts   # "I should see", "table should contain"
-├── factories/              # Factorías de datos (Fishery + Faker)
-│   ├── patient.factory.ts
-│   ├── customer.factory.ts
-│   ├── invoice.factory.ts
-│   └── record.factory.ts
-└── <domain>/
-    └── <feature>/
-        ├── feature.feature     # Escenarios Gherkin
-        └── feature.steps.ts    # Step definitions específicos
-```
+PHP tests live under `tests/`; frontend tests under `assets/tests/`.
+PHPUnit configuration is `phpunit.dist.xml`; Playwright configuration is
+`playwright.config.ts`. `make test-coverage` writes `var/coverage/` and requires
+a PHP coverage driver. `make test-all` runs all three suites and requires both
+the development Node service and the browser prerequisites below.
 
-## Ejecución
+## First browser test run
+
+Requires Node 22+, Corepack/pnpm and Docker. The test database is separate from development.
 
 ```bash
-# Recomendado para desarrollo local (evita colisiones de BD)
-npx playwright test --workers=1
-
-# Generar specs y ejecutar
-npx bddgen && npx playwright test --project=bdd
-
-# Ejecutar con UI para depuración
-npx playwright test --project=bdd --ui
+make test-build
+make test-up
+make test-assets-build
+corepack pnpm exec playwright install chromium
+make test-e2e
 ```
 
-## Estrategia de Datos
+Test services: application `http://127.0.0.1:8081`, MariaDB `localhost:3307`,
+Redis `localhost:6380`. Override the web port consistently with
+`TEST_WEB_PORT=18081`; `E2E_BASE_URL` defaults to that port.
 
-### 1. Factorías (Recomendado)
+Test preparation starts/waits for services, installs Composer dependencies only
+if `vendor/autoload.php` is missing, generates JWT keys, refreshes test cache and
+recreates the test database with fixtures. After changing `composer.lock`, run
+`make composer-install` in the development stack before testing; both stacks
+mount the same checkout and dependencies.
 
-Usamos `fishery` y `@faker-js/faker` para generar datos dinámicos y robustos. **Evita hardcodear datos** en los tests.
+`test-assets-build` installs the frontend lockfile and builds with Vite mode `test`.
+Re-run it after frontend changes. Browser runs generate BDD specs before Playwright.
 
-```typescript
-// tests/e2e/factories/patient.factory.ts
-export const patientFactory = Factory.define<Partial<Patient>>(() => ({
-    firstName: faker.person.firstName(),
-    taxId: faker.helpers.replaceSymbols('########?').toUpperCase(),
-    // ...
-}));
+## Selecting tests and debugging
 
-// En tu step definition
-const testPatient = patientFactory.build();
-await page.getByLabel(/First Name/).fill(testPatient.firstName);
+```bash
+make test-e2e args="--project=bdd"
+make test-e2e file=".features-gen/tests/e2e/security/login/login.feature.spec.js"
+make test-e2e-ui
+make test-e2e-video
+make test-down
 ```
 
-### 2. Database Reset con Tags
+Use generated `.feature.spec.js` paths for Gherkin tests and original `.spec.ts`
+paths for ordinary Playwright tests. `file` and `args` also work with UI/video targets.
+The HTML report is in `var/log/playwright/report`; recordings and artifacts are in
+`var/log/playwright/test-results`. By default videos are retained on failure;
+the video target sets `PLAYWRIGHT_VIDEO=on` and retains all recordings.
+Failed tests always return a failing Make exit status.
 
-La base de datos se resetea siguiendo esta lógica para soportar "User Journeys" secuenciales:
+`make test-down` removes the test containers but keeps bind-mounted database files.
+Each E2E invocation resets test data before running.
 
-| Contexto | Comportamiento |
-|----------|----------------|
-| Primer escenario del feature | Reset automático |
-| Escenarios siguientes (sin tag) | Reutiliza datos (secuencial) |
-| `@no-reset` | **Nunca resetea** (reutiliza datos, incluso en CI) |
-| `@reset` | Siempre resetea |
+## Writing browser tests
 
-> **Nota sobre CI**: A diferencia de versiones anteriores, el modo CI **respeta** el tag `@no-reset` para permitir la ejecución de historias de usuario completas que dependen del estado anterior (ej: Crear paciente -> Editar paciente -> Añadir historial).
+- Reuse fixtures and step definitions in `tests/e2e/common/`.
+- Use factories in `tests/e2e/factories/` for scenario data.
+- Keep related `.feature` and `.steps.ts` files together under the domain directory.
+- Prefer role/label locators and auto-retrying assertions over fixed sleeps.
+- Playwright runs with one worker because scenarios share database state.
 
-## Reglas de Oro (Auditadas)
-
-1. **Sin waits explícitos** - `waitForTimeout` está **PROHIBIDO**. Usa `waitFor()`, `expect().toBeVisible()`, o `waitForLoadState('networkidle')`.
-2. **Selectores semánticos** - Usa `getByRole()`, `getByLabel()`, `getByText()`. Evita selectores CSS frágiles (`#id`, `.class`).
-3. **Datos Dinámicos** - Usa las factorías en `tests/e2e/factories/` en lugar de strings fijos.
-4. **Validación Robusta** - Sincroniza las aserciones con los datos generados por la factoría.
-   * *Mal*: `expect(locator).toHaveValue("12345678A")`
-   * *Bien*: `expect(locator).toHaveValue(testPatient.taxId)`
-
-## Steps Genéricos Disponibles
-
-### Navigation (`common/steps/navigation.steps.ts`)
-
-```gherkin
-Given I am on the "{path}" page
-Given I am on the login page
-When I navigate to "{path}"
-When I reload the page
-Then I should be on "{path}"
-Then I should be redirected to "{path}"
-```
-
-### Forms (`common/steps/forms.steps.ts`)
-
-```gherkin
-When I fill in "{field}" with "{value}"
-When I click the "{name}" button
-When I click the "{name}" link
-When I select "{option}" from "{field}"
-When I check "{label}"
-Then the field "{field}" should have value "{value}"
-```
-
-### Assertions (`common/steps/assertions.steps.ts`)
-
-```gherkin
-Then I should see "{text}"
-Then I should see text matching "{pattern}"
-Then I should see {n} rows in the table
-Then the table should contain "{text}"
-Then the "{name}" button should be visible
-Then the "{name}" button should be disabled
-```
+The BDD fixture calls `/api/test/reset-db-empty` before the first scenario of each
+feature. Later scenarios reuse its data. `@reset` forces a reset; `@no-reset`
+skips it, including in CI. See `tests/e2e/common/bdd.ts` for the implementation.
