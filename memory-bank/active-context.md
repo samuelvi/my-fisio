@@ -3,7 +3,7 @@
 ## Current work
 Documentation and developer tooling consolidated on `fix/project-clarity`.
 The user approved direct branch work without worktrees for this task.
-Integration into main is pending confirmation.
+The user approved integration into main. Implementation commit: `d14d9a7`.
 
 ## Verified
 - README: 70 lines; Makefile: 270 lines; one 30-line documentation index.
