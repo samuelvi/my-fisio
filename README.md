@@ -67,5 +67,3 @@ selected changes for auditing. See the [System Design](docs/architecture/system-
 - [Documentation index](docs/README.md)
 - [Local configuration](docs/operations/configuration.md)
 - [Deployment](docs/operations/deployment.md)
-- [Agent entry point](AGENTS.md) and [project memory](memory-bank/product-context.md)
-- [Independent skills library and SOUL](../TinaFisioBackendSkills/README.md)

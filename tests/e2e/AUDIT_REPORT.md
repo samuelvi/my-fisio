@@ -1,4 +1,4 @@
-# E2E Test Audit Report — vs `.skills/playwright-bdd-testing`
+# E2E Test Audit Report
 
 **Date**: 2026-01-28
 **Audited files**: 44 (19 features + 25 step definitions)
@@ -14,7 +14,7 @@ P1 (Selectors) addressed by replacing CSS/ID selectors with semantic ones and fi
 
 ## P0 — Eliminate `waitForTimeout()` (CRITICAL)
 
-> Skill rule: "NEVER use explicit timeouts (waitForTimeout) — use conditions, retry, or polling"
+Use conditions, retry, or polling instead of explicit timeouts (`waitForTimeout`).
 
 ### Instances to fix
 
@@ -33,7 +33,7 @@ P1 (Selectors) addressed by replacing CSS/ID selectors with semantic ones and fi
 
 ## P1 — Replace CSS/ID selectors with semantic selectors (CRITICAL)
 
-> Skill rule: "ALWAYS use text-based selectors (getByRole, getByText, getByLabel). NEVER use CSS/ID selectors."
+Prefer semantic selectors (`getByRole`, `getByText`, `getByLabel`) over CSS/ID selectors.
 
 **Status: COMPLETE**
 
@@ -54,7 +54,7 @@ P1 (Selectors) addressed by replacing CSS/ID selectors with semantic ones and fi
 
 ## P2 — Introduce factories with Faker (CRITICAL)
 
-> Skill rule: "Use structured factories with Faker — never SQL dumps or hardcoded IDs"
+Use structured factories with Faker instead of SQL dumps or hardcoded IDs.
 
 **Status: COMPLETE**
 
@@ -66,21 +66,11 @@ P1 (Selectors) addressed by replacing CSS/ID selectors with semantic ones and fi
 
 ---
 
-## P3 — Reconcile skill documentation with CI reality (MODERATE)
+## P3 — Document CI reset behavior (MODERATE)
 
-### The contradiction
-
-**Skill says** (SKILL.md:242, tags-and-workflow.md:247-249):
-> "In CI mode: ALL scenarios reset (test independence)"
-> "Tags @no-reset are IGNORED"
-> "Every scenario is independent, no shared state"
-
-**Code says** (bdd.ts — after our fix):
-> `@no-reset` is respected in CI — otherwise 6 tests fail because they depend on data from the previous scenario.
-
-### Resolution
-
-**Action**: Updated `SKILL.md` and `references/tags-and-workflow.md` to confirm that `@no-reset` is respected in CI to support sequential user journeys.
+`tests/e2e/common/bdd.ts` respects `@no-reset` in CI to support sequential user
+journeys. The tag takes precedence over automatic database resets. See the
+[testing guide](../../docs/testing/e2e.md) for the maintained reset contract.
 
 ---
 
@@ -92,4 +82,4 @@ P1 (Selectors) addressed by replacing CSS/ID selectors with semantic ones and fi
 - [x] **P2**: Install `@faker-js/faker` + `fishery`
 - [x] **P2**: Create factories for customer, patient, invoice, record
 - [x] **P2**: Centralize auth credentials
-- [x] **P3**: Update skill documentation re: CI + `@no-reset`
+- [x] **P3**: Document CI behavior for `@no-reset`

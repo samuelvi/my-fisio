@@ -15,6 +15,19 @@ PHPUnit configuration is `phpunit.dist.xml`; Playwright configuration is
 a PHP coverage driver. `make test-all` runs all three suites and requires both
 the development Node service and the browser prerequisites below.
 
+## Known excluded scenario
+
+Verified on 2026-10-04: `Long text handling in notes` in
+`tests/e2e/security/boundaries/input-limits.feature` remains tagged `@ignore`.
+It submits 5,000 characters, but `src/Domain/Entity/Patient.php` maps `notes` to
+`VARCHAR(250)`. The API resource does not validate that limit. On MariaDB the
+update returns HTTP 500 (`SQLSTATE[22001]`, error 1406, data too long for `notes`),
+so the expected redirect never occurs. The failure also reproduced on retry.
+
+The normal suite passed 73 browser tests; this excluded scenario did not pass.
+Its temporary inclusion was reverted after diagnosis. The storage/validation
+change is deferred by explicit project-owner decision; track it separately.
+
 ## First browser test run
 
 Requires Node 22+, Corepack/pnpm and Docker. The test database is separate from development.

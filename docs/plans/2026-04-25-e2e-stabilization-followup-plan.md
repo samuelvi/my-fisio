@@ -1,7 +1,5 @@
 # E2E Stabilization Follow-up Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Dejar la suite E2E ejecutable y estable en entorno test Docker con puerto configurable, y avanzar hasta tener la mayor parte de escenarios en verde.
 
 **Architecture:** Mantener Playwright-BDD como runner principal, con generación automática de `.features-gen` antes de ejecutar. Estabilizar primero infraestructura (contenedores, permisos, cache/proxy Doctrine), luego autenticación/headers y finalmente steps BDD frágiles por dominio (customers/appointments).
@@ -175,7 +173,6 @@ Expected finish condition:
 - [ ] `make test-e2e TEST_WEB_PORT=18081 file=".features-gen/tests/e2e/security/login/login.feature.spec.js"`
 - [ ] `make test-e2e TEST_WEB_PORT=18081` (full)
 - [ ] `make test-down TEST_WEB_PORT=18081`
-- [ ] `python3 .opencode/meta/hooks/quality_gate.py --workspace . --mode quick --strict` (si existe en repo)
 
 ---
 
@@ -215,4 +212,3 @@ Expected finish condition:
 - ✅ `make test-e2e TEST_WEB_PORT=18081 file=".features-gen/tests/e2e/security/login/login.feature.spec.js"`
 - ✅ `make test-e2e TEST_WEB_PORT=18081` (full, `68 passed`)
 - ✅ `make test-down TEST_WEB_PORT=18081`
-- ⚪ `python3 .opencode/meta/hooks/quality_gate.py --workspace . --mode quick --strict` not executed because script was not present in this worktree.

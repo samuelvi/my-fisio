@@ -1,7 +1,5 @@
 # Appointments Draft Recovery Follow-up Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
-
 **Goal:** Reuse existing draft-recovery logic in Appointments modal flow (create/edit) and clean dead/obsolete draft code paths, without implementing offline queue for drag/drop/resize.
 
 **Architecture:** Keep current form-draft pattern (`useFormDraft`/`useDraft`) and apply it to appointment modal submit flow only. Do not add new infra for offline sync queue. Remove or align stale draft artifacts (unused interceptor, outdated tests/docs) to avoid regressions and confusion.

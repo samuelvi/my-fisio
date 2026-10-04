@@ -786,9 +786,6 @@ feat(patient): add fuzzy search capability
 Implements accent-insensitive and typo-tolerant search using MariaDB UNACCENT function and SOUNDEX.
 
 Closes #42
-
-🤖 Generated with Claude Code
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 ```

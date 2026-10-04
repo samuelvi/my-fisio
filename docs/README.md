@@ -19,12 +19,10 @@ Start with the [project README](../README.md). Use `make help` for the command c
 - [Patients](features/patients.md), [appointments](features/appointments.md), [invoices](features/invoices.md)
 - [Audit system](features/audit-system.md) and [draft recovery](features/draft-system.md)
 
-## Project context
+## Development history
 
-- [Agent instructions](../AGENTS.md) explain how to load context selectively.
-- [Memory bank](../memory-bank/product-context.md) records verified implementation facts and current work.
-- [Decisions](adr/) and [implementation plans](superpowers/) preserve development history.
-- [Original specifications](specifications/) and [archive](archive/) retain historical detail. They may describe planned or superseded behavior; verify against the code before using them as implementation requirements.
+- [Decisions](adr/) and [implementation plans](plans/) preserve development history.
+- [Original specifications](specifications/) retain historical detail. They may describe planned or superseded behavior; verify against the code before using them as implementation requirements.
 
 Keep each subject in one guide and link to it. Do not copy command catalogs or
 architecture descriptions into additional indexes.

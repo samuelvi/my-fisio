@@ -35,7 +35,7 @@ All documents have been prepared to the standard required for:
 | **08** | [Validations & Quality](./08-VALIDATIONS-AND-QUALITY.md) | 38 KB | 1,301 | Testing strategy, QA processes, metrics | QA, Test Engineers, PMO |
 | **09** | [Constraints & Limitations](./09-CONSTRAINTS-AND-LIMITATIONS.md) | 36 KB | 1,295 | Technical boundaries, trade-offs, known gaps | All Technical Teams |
 | **10** | [Risks & Mitigation](./10-RISKS-AND-MITIGATION.md) | 36 KB | 1,077 | Risk register, mitigation plans, contingencies | PMO, Risk Management, Exec |
-| **11** | [Open Questions & Next Steps](./11-OPEN-QUESTIONS-AND-NEXT-STEPS.md) | 37 KB | 1,042 | Pending decisions, action items, blockers | Product, Engineering, PMO |
+| **11** | Open Questions & Next Steps (historical file not retained) | 37 KB | 1,042 | Pending decisions, action items, blockers | Product, Engineering, PMO |
 | **12** | [Changelog & Updates](./12-CHANGELOG.md) | 3 KB | 100 | Record of recent changes and updates | Technical Team |
 | | **TOTAL** | **332 KB** | **10,000+** | Complete enterprise documentation | All Stakeholders |
 
@@ -49,7 +49,7 @@ All documents have been prepared to the standard required for:
 1. [01-EXECUTIVE-SUMMARY.md](./01-EXECUTIVE-SUMMARY.md) - Strategic overview, ROI, success metrics
 2. [03-SCOPE-AND-ROADMAP.md](./03-SCOPE-AND-ROADMAP.md) - What's delivered, what's next, timeline
 3. [10-RISKS-AND-MITIGATION.md](./10-RISKS-AND-MITIGATION.md) - Top risks and mitigation strategies
-4. [11-OPEN-QUESTIONS-AND-NEXT-STEPS.md](./11-OPEN-QUESTIONS-AND-NEXT-STEPS.md) - Critical decisions needed
+4. Historical open-questions document is no longer retained; confirm current decisions with the project owner.
 
 **Key Takeaways:**
 - ✅ MVP complete and functional (patient management, scheduling, billing)
@@ -65,7 +65,7 @@ All documents have been prepared to the standard required for:
 1. [02-PRODUCT-REQUIREMENTS.md](./02-PRODUCT-REQUIREMENTS.md) - Complete PRD with user personas, journeys, requirements
 2. [03-SCOPE-AND-ROADMAP.md](./03-SCOPE-AND-ROADMAP.md) - Feature scope, roadmap v1.1 → v2.0
 3. [09-CONSTRAINTS-AND-LIMITATIONS.md](./09-CONSTRAINTS-AND-LIMITATIONS.md) - What the system CAN'T do
-4. [11-OPEN-QUESTIONS-AND-NEXT-STEPS.md](./11-OPEN-QUESTIONS-AND-NEXT-STEPS.md) - Product decisions pending
+4. Historical open-questions document is no longer retained; confirm pending product decisions with the project owner.
 
 **Key Takeaways:**
 - 🎯 38 functional requirements implemented (FR-001 through FR-051)
@@ -381,7 +381,7 @@ All documents in this suite exhibit the following professional standards:
 ### C. Related Documentation
 
 - **Source Code Repository:** `src/`, `assets/`, `tests/`
-- **Legacy Documentation:** `docs/AGENTS.md`, `docs/DATABASE_SCHEMA.md`, `docs/INSTALLATION.md`
+- **Development Documentation:** `docs/architecture/system-architecture.md`, `docs/architecture/database-schema.md`, `docs/operations/installation.md`
 - **Configuration Files:** `.env`, `docker-compose.yaml`, `phpunit.dist.xml`, `playwright.config.cjs`
 - **README:** `README.md` (operational guide for developers)
 

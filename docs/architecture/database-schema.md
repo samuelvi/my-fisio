@@ -12,13 +12,13 @@
 
 This document describes the current database schema for the Physiotherapy Clinic Management System using MariaDB 11, following DDD (Domain-Driven Design) principles and clean code naming conventions.
 
-For legacy migration mapping, see [private/docs/LEGACY_MIGRATION_MAPPING.md](../private/docs/LEGACY_MIGRATION_MAPPING.md).
+For current persistence behavior, see [data and consistency](data-consistency.md).
 
 ---
 
 ## Naming Conventions
 
-Following the conventions defined in [AGENTS.md](./AGENTS.md):
+Database naming conventions:
 
 - **Tables**: `snake_case` plural (e.g., `appointments`, `patients`)
 - **Columns**: `snake_case` (e.g., `first_name`, `starts_at`)
@@ -355,9 +355,9 @@ invoices (1) ──< invoice_lines (N)
 
 ## Related Documentation
 
-- [AGENTS.md](./AGENTS.md) - Development guidelines and conventions
-- [LEGACY_MIGRATION_MAPPING.md](../private/docs/LEGACY_MIGRATION_MAPPING.md) - Legacy database migration reference
-- [INSTALLATION.md](./INSTALLATION.md) - Database setup instructions
+- [System Design](system-architecture.md) - Current architecture and source references
+- [Data and consistency](data-consistency.md) - Current persistence contracts
+- [Installation](../operations/installation.md) - Database setup instructions
 
 ---
 

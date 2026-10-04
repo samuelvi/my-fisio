@@ -103,12 +103,6 @@ phpstan.neon
 # Backup directories from documentation reorganization
 backup-docs-*/
 
-# Temporary files from reorganization scripts
-.last-backup
-reorganize-docs.log
-
-# .gitignore additions review file (merge manually to .gitignore)
-.gitignore.additions
 ###< Documentation Reorganization ###
 tests/e2e/features/.gen/
 tests/e2e/features/tests/
@@ -118,14 +112,3 @@ tests/e2e/features/tests/
 # Scripts locales de despliegue
 /deploy/
 composer.phar
-.gitmodules
-opencode-bundle
-
-.opencode
-.opencode.local
-readme-opencode-bundle-init.md
-.gitmodules
-.mcprules-*
-
-# Generated memory search indexes
-/memory-bank/graph/

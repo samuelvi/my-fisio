@@ -49,12 +49,6 @@
 | 27 | InvoiceLineInput limits | ✅ Fixed | Added Range constraints |
 | 28 | No CSRF | ✅ N/A | JWT stateless API |
 
-## Skills Created
-
-- `.skills/secrets-management/SKILL.md` - Credential handling
-- `.skills/security-model/SKILL.md` - Single-tenant security model
-- `.skills/dangerous-defaults/SKILL.md` - Parameter safety
-
 ## Notes
 
 - Application is **single-tenant** (one clinic, shared data)
