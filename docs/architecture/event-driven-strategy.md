@@ -3,7 +3,7 @@
 **SQL entity state is the source of truth.** PCMS uses domain events to record
 changes and drive audit entries; it does not reconstruct entities by replaying events.
 
-## Write flow
+## Command-handler write flow
 
 1. A command handler creates or updates an entity.
 2. The repository persists the state.
@@ -13,8 +13,12 @@ changes and drive audit entries; it does not reconstruct entities by replaying e
    with the operation, changes, user and request metadata.
 
 `config/packages/messenger.yaml` configures synchronous event transport and
-Doctrine transaction middleware for command and event buses. The write handler
-owns event dispatch; there is no automatic Doctrine lifecycle audit listener.
+Doctrine transaction middleware for command and event buses. The calling handler
+or processor owns event dispatch; there is no automatic Doctrine lifecycle audit
+listener. Appointment, record and invoice processors do not use the command bus;
+their state writes and later events do not share an outer command transaction.
+See [actual transaction boundaries and audit exceptions](data-consistency.md)
+and the [audit sequence](critical-flows.md#event-persistence-and-audit).
 
 ## Source pointers
 

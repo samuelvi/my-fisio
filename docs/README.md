@@ -12,10 +12,10 @@ Start with the [project README](../README.md). Use `make help` for the command c
 
 ## Architecture and features
 
-- [System architecture](architecture/system-architecture.md)
+- [PCMS System Design](architecture/system-architecture.md): context/containers, critical flows, consistency and runtime boundaries.
 - [Frontend](architecture/frontend.md)
 - [Domain events and auditing](architecture/event-driven-strategy.md)
-- [Data model](architecture/data-model.md) and [database schema](architecture/database-schema.md)
+- [Current data and consistency](architecture/data-consistency.md); historical [data model](architecture/data-model.md) and [schema narrative](architecture/database-schema.md).
 - [Patients](features/patients.md), [appointments](features/appointments.md), [invoices](features/invoices.md)
 - [Audit system](features/audit-system.md) and [draft recovery](features/draft-system.md)
 

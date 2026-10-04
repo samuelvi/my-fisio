@@ -1,20 +1,10 @@
-# Contexto del Proyecto: TinaRemake (New3)
+# PCMS context
 
-## Mandato Principal: Adherencia a Skills
-Este proyecto cuenta con documentación técnica estricta en el directorio `.skills/`.
-**Instrucción Permanente:** Antes de realizar cualquier análisis, refactorización o generación de código, DEBO consultar los archivos en `.skills/` (especialmente `clean-code`) y aplicar sus patrones sin excepción.
+Follow the repository [AGENTS.md](../AGENTS.md). The maintained skills and approved
+SOUL live in the independent sibling `TinaFisioBackendSkills` repository.
+Read its `SOUL.md`, then only the relevant curated `pcms-*` skill and design section.
+Do not load every skill or use the deprecated `.skills/` and `opencode-bundle`
+definitions as current architecture rules.
 
-## Estándares de Código (Resumen de .skills/clean-code)
-- **PHP:** Strict types, English only, Inyección de dependencias por constructor, Early returns.
-- **TypeScript:** Stepdown rule (imports -> types -> public -> private), Funciones pequeñas, Single Responsibility.
-- **Arquitectura:** DDD (Domain-Driven Design), Separación estricta (Domain / Application / Infrastructure).
-
-## Stack Tecnológico
-- **Backend:** Symfony, API Platform, Doctrine.
-- **Frontend:** React, TypeScript, Vite, Tailwind.
-- **Testing:** PHPUnit (Unit/Integration), Playwright (E2E).
-- **Calidad:** PHPStan, PHP-CS-Fixer, Rector.
-
-## Notas de Memoria
-- El usuario valora la arquitectura limpia y el desacoplamiento.
-- No asumir configuraciones; verificar siempre `composer.json` o `package.json`.
+Communicate in Spanish; write code and technical documentation in English.
+The canonical System Design is `docs/architecture/system-architecture.md`.

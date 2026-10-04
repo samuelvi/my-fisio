@@ -12,6 +12,8 @@ CONSOLE = $(PHP) php bin/console
 NODE = $(DOCKER_COMPOSE_DEV) exec -T node_watch
 TEST_PHP = $(DOCKER_COMPOSE_TEST) exec -T php_test
 TEST_CONSOLE = $(TEST_PHP) php bin/console
+PCMS_LIBRARY ?= $(abspath ../TinaFisioBackendSkills)
+PCMS_RUNTIME ?= $(PCMS_LIBRARY)/.runtime/pcms
 
 .PHONY: help guard-real-repo node22-guard require-pkg require-cmd
 .PHONY: deps-check deps-add deps-add-dev deps-audit deps-install
@@ -255,16 +257,16 @@ urls: ## Show development URLs
 mailpit: ## Open MailPit
 	@open http://localhost:8025 2>/dev/null || xdg-open http://localhost:8025 2>/dev/null || echo 'http://localhost:8025'
 
-opencode-init:
-	$(MAKE) -C opencode-bundle bundle-init-all
+opencode-init: guard-real-repo
+	python3 "$(PCMS_LIBRARY)/scripts/build_profile.py" --project-root "$(CURDIR)" --output "$(PCMS_RUNTIME)"
 
-opencode-link:
-	$(MAKE) -C opencode-bundle link-parent
+opencode-link: opencode-init
 
-opencode-verify:
-	$(MAKE) -C opencode-bundle bundle-verify-all
+opencode-verify: opencode-init
+	python3 "$(PCMS_LIBRARY)/scripts/validate.py"
+	python3 "$(PCMS_RUNTIME)/launch.py" check
 
-opencode-open:
-	$(MAKE) -C opencode-bundle opencode-all ARGS="$(ARGS)"
+opencode-open: opencode-init
+	python3 "$(PCMS_RUNTIME)/launch.py" $(ARGS)
 
-opencode-start: opencode-init opencode-link opencode-verify opencode-open ## Start the optional local OpenCode bundle
+opencode-start: opencode-verify opencode-open ## Start OpenCode with the independent PCMS skills library

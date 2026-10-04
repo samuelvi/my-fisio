@@ -59,8 +59,8 @@ Use the [dependency workflow](docs/security/dependency-installation.md) when add
 | `tests/`, `assets/tests/` | Backend, browser and frontend tests |
 | `translations/`, `templates/` | Translation catalogs, page shell and invoice templates |
 
-SQL stores the current state. Commands change entities; domain events record
-changes for auditing. See [architecture](docs/architecture/system-architecture.md).
+SQL stores the current state. API write paths persist entities and dispatch
+selected changes for auditing. See the [System Design](docs/architecture/system-architecture.md).
 
 ## Documentation
 
@@ -68,3 +68,4 @@ changes for auditing. See [architecture](docs/architecture/system-architecture.m
 - [Local configuration](docs/operations/configuration.md)
 - [Deployment](docs/operations/deployment.md)
 - [Agent entry point](AGENTS.md) and [project memory](memory-bank/product-context.md)
+- [Independent skills library and SOUL](../TinaFisioBackendSkills/README.md)

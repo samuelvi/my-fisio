@@ -3,11 +3,24 @@
 ## Load only what the task needs
 
 1. Check Git status and the current branch before editing.
-2. Read `memory-bank/active-context.md` and `memory-bank/system-patterns.md`.
-3. For product context, read `memory-bank/product-context.md`. Use `docs/README.md`
+2. Use the independent `TinaFisioBackendSkills` library. Read its `SOUL.md` as the
+   behavioral foundation. The external launcher supplies `PCMS_SKILLS_ROOT`
+   (the library's `skills/` directory; SOUL is `../SOUL.md` relative to it) and
+   `PCMS_PROJECT_ROOT`; the conventional local library location is the sibling
+   `../TinaFisioBackendSkills/`. If unavailable, report it rather than substituting
+   legacy skill instructions.
+3. Read `memory-bank/active-context.md` and `memory-bank/system-patterns.md`.
+4. For product context, read `memory-bank/product-context.md`. Use `docs/README.md`
    to locate a specific guide; do not load the whole specifications archive.
-4. Verify documentation claims against the touched code. Historical specs and
+5. Use `pcms-system-design` for architecture and the relevant `pcms-*` task skills.
+   `docs/architecture/system-architecture.md` is the canonical System Design.
+6. Verify documentation claims against the touched code. Historical specs and
    legacy `.agents/` documents may describe superseded behavior.
+
+`opencode-bundle` and `.skills/` are deprecated for PCMS. They are retained as
+legacy sources, not the maintained runtime. Do not run bundle composition or
+load those skill bodies instead of the external library. Keep generated profiles
+and skill/runtime installations outside this checkout.
 
 ## Working conventions
 
